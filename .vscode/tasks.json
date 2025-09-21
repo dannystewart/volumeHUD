@@ -47,7 +47,7 @@
             "problemMatcher": []
         },
         {
-            "label": "Volume HUD: Run (Swift Package)",
+            "label": "volumeHUD: Run (Swift Package)",
             "type": "shell",
             "command": "${workspaceFolder}/run-swift.sh",
             "group": "build",
@@ -60,7 +60,7 @@
             "problemMatcher": []
         },
         {
-            "label": "Volume HUD: Run (Xcode Build)",
+            "label": "volumeHUD: Run (Xcode Build)",
             "type": "shell",
             "command": "${workspaceFolder}/run-xcodebuild.sh",
             "group": "build",
@@ -73,7 +73,7 @@
             "problemMatcher": []
         },
         {
-            "label": "Volume HUD: Stop",
+            "label": "volumeHUD: Stop",
             "type": "shell",
             "command": "${workspaceFolder}/stop.sh",
             "group": "build",
