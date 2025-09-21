@@ -7,19 +7,19 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		3071AD172E80259F00D64378 /* Volume HUD.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Volume HUD.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		30C937682E806B79004B5AF5 /* volumeHUD.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = volumeHUD.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		3071AD192E80259F00D64378 /* Volume HUD */ = {
+		30C9376A2E806B79004B5AF5 /* volumeHUD */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "Volume HUD";
+			path = volumeHUD;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		3071AD142E80259F00D64378 /* Frameworks */ = {
+		30C937652E806B79004B5AF5 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -29,18 +29,18 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		3071AD0E2E80259F00D64378 = {
+		30C9375F2E806B79004B5AF5 = {
 			isa = PBXGroup;
 			children = (
-				3071AD192E80259F00D64378 /* Volume HUD */,
-				3071AD182E80259F00D64378 /* Products */,
+				30C9376A2E806B79004B5AF5 /* volumeHUD */,
+				30C937692E806B79004B5AF5 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		3071AD182E80259F00D64378 /* Products */ = {
+		30C937692E806B79004B5AF5 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				3071AD172E80259F00D64378 /* Volume HUD.app */,
+				30C937682E806B79004B5AF5 /* volumeHUD.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -48,64 +48,64 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		3071AD162E80259F00D64378 /* Volume HUD */ = {
+		30C937672E806B79004B5AF5 /* volumeHUD */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 3071AD222E8025A100D64378 /* Build configuration list for PBXNativeTarget "Volume HUD" */;
+			buildConfigurationList = 30C937732E806B7A004B5AF5 /* Build configuration list for PBXNativeTarget "volumeHUD" */;
 			buildPhases = (
-				3071AD132E80259F00D64378 /* Sources */,
-				3071AD142E80259F00D64378 /* Frameworks */,
-				3071AD152E80259F00D64378 /* Resources */,
+				30C937642E806B79004B5AF5 /* Sources */,
+				30C937652E806B79004B5AF5 /* Frameworks */,
+				30C937662E806B79004B5AF5 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				3071AD192E80259F00D64378 /* Volume HUD */,
+				30C9376A2E806B79004B5AF5 /* volumeHUD */,
 			);
-			name = "Volume HUD";
+			name = volumeHUD;
 			packageProductDependencies = (
 			);
-			productName = "Volume HUD";
-			productReference = 3071AD172E80259F00D64378 /* Volume HUD.app */;
+			productName = volumeHUD;
+			productReference = 30C937682E806B79004B5AF5 /* volumeHUD.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		3071AD0F2E80259F00D64378 /* Project object */ = {
+		30C937602E806B79004B5AF5 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2600;
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
-					3071AD162E80259F00D64378 = {
+					30C937672E806B79004B5AF5 = {
 						CreatedOnToolsVersion = 26.0;
 					};
 				};
 			};
-			buildConfigurationList = 3071AD122E80259F00D64378 /* Build configuration list for PBXProject "Volume HUD" */;
+			buildConfigurationList = 30C937632E806B79004B5AF5 /* Build configuration list for PBXProject "volumeHUD" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
 				Base,
 			);
-			mainGroup = 3071AD0E2E80259F00D64378;
+			mainGroup = 30C9375F2E806B79004B5AF5;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
-			productRefGroup = 3071AD182E80259F00D64378 /* Products */;
+			productRefGroup = 30C937692E806B79004B5AF5 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				3071AD162E80259F00D64378 /* Volume HUD */,
+				30C937672E806B79004B5AF5 /* volumeHUD */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		3071AD152E80259F00D64378 /* Resources */ = {
+		30C937662E806B79004B5AF5 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -115,7 +115,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		3071AD132E80259F00D64378 /* Sources */ = {
+		30C937642E806B79004B5AF5 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -125,7 +125,7 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		3071AD202E8025A100D64378 /* Debug */ = {
+		30C937712E806B7A004B5AF5 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -160,6 +160,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = PL2FTGT24W;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -188,7 +189,7 @@
 			};
 			name = Debug;
 		};
-		3071AD212E8025A100D64378 /* Release */ = {
+		30C937722E806B7A004B5AF5 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -223,6 +224,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = PL2FTGT24W;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -243,7 +245,7 @@
 			};
 			name = Release;
 		};
-		3071AD232E8025A100D64378 /* Debug */ = {
+		30C937742E806B7A004B5AF5 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -251,17 +253,21 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PL2FTGT24W;
 				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = volumeHUD;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.dannystewart.Volume-HUD";
+				PRODUCT_BUNDLE_IDENTIFIER = com.dannystewart.volumeHUD;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -273,7 +279,7 @@
 			};
 			name = Debug;
 		};
-		3071AD242E8025A100D64378 /* Release */ = {
+		30C937752E806B7A004B5AF5 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -281,17 +287,21 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PL2FTGT24W;
 				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = volumeHUD;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.dannystewart.Volume-HUD";
+				PRODUCT_BUNDLE_IDENTIFIER = com.dannystewart.volumeHUD;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -306,25 +316,25 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		3071AD122E80259F00D64378 /* Build configuration list for PBXProject "Volume HUD" */ = {
+		30C937632E806B79004B5AF5 /* Build configuration list for PBXProject "volumeHUD" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				3071AD202E8025A100D64378 /* Debug */,
-				3071AD212E8025A100D64378 /* Release */,
+				30C937712E806B7A004B5AF5 /* Debug */,
+				30C937722E806B7A004B5AF5 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		3071AD222E8025A100D64378 /* Build configuration list for PBXNativeTarget "Volume HUD" */ = {
+		30C937732E806B7A004B5AF5 /* Build configuration list for PBXNativeTarget "volumeHUD" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				3071AD232E8025A100D64378 /* Debug */,
-				3071AD242E8025A100D64378 /* Release */,
+				30C937742E806B7A004B5AF5 /* Debug */,
+				30C937752E806B7A004B5AF5 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = 3071AD0F2E80259F00D64378 /* Project object */;
+	rootObject = 30C937602E806B79004B5AF5 /* Project object */;
 }

@@ -1,3 +1,3 @@
 #!/bin/bash
-pkill -f 'Volume HUD'
-echo 'Volume HUD stopped'
+pkill -f 'volumeHUD'
+echo 'volumeHUD stopped'

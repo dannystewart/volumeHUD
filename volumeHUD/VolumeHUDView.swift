@@ -1,6 +1,6 @@
 //
 //  VolumeHUDView.swift
-//  Volume HUD
+//  volumeHUD
 //
 //  Created by Danny Stewart on 9/21/25.
 //

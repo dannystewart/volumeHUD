@@ -4,7 +4,7 @@
 <dict>
 	<key>SchemeUserState</key>
 	<dict>
-		<key>Volume HUD.xcscheme_^#shared#^_</key>
+		<key>volumeHUD.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
 			<integer>0</integer>
@@ -12,7 +12,7 @@
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
-		<key>3071AD162E80259F00D64378</key>
+		<key>30C937672E806B79004B5AF5</key>
 		<dict>
 			<key>primary</key>
 			<true/>

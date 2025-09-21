@@ -1,6 +1,6 @@
 //
 //  ContentView.swift
-//  Volume HUD
+//  volumeHUD
 //
 //  Created by Danny Stewart on 9/21/25.
 //
@@ -14,7 +14,7 @@ struct ContentView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            Text("Volume HUD")
+            Text("volumeHUD")
                 .font(.largeTitle)
                 .fontWeight(.bold)
 

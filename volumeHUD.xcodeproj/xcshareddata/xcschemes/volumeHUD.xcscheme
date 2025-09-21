@@ -15,10 +15,10 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "3071AD162E80259F00D64378"
-               BuildableName = "Volume HUD.app"
-               BlueprintName = "Volume HUD"
-               ReferencedContainer = "container:Volume HUD.xcodeproj">
+               BlueprintIdentifier = "30C937672E806B79004B5AF5"
+               BuildableName = "volumeHUD.app"
+               BlueprintName = "volumeHUD"
+               ReferencedContainer = "container:volumeHUD.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -44,10 +44,10 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "3071AD162E80259F00D64378"
-            BuildableName = "Volume HUD.app"
-            BlueprintName = "Volume HUD"
-            ReferencedContainer = "container:Volume HUD.xcodeproj">
+            BlueprintIdentifier = "30C937672E806B79004B5AF5"
+            BuildableName = "volumeHUD.app"
+            BlueprintName = "volumeHUD"
+            ReferencedContainer = "container:volumeHUD.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -61,10 +61,10 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "3071AD162E80259F00D64378"
-            BuildableName = "Volume HUD.app"
-            BlueprintName = "Volume HUD"
-            ReferencedContainer = "container:Volume HUD.xcodeproj">
+            BlueprintIdentifier = "30C937672E806B79004B5AF5"
+            BuildableName = "volumeHUD.app"
+            BlueprintName = "volumeHUD"
+            ReferencedContainer = "container:volumeHUD.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

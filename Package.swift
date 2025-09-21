@@ -1,27 +1,23 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 6.2
 import PackageDescription
 
 let package = Package(
-    name: "Volume HUD",
+    name: "volumeHUD",
     platforms: [
-        .macOS(.v12)
+        .macOS(.v26)
     ],
     products: [
         .executable(
-            name: "Volume HUD",
-            targets: ["Volume HUD"]
+            name: "volumeHUD",
+            targets: ["volumeHUD"]
         )
     ],
     targets: [
         .executableTarget(
-            name: "Volume HUD",
-            path: "Volume HUD",
-            sources: [
-                "ContentView.swift",
-                "HUDController.swift",
-                "VolumeHUDApp.swift",
-                "VolumeHUDView.swift",
-                "VolumeMonitor.swift",
+            name: "volumeHUD",
+            path: "volumeHUD",
+            resources: [
+                .process("Assets.xcassets")
             ]
         )
     ]

@@ -1,6 +1,6 @@
 //
 //  VolumeMonitor.swift
-//  Volume HUD
+//  volumeHUD
 //
 //  Created by Danny Stewart on 9/21/25.
 //
@@ -11,7 +11,8 @@ import Combine
 import CoreAudio
 import Foundation
 
-class VolumeMonitor: ObservableObject {
+@MainActor
+class VolumeMonitor: ObservableObject, @unchecked Sendable {
     @Published var currentVolume: Float = 0.0
     @Published var isMuted: Bool = false
 
@@ -73,7 +74,7 @@ class VolumeMonitor: ObservableObject {
                 guard let clientData = inClientData else { return noErr }
                 let volumeMonitor = Unmanaged<VolumeMonitor>.fromOpaque(clientData)
                     .takeUnretainedValue()
-                DispatchQueue.main.async {
+                Task { @MainActor in
                     volumeMonitor.updateVolumeValues()
                 }
                 return noErr
@@ -95,7 +96,7 @@ class VolumeMonitor: ObservableObject {
                 guard let clientData = inClientData else { return noErr }
                 let volumeMonitor = Unmanaged<VolumeMonitor>.fromOpaque(clientData)
                     .takeUnretainedValue()
-                DispatchQueue.main.async {
+                Task { @MainActor in
                     volumeMonitor.updateVolumeValues()
                 }
                 return noErr
@@ -195,7 +196,7 @@ class VolumeMonitor: ObservableObject {
             if Thread.isMainThread {
                 hudController?.showVolumeHUD(volume: currentVolume, isMuted: isMuted)
             } else {
-                DispatchQueue.main.async {
+                Task { @MainActor in
                     self.hudController?.showVolumeHUD(
                         volume: self.currentVolume, isMuted: self.isMuted)
                 }

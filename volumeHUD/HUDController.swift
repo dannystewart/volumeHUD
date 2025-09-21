@@ -1,6 +1,6 @@
 //
 //  HUDController.swift
-//  Volume HUD
+//  volumeHUD
 //
 //  Created by Danny Stewart on 9/21/25.
 //
@@ -9,7 +9,7 @@ import AppKit
 import Combine
 import SwiftUI
 
-class HUDController: ObservableObject {
+class HUDController: ObservableObject, @unchecked Sendable {
     @Published var isShowing = false
 
     private var hudWindow: NSWindow?
@@ -17,16 +17,12 @@ class HUDController: ObservableObject {
     private var hideTimer: Timer?
     weak var volumeMonitor: VolumeMonitor?
 
+    @MainActor
     func showVolumeHUD(volume: Float, isMuted: Bool) {
-        if Thread.isMainThread {
-            self.displayHUD(volume: volume, isMuted: isMuted)
-        } else {
-            DispatchQueue.main.async {
-                self.displayHUD(volume: volume, isMuted: isMuted)
-            }
-        }
+        self.displayHUD(volume: volume, isMuted: isMuted)
     }
 
+    @MainActor
     private func displayHUD(volume: Float, isMuted: Bool) {
         // Cancel any existing hide timer
         hideTimer?.invalidate()
@@ -59,10 +55,13 @@ class HUDController: ObservableObject {
 
         // Set timer to hide the HUD
         hideTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { _ in
-            self.hideHUD()
+            Task { @MainActor in
+                self.hideHUD()
+            }
         }
     }
 
+    @MainActor
     private func createHUDWindow() {
         let windowSize = NSSize(width: 200, height: 200)
 
@@ -102,16 +101,17 @@ class HUDController: ObservableObject {
         print("Created HUD window at: \(windowRect)")
     }
 
+    @MainActor
     private func hideHUD() {
-        DispatchQueue.main.async {
-            self.hudWindow?.orderOut(nil)
-            self.isShowing = false
-        }
+        hudWindow?.orderOut(nil)
+        isShowing = false
     }
 
     deinit {
+        // Clean up resources synchronously in deinit
         hideTimer?.invalidate()
         hostingView = nil
-        hudWindow?.orderOut(nil)
+        // Note: Cannot call orderOut from deinit due to concurrency constraints
+        // The window will be cleaned up when the app terminates
     }
 }
