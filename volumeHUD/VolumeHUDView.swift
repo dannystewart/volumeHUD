@@ -13,28 +13,28 @@ struct VolumeHUDView: View {
     let isVisible: Bool
 
     private let hudSize: CGFloat = 200
-    private let iconSize: CGFloat = 82
+    private let iconSize: CGFloat = 80
 
     var body: some View {
         VStack(spacing: 0) {
             // Volume icon - centered in upper portion
             VStack {
                 Spacer()
-                    .frame(height: 64)
+                    .frame(height: 60)
                 Image(systemName: volumeIcon)
                     .font(.system(size: iconSize, weight: .medium))
                     .foregroundColor(.white)
                     .offset(y: isMuted ? 2 : 0)  // Nudge mute icon down 2 pixels
                 Spacer()
             }
-            .frame(height: 120)
+            .frame(height: 100)
 
             // Volume bars or mute indicator - fixed lower area
             VStack {
                 Spacer()
-                    .frame(height: 30)  // Push volume bars down
+                    .frame(height: 40)  // Push volume bars down
                 if !isMuted {
-                    HStack(spacing: 3) {
+                    HStack(spacing: 2) {
                         Spacer()
                             .frame(width: 20)
                         ForEach(0..<16, id: \.self) { index in
@@ -59,7 +59,7 @@ struct VolumeHUDView: View {
         )
         .scaleEffect(isVisible ? 1.0 : 0.8)
         .opacity(isVisible ? 1.0 : 0.0)
-        .animation(.easeOut(duration: 0.3), value: isVisible)
+        .animation(.easeOut(duration: 0.2), value: isVisible)
     }
 
     private var volumeIcon: String {

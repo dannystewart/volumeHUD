@@ -54,7 +54,7 @@ class HUDController: ObservableObject, @unchecked Sendable {
         }
 
         // Set timer to hide the HUD
-        hideTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { _ in
+        hideTimer = Timer.scheduledTimer(withTimeInterval: 1.1, repeats: false) { _ in
             DispatchQueue.main.async {
                 self.hideHUD()
             }
@@ -98,7 +98,7 @@ class HUDController: ObservableObject, @unchecked Sendable {
         // Make sure window appears on all spaces and can't be activated
         window.canHide = false
 
-        // Start the window hidden - it will only be shown when volume changes
+        // Start the window hidden (only show when volume changes)
         window.orderOut(nil)
 
         print("Created HUD window at: \(windowRect)")
@@ -112,9 +112,8 @@ class HUDController: ObservableObject, @unchecked Sendable {
 
     deinit {
         // Clean up resources synchronously in deinit
+        // The window will be cleaned up when the app terminates
         hideTimer?.invalidate()
         hostingView = nil
-        // Note: Cannot call orderOut from deinit due to concurrency constraints
-        // The window will be cleaned up when the app terminates
     }
 }
