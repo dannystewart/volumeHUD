@@ -56,6 +56,11 @@ There are also build scripts:
 ./run-xcodebuild.sh  # Build with xcodebuild
 ```
 
+## Known Issues
+
+- There's currently no GUI to quit the app. Use `pkill -f volumeHUD`.
+- The HUD won't show if you press volume down when at 0% or volume up when at 100% because there's no volume change to detect. I'd need to watch for key presses, which I haven't figured out how to do and would require Accessibility permissions which I'm hesitant to request.
+
 ## License
 
-This project is open source under the [MIT License](./LICENSE). Feel free to use and modify as needed.
+This project is open source under the [MIT License](./LICENSE). Feel free to do what you like with it, or contribute!
