@@ -7,7 +7,6 @@
 
 import AVFoundation
 import AudioToolbox
-import Carbon
 import Combine
 import CoreAudio
 import Foundation
@@ -21,9 +20,6 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
     private var deviceID: AudioDeviceID = kAudioObjectUnknown
     private var previousVolume: Float = 0.0
     private var previousMuteState: Bool = false
-    private var eventTap: CFMachPort?
-    private var runLoopSource: CFRunLoopSource?
-    private var isKeyMonitoringEnabled: Bool = false
 
     weak var hudController: HUDController?
 
@@ -107,9 +103,6 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             selfPtr
         )
 
-        // Start monitoring for volume key events
-        startVolumeKeyMonitoring()
-
         isMonitoring = true
         print("Started monitoring volume changes")
     }
@@ -144,9 +137,6 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             },
             selfPtr
         )
-
-        // Stop volume key monitoring
-        stopVolumeKeyMonitoring()
 
         isMonitoring = false
         print("Stopped monitoring volume changes")
@@ -234,100 +224,5 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             previousVolume = newVolume
             previousMuteState = newMuted
         }
-    }
-
-    // MARK: - Volume Key Monitoring
-
-    /// Monitors for volume key presses even when volume is at min/max limits.
-    /// This handles the case where pressing volume up at 100% or volume down at 0%
-    /// doesn't trigger volume change events, but users still expect to see the HUD.
-
-    private func startVolumeKeyMonitoring() {
-        // Create event tap for volume keys
-        let eventMask = (1 << CGEventType.keyDown.rawValue) | (1 << CGEventType.keyUp.rawValue)
-
-        eventTap = CGEvent.tapCreate(
-            tap: .cgSessionEventTap,
-            place: .headInsertEventTap,
-            options: .defaultTap,
-            eventsOfInterest: CGEventMask(eventMask),
-            callback: { (proxy, type, event, refcon) -> Unmanaged<CGEvent>? in
-                guard let refcon = refcon else { return Unmanaged.passUnretained(event) }
-                let volumeMonitor = Unmanaged<VolumeMonitor>.fromOpaque(refcon)
-                    .takeUnretainedValue()
-                return volumeMonitor.handleVolumeKeyEvent(proxy: proxy, type: type, event: event)
-            },
-            userInfo: Unmanaged.passUnretained(self).toOpaque()
-        )
-
-        guard let eventTap = eventTap else {
-            print(
-                "Failed to create event tap for volume keys - accessibility permissions may not be granted"
-            )
-            print(
-                "App will work for volume changes but won't show HUD for min/max cases"
-            )
-            isKeyMonitoringEnabled = false
-            return
-        }
-
-        // Create run loop source
-        runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, eventTap, 0)
-        guard let runLoopSource = runLoopSource else {
-            print("Failed to create run loop source for volume key monitoring")
-            isKeyMonitoringEnabled = false
-            return
-        }
-
-        // Add to run loop
-        CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, .commonModes)
-        CGEvent.tapEnable(tap: eventTap, enable: true)
-
-        isKeyMonitoringEnabled = true
-        print("Started monitoring volume key events")
-    }
-
-    private func stopVolumeKeyMonitoring() {
-        if let eventTap = eventTap {
-            CGEvent.tapEnable(tap: eventTap, enable: false)
-            CFMachPortInvalidate(eventTap)
-        }
-
-        if let runLoopSource = runLoopSource {
-            CFRunLoopRemoveSource(CFRunLoopGetCurrent(), runLoopSource, .commonModes)
-        }
-
-        eventTap = nil
-        runLoopSource = nil
-        isKeyMonitoringEnabled = false
-        print("Stopped monitoring volume key events")
-    }
-
-    private func handleVolumeKeyEvent(proxy: CGEventTapProxy, type: CGEventType, event: CGEvent)
-        -> Unmanaged<CGEvent>?
-    {
-        // Only handle key down events and only if key monitoring is enabled
-        guard type == .keyDown && isKeyMonitoringEnabled else {
-            return Unmanaged.passUnretained(event)
-        }
-
-        let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
-
-        // Check for volume up (key code 72) or volume down (key code 73)
-        // These are the standard key codes for volume buttons on Mac keyboards
-        if keyCode == 72 || keyCode == 73 {
-            // Get current volume and mute state
-            let (currentVol, currentMute) = getCurrentVolumeAndMuteState()
-
-            // Show HUD with current volume level
-            DispatchQueue.main.async {
-                self.hudController?.showVolumeHUD(volume: currentVol, isMuted: currentMute)
-            }
-
-            print(
-                "Volume key pressed (code: \(keyCode)) - showing HUD at \(Int(currentVol * 100))%")
-        }
-
-        return Unmanaged.passUnretained(event)
     }
 }
