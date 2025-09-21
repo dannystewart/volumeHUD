@@ -23,9 +23,10 @@ struct VolumeHUDView: View {
                 Image(systemName: volumeIcon)
                     .font(.system(size: iconSize, weight: .medium))
                     .foregroundColor(.white)
+                    .offset(y: isMuted ? 2 : 0) // Nudge mute icon down 2 pixels
                 Spacer()
             }
-            .frame(height: 120)
+            .frame(height: 100)
 
             // Volume bars or mute indicator - fixed lower area
             VStack {
@@ -45,7 +46,7 @@ struct VolumeHUDView: View {
                     }
                 }
             }
-            .frame(height: 60)
+            .frame(height: 80)
         }
         .frame(width: hudSize, height: hudSize)
         .background(
