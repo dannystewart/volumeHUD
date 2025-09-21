@@ -37,7 +37,7 @@ The HUD appears in the lower portion of your screen and won't interfere with you
 
 ## How to Use
 
-This requires macOS 26 or later (you don't need it prior to that anyway), and Xcode 16 for building it.
+This requires macOS 26 or later (you don't need it prior to that anyway) and Xcode 16 to build it.
 
 1. Clone this repository:
 
@@ -52,8 +52,8 @@ cd volumeHUD
 There are also build scripts:
 
 ```bash
-./run-swift.sh    # Build and run with Swift Package Manager
-./run-xcodebuild.sh  # Build with xcodebuild
+./scripts/run-swift.sh       # Build and run with Swift Package Manager
+./scripts/run-xcodebuild.sh  # Build with xcodebuild
 ```
 
 ## Known Issues

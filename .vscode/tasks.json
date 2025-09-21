@@ -49,7 +49,7 @@
         {
             "label": "volumeHUD: Run (Swift Package)",
             "type": "shell",
-            "command": "${workspaceFolder}/run-swift.sh",
+            "command": "${workspaceFolder}/scripts/run-swift.sh",
             "group": "build",
             "presentation": {
                 "echo": true,
@@ -62,7 +62,7 @@
         {
             "label": "volumeHUD: Run (Xcode Build)",
             "type": "shell",
-            "command": "${workspaceFolder}/run-xcodebuild.sh",
+            "command": "${workspaceFolder}/scripts/run-xcodebuild.sh",
             "group": "build",
             "presentation": {
                 "echo": true,
@@ -75,7 +75,7 @@
         {
             "label": "volumeHUD: Stop",
             "type": "shell",
-            "command": "${workspaceFolder}/stop.sh",
+            "command": "${workspaceFolder}/scripts/stop.sh",
             "group": "build",
             "presentation": {
                 "echo": true,

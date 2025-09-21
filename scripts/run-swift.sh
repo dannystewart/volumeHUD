@@ -1,5 +1,5 @@
 #!/bin/bash
-cd "$(dirname "$0")" || exit 1
+cd "$(dirname "$0")" && cd .. || exit 1
 pkill -f 'volumeHUD' || true
 sleep 0.5
 swift build
