@@ -1,5 +1,5 @@
 //
-//  Volume_HUDApp.swift
+//  VolumeHUDApp.swift
 //  Volume HUD
 //
 //  Created by Danny Stewart on 9/21/25.

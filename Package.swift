@@ -17,11 +17,11 @@ let package = Package(
             name: "Volume HUD",
             path: "Volume HUD",
             sources: [
-                "Volume_HUDApp.swift",
                 "ContentView.swift",
-                "VolumeMonitor.swift",
                 "HUDController.swift",
+                "VolumeHUDApp.swift",
                 "VolumeHUDView.swift",
+                "VolumeMonitor.swift",
             ]
         )
     ]
