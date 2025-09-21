@@ -1,0 +1,48 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "swift: Build Debug",
+            "type": "shell",
+            "command": "swift",
+            "args": [
+                "build",
+                "--configuration",
+                "debug",
+                "--target",
+                "x86_64-apple-macosx12.0"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "swift: Build Release",
+            "type": "shell",
+            "command": "swift",
+            "args": [
+                "build",
+                "--configuration",
+                "release",
+                "--target",
+                "x86_64-apple-macosx12.0"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        }
+    ]
+}

@@ -1,0 +1,20 @@
+{
+    "code-runner.executorMap": {
+        "swift": "cd $dir/.. && swift build && ./.build/arm64-apple-macosx/debug/Volume\\ HUD"
+    },
+    "editor.detectIndentation": false,
+    "editor.formatOnPaste": true,
+    "editor.formatOnSave": true,
+    "swift.autoGenerateLaunchConfigurations": true,
+    "swift.buildArguments": [
+        "-Xswiftc",
+        "-target",
+        "-Xswiftc",
+        "x86_64-apple-macosx12.0"
+    ],
+    "swift.buildPath": "./build",
+    "swift.sdk": "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk",
+    "swift.sourcekit-lsp.serverPath": "/usr/bin/sourcekit-lsp",
+    "swift.swiftEnvironmentVariables": {},
+    "swift.target": "x86_64-apple-macosx12.0"
+}
