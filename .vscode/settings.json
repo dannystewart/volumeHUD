@@ -1,7 +1,9 @@
 {
     "code-runner.executorMap": {
-        "swift": "cd $dir/.. && swift build && ./.build/arm64-apple-macosx/debug/Volume\\ HUD"
+        "swift": "cd $dir/.. && pkill -f 'Volume HUD' || true && sleep 0.5 && swift build && echo 'Starting Volume HUD...' && ./.build/arm64-apple-macosx/debug/Volume\\ HUD &"
     },
+    "code-runner.preserveFocus": false,
+    "code-runner.runInTerminal": true,
     "editor.detectIndentation": false,
     "editor.formatOnPaste": true,
     "editor.formatOnSave": true,
