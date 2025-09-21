@@ -29,21 +29,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Keep the app headless and out of the Dock
         NSApplication.shared.setActivationPolicy(.accessory)
 
-        // Listen for external toggle requests (optional: allows CLI/Automator to toggle)
-        DistributedNotificationCenter.default()
-            .addObserver(
-                self,
-                selector: #selector(handleToggleNotification),
-                name: kToggleNotificationName,
-                object: nil)
-
-        // Initialize
+        // Initialize the volume monitor and HUD controller
         volumeMonitor = VolumeMonitor()
         hudController = HUDController()
         hudController.volumeMonitor = volumeMonitor
         volumeMonitor.hudController = hudController
 
-        // Notifications: request permission and post "started"
+        // Request notification permission and post "started" notification
         requestNotificationAuthorizationIfNeeded { [weak self] granted in
             guard let self else { return }
             if granted {
@@ -59,24 +51,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         print("Started monitoring volume changes from AppDelegate")
     }
 
-    // Handle attempts to "reopen" the app (e.g., user launches the app again)
+    // Handle attempts to launch the app a second time
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool)
         -> Bool
     {
-        // Treat reopen as a toggle request without activating the app or showing the Dock icon
+        // Treat reopening as a toggle request without activating the app
         scheduleQuit()
         return false
     }
 
-    // If the system routes a new "open" event to the running app (e.g., via LaunchServices),
-    // also treat that as a toggle without activation.
+    // If we get a new "open" event, also treat that as a toggle without activation
     func application(_ application: NSApplication, open urls: [URL]) {
-        scheduleQuit()
-    }
-
-    @objc
-    private func handleToggleNotification() {
-        // Received an external toggle; schedule quit with the same delay
         scheduleQuit()
     }
 
@@ -95,7 +80,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func gracefulTerminate() {
-        print("Stopping monitoring and quitting.")
+        print("Stopping monitoring and quitting")
         volumeMonitor?.stopMonitoring()
         postUserNotification(title: "volumeHUD stopped", body: nil)
 
@@ -103,7 +88,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.terminate(nil)
     }
 
-    // MARK: - User notifications
+    // MARK: User Notifications
 
     private func requestNotificationAuthorizationIfNeeded(
         completion: @escaping @Sendable (Bool) -> Void
