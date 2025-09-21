@@ -20,7 +20,8 @@
                 "echo": true,
                 "reveal": "always",
                 "focus": false,
-                "panel": "shared"
+                "panel": "shared",
+                "close": true
             },
             "problemMatcher": []
         },
@@ -40,7 +41,48 @@
                 "echo": true,
                 "reveal": "always",
                 "focus": false,
+                "panel": "shared",
+                "close": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Volume HUD: Run (Swift Package)",
+            "type": "shell",
+            "command": "${workspaceFolder}/run-swift.sh",
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
                 "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Volume HUD: Run (Xcode Build)",
+            "type": "shell",
+            "command": "${workspaceFolder}/run-xcodebuild.sh",
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Volume HUD: Stop",
+            "type": "shell",
+            "command": "${workspaceFolder}/stop.sh",
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "close": true
             },
             "problemMatcher": []
         }
