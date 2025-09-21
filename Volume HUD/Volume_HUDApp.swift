@@ -8,24 +8,47 @@
 import SwiftUI
 
 class AppDelegate: NSObject, NSApplicationDelegate {
+    var volumeMonitor: VolumeMonitor?
+    var hudController: HUDController?
+
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-        return true
+        return false  // Keep app running even when main window is closed
+    }
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        // Bring app to foreground when launched
+        NSApplication.shared.activate(ignoringOtherApps: true)
+
+        // Start volume monitoring immediately
+        if let volumeMonitor = volumeMonitor, let hudController = hudController {
+            volumeMonitor.startMonitoring()
+            hudController.volumeMonitor = volumeMonitor
+            volumeMonitor.hudController = hudController
+            print("Started monitoring volume changes from AppDelegate")
+        }
     }
 }
 
 @main
 struct Volume_HUDApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    
+    @StateObject private var volumeMonitor = VolumeMonitor()
+    @StateObject private var hudController = HUDController()
+
     init() {
-        // Make app quit when main window is closed
-        NSApplication.shared.setActivationPolicy(.regular)
+        // Keep app running in background even when windows are hidden
+        NSApplication.shared.setActivationPolicy(.accessory)
+
+        // Pass objects to app delegate for immediate initialization
+        appDelegate.volumeMonitor = volumeMonitor
+        appDelegate.hudController = hudController
     }
-    
+
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(volumeMonitor)
+                .environmentObject(hudController)
         }
-        .windowResizability(.contentSize)
     }
 }

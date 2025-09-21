@@ -13,12 +13,17 @@ class HUDController: ObservableObject {
     @Published var isShowing = false
 
     private var hudWindow: NSWindow?
+    private var hostingView: NSHostingView<VolumeHUDView>?
     private var hideTimer: Timer?
     weak var volumeMonitor: VolumeMonitor?
 
     func showVolumeHUD(volume: Float, isMuted: Bool) {
-        DispatchQueue.main.async {
+        if Thread.isMainThread {
             self.displayHUD(volume: volume, isMuted: isMuted)
+        } else {
+            DispatchQueue.main.async {
+                self.displayHUD(volume: volume, isMuted: isMuted)
+            }
         }
     }
 
@@ -33,12 +38,22 @@ class HUDController: ObservableObject {
 
         // Update the content view
         if let window = hudWindow {
-            let hostingView = NSHostingView(rootView: VolumeHUDView(volume: volume, isMuted: isMuted, isVisible: true))
-            hostingView.frame = window.contentView?.bounds ?? NSRect(x: 0, y: 0, width: 200, height: 200)
-            
-            window.contentView = hostingView
+            if hostingView == nil {
+                hostingView = NSHostingView(
+                    rootView: VolumeHUDView(volume: volume, isMuted: isMuted, isVisible: true)
+                )
+                hostingView?.frame =
+                    window.contentView?.bounds ?? NSRect(x: 0, y: 0, width: 200, height: 200)
+                window.contentView = hostingView
+            } else {
+                hostingView?.rootView = VolumeHUDView(
+                    volume: volume,
+                    isMuted: isMuted,
+                    isVisible: true
+                )
+            }
+
             window.orderFront(nil)
-            
             isShowing = true
         }
 
@@ -54,11 +69,11 @@ class HUDController: ObservableObject {
         // Get the main screen
         guard let screen = NSScreen.main else { return }
 
-        // Position the window lower on screen (about 1/5 from bottom)
+        // Position the window lower on screen
         let screenFrame = screen.frame
         let windowRect = NSRect(
             x: (screenFrame.width - windowSize.width) / 2,
-            y: screenFrame.height * 0.2,  // Position at 20% from bottom (lower than before)
+            y: screenFrame.height * 0.2,  // Position at 20% from bottom
             width: windowSize.width,
             height: windowSize.height
         )

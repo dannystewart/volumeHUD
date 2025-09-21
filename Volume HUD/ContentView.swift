@@ -7,12 +7,11 @@
 
 import Combine
 import SwiftUI
-import Combine
 
 struct ContentView: View {
-    @StateObject private var volumeMonitor = VolumeMonitor()
-    @StateObject private var hudController = HUDController()
-    
+    @EnvironmentObject var volumeMonitor: VolumeMonitor
+    @EnvironmentObject var hudController: HUDController
+
     var body: some View {
         VStack(spacing: 20) {
             Text("Volume HUD")
@@ -33,17 +32,13 @@ struct ContentView: View {
             .foregroundColor(.secondary)
 
             Button("Test HUD") {
-                hudController.showVolumeHUD(volume: volumeMonitor.currentVolume, isMuted: volumeMonitor.isMuted)
+                hudController.showVolumeHUD(
+                    volume: volumeMonitor.currentVolume, isMuted: volumeMonitor.isMuted)
             }
             .buttonStyle(.borderedProminent)
         }
         .padding()
         .frame(maxWidth: 400, maxHeight: 300)
-        .onAppear {
-            volumeMonitor.startMonitoring()
-            hudController.volumeMonitor = volumeMonitor
-            volumeMonitor.hudController = hudController
-        }
         .onDisappear {
             volumeMonitor.stopMonitoring()
         }
