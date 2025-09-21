@@ -261,6 +261,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = volumeHUD;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSAppleEventsUsageDescription = "Optional: Allows app to show volume HUD when pressing volume buttons at 0% or 100% volume. The app works perfectly without this for normal volume changes.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -295,6 +296,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = volumeHUD;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSAppleEventsUsageDescription = "Optional: Allows the app to show the volume HUD when pressing volume buttons at minimum (0%) or maximum (100%) volume levels. The app works perfectly without this permission for normal volume changes.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
