@@ -57,11 +57,11 @@ struct VolumeHUDView: View {
     private var volumeIcon: String {
         if isMuted {
             return "speaker.slash.fill"
-        } else if volume < 0.25 {
+        } else if volume < 0.08 {
             return "speaker.fill"
-        } else if volume < 0.5 {
+        } else if volume < 0.33 {
             return "speaker.wave.1.fill"
-        } else if volume < 0.75 {
+        } else if volume < 0.66 {
             return "speaker.wave.2.fill"
         } else {
             return "speaker.wave.3.fill"
