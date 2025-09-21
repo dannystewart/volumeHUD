@@ -155,7 +155,9 @@ class VolumeMonitor: ObservableObject {
         )
         
         if volumeStatus == noErr {
-            currentVolume = volume
+            // Quantize volume to 16 discrete steps (1/16th increments)
+            let quantizedVolume = round(volume * 16.0) / 16.0
+            currentVolume = quantizedVolume
         }
         
         // Get mute state
