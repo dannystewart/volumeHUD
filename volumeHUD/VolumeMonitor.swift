@@ -61,7 +61,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         self.deviceID = deviceID
 
         // Get initial volume without showing HUD
-        updateVolumeValuesSilently()
+        updateVolumeValuesOnStartup()
 
         // Register for volume change notifications
         let selfPtr = UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
@@ -142,56 +142,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         print("Stopped monitoring volume changes")
     }
 
-    private func updateVolumeValuesSilently() {
-        // Get volume
-        var volume: Float = 0.0
-        var size = UInt32(MemoryLayout<Float>.size)
-
-        let volumeStatus = AudioObjectGetPropertyData(
-            deviceID,
-            &audioObjectPropertyAddress,
-            0,
-            nil,
-            &size,
-            &volume
-        )
-
-        if volumeStatus == noErr {
-            // Quantize volume to 16 steps to match the volume bars
-            let quantizedVolume = round(volume * 16.0) / 16.0
-            currentVolume = quantizedVolume
-        }
-
-        // Get mute state
-        var muted: UInt32 = 0
-        size = UInt32(MemoryLayout<UInt32>.size)
-        var muteAddress = AudioObjectPropertyAddress(
-            mSelector: kAudioDevicePropertyMute,
-            mScope: kAudioDevicePropertyScopeOutput,
-            mElement: kAudioObjectPropertyElementMain
-        )
-
-        let muteStatus = AudioObjectGetPropertyData(
-            deviceID,
-            &muteAddress,
-            0,
-            nil,
-            &size,
-            &muted
-        )
-
-        if muteStatus == noErr {
-            isMuted = muted != 0
-        }
-
-        // Set previous values to current values to prevent initial HUD display
-        previousVolume = currentVolume
-        previousMuteState = isMuted
-
-        print("Initial volume set: \(Int(currentVolume * 100))%, Muted: \(isMuted)")
-    }
-
-    private func updateVolumeValues() {
+    private func getCurrentVolumeAndMuteState() -> (volume: Float, isMuted: Bool) {
         // Get volume
         var volume: Float = 0.0
         var size = UInt32(MemoryLayout<Float>.size)
@@ -206,8 +157,6 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         )
 
         var newVolume: Float = currentVolume
-        var newMuted: Bool = isMuted
-
         if volumeStatus == noErr {
             // Quantize volume to 16 steps to match the volume bars
             let quantizedVolume = round(volume * 16.0) / 16.0
@@ -232,9 +181,30 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             &muted
         )
 
+        var newMuted: Bool = isMuted
         if muteStatus == noErr {
             newMuted = muted != 0
         }
+
+        return (volume: newVolume, isMuted: newMuted)
+    }
+
+    private func updateVolumeValuesOnStartup() {
+        let (newVolume, newMuted) = getCurrentVolumeAndMuteState()
+
+        // Update @Published properties directly
+        currentVolume = newVolume
+        isMuted = newMuted
+
+        // Set previous values to current values to prevent initial HUD display
+        previousVolume = newVolume
+        previousMuteState = newMuted
+
+        print("Initial volume set: \(Int(newVolume * 100))%, Muted: \(newMuted)")
+    }
+
+    private func updateVolumeValues() {
+        let (newVolume, newMuted) = getCurrentVolumeAndMuteState()
 
         // Check if volume or mute state changed
         let volumeChanged = abs(newVolume - previousVolume) > 0.001  // Smaller threshold for more responsiveness
