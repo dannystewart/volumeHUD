@@ -55,7 +55,7 @@ class HUDController: ObservableObject, @unchecked Sendable {
 
         // Set timer to hide the HUD
         hideTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { _ in
-            Task { @MainActor in
+            DispatchQueue.main.async {
                 self.hideHUD()
             }
         }
@@ -97,6 +97,9 @@ class HUDController: ObservableObject, @unchecked Sendable {
 
         // Make sure window appears on all spaces and can't be activated
         window.canHide = false
+
+        // Start the window hidden - it will only be shown when volume changes
+        window.orderOut(nil)
 
         print("Created HUD window at: \(windowRect)")
     }
