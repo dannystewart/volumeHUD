@@ -20,7 +20,7 @@ struct VolumeHUDView: View {
             // Volume icon - centered in upper portion
             VStack {
                 Spacer()
-                    .frame(height: 60)
+                    .frame(height: 55)
                 Image(systemName: volumeIcon)
                     .font(.system(size: iconSize, weight: .medium))
                     .foregroundColor(.white)
@@ -41,7 +41,7 @@ struct VolumeHUDView: View {
                             // Volume bars
                             Rectangle()
                                 .fill(volumeBarColor(for: index))
-                                .frame(width: 7, height: 7)
+                                .frame(width: 7.5, height: 7.5)
                         }
                         // Right margin
                         Spacer()
@@ -57,9 +57,7 @@ struct VolumeHUDView: View {
                 .fill(.regularMaterial)
                 .environment(\.colorScheme, .dark)
         )
-        .scaleEffect(isVisible ? 1.0 : 0.8)
         .opacity(isVisible ? 1.0 : 0.0)
-        .animation(.easeOut(duration: 0.2), value: isVisible)
     }
 
     private var volumeIcon: String {

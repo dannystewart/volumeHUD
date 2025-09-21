@@ -39,7 +39,7 @@ class HUDController: ObservableObject, @unchecked Sendable {
                     rootView: VolumeHUDView(volume: volume, isMuted: isMuted, isVisible: true)
                 )
                 hostingView?.frame =
-                    window.contentView?.bounds ?? NSRect(x: 0, y: 0, width: 200, height: 200)
+                    window.contentView?.bounds ?? NSRect(x: 0, y: 0, width: 210, height: 210)
                 window.contentView = hostingView
             } else {
                 hostingView?.rootView = VolumeHUDView(
@@ -53,7 +53,7 @@ class HUDController: ObservableObject, @unchecked Sendable {
             isShowing = true
         }
 
-        // Set timer to hide the HUD
+        // Set timer to hide the HUD after volume change
         hideTimer = Timer.scheduledTimer(withTimeInterval: 1.1, repeats: false) { _ in
             DispatchQueue.main.async {
                 self.hideHUD()
@@ -63,7 +63,7 @@ class HUDController: ObservableObject, @unchecked Sendable {
 
     @MainActor
     private func createHUDWindow() {
-        let windowSize = NSSize(width: 200, height: 200)
+        let windowSize = NSSize(width: 210, height: 210)
 
         // Get the main screen
         guard let screen = NSScreen.main else { return }
@@ -72,7 +72,7 @@ class HUDController: ObservableObject, @unchecked Sendable {
         let screenFrame = screen.frame
         let windowRect = NSRect(
             x: (screenFrame.width - windowSize.width) / 2,
-            y: screenFrame.height * 0.15,  // Distance from bottom of screen
+            y: screenFrame.height * 0.17,  // Distance from bottom of screen
             width: windowSize.width,
             height: windowSize.height
         )
