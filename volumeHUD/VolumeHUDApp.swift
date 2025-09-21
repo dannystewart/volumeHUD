@@ -7,10 +7,11 @@
 
 import AppKit
 import SwiftUI
-import UserNotifications
+@preconcurrency import UserNotifications
 
 private let kToggleNotificationName = Notification.Name("com.dannystewart.volumehud.toggle")
 
+@MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
     var volumeMonitor: VolumeMonitor!
     var hudController: HUDController!
@@ -43,9 +44,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         volumeMonitor.hudController = hudController
 
         // Notifications: request permission and post "started"
-        requestNotificationAuthorizationIfNeeded { granted in
+        requestNotificationAuthorizationIfNeeded { [weak self] granted in
+            guard let self else { return }
             if granted {
-                self.postUserNotification(title: "volumeHUD started", body: nil)
+                // Ensure AppKit usage on main actor
+                Task { @MainActor in
+                    self.postUserNotification(title: "volumeHUD started", body: nil)
+                }
             }
         }
 
@@ -100,7 +105,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - User notifications
 
-    private func requestNotificationAuthorizationIfNeeded(completion: @escaping (Bool) -> Void) {
+    private func requestNotificationAuthorizationIfNeeded(
+        completion: @escaping @Sendable (Bool) -> Void
+    ) {
         let center = UNUserNotificationCenter.current()
         center.getNotificationSettings { settings in
             switch settings.authorizationStatus {
