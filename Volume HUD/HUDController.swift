@@ -57,8 +57,8 @@ class HUDController: ObservableObject {
             isShowing = true
         }
 
-        // Set timer to hide the HUD after 1.2 seconds
-        hideTimer = Timer.scheduledTimer(withTimeInterval: 1.2, repeats: false) { _ in
+        // Set timer to hide the HUD
+        hideTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { _ in
             self.hideHUD()
         }
     }
@@ -73,7 +73,7 @@ class HUDController: ObservableObject {
         let screenFrame = screen.frame
         let windowRect = NSRect(
             x: (screenFrame.width - windowSize.width) / 2,
-            y: screenFrame.height * 0.2,  // Position at 20% from bottom
+            y: screenFrame.height * 0.15,  // Distance from bottom of screen
             width: windowSize.width,
             height: windowSize.height
         )

@@ -39,9 +39,6 @@ struct ContentView: View {
         }
         .padding()
         .frame(maxWidth: 400, maxHeight: 300)
-        .onDisappear {
-            volumeMonitor.stopMonitoring()
-        }
     }
 }
 

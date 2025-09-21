@@ -59,7 +59,7 @@ struct VolumeHUDView: View {
         )
         .scaleEffect(isVisible ? 1.0 : 0.8)
         .opacity(isVisible ? 1.0 : 0.0)
-        .animation(.easeOut(duration: 0.2), value: isVisible)
+        .animation(.easeOut(duration: 0.3), value: isVisible)
     }
 
     private var volumeIcon: String {
@@ -79,7 +79,7 @@ struct VolumeHUDView: View {
     private func volumeBarColor(for index: Int) -> Color {
         let threshold = Float(index) / 16.0
         if volume > threshold {
-            return .white  // Active bars are white
+            return .white.opacity(0.8)  // Active bars are white
         } else {
             return .white.opacity(0.2)  // Inactive bars are dim
         }

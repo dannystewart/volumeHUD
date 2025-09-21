@@ -16,10 +16,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Bring app to foreground when launched
-        NSApplication.shared.activate(ignoringOtherApps: true)
-
-        // Start volume monitoring immediately
+        // Start volume monitoring immediately (run silently in background)
         if let volumeMonitor = volumeMonitor, let hudController = hudController {
             volumeMonitor.startMonitoring()
             hudController.volumeMonitor = volumeMonitor
@@ -45,10 +42,9 @@ struct Volume_HUDApp: App {
     }
 
     var body: some Scene {
-        WindowGroup {
-            ContentView()
-                .environmentObject(volumeMonitor)
-                .environmentObject(hudController)
+        // No main window - app runs silently in background
+        Settings {
+            EmptyView()
         }
     }
 }
