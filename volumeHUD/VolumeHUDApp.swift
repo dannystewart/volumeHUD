@@ -86,7 +86,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func gracefulTerminate() {
         print("Stopping monitoring and quitting")
         volumeMonitor?.stopMonitoring()
-        postUserNotification(title: "Quitting volumeHUD", body: nil)
+        postUserNotification(title: "volumeHUD quit", body: nil)
 
         // Terminate without activating the app
         NSApp.terminate(nil)
