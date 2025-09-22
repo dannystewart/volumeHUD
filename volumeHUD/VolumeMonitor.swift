@@ -23,6 +23,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
     private var previousVolume: Float = 0.0
     private var previousMuteState: Bool = false
     private var systemEventMonitor: Any?
+    private var keyEventMonitor: Any?
     private var lastCapsLockTime: TimeInterval = 0
     private var lastVolumeKeyLogTime: TimeInterval = 0
     private var defaultDeviceListenerAdded = false
@@ -167,7 +168,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         let muteChanged = newMuted != previousMuteState
 
         if volumeChanged || muteChanged {
-            print("Volume updated: \(Int(newVolume * 100))%, Muted: \(newMuted)")
+            print("CHANGE: Volume updated: \(Int(newVolume * 100))%, Muted: \(newMuted)")
 
             // Update @Published properties and show HUD on main thread
             DispatchQueue.main.async {
@@ -208,13 +209,8 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         }
 
         // Also monitor key events to catch volume keys that might not generate system-defined events
-        let keyEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.keyDown, .keyUp]) {
-            event in
-        }
-
-        // Store both monitors for cleanup
-        if systemEventMonitor == nil {
-            systemEventMonitor = keyEventMonitor
+        keyEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.keyDown, .keyUp]) {
+            _ in
         }
 
         print("Started monitoring system-defined events for volume keys")
@@ -226,6 +222,10 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             NSEvent.removeMonitor(monitor)
             systemEventMonitor = nil
             print("Stopped monitoring system-defined events")
+        }
+        if let keyMonitor = keyEventMonitor {
+            NSEvent.removeMonitor(keyMonitor)
+            keyEventMonitor = nil
         }
     }
 
@@ -246,18 +246,29 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
                 print("Ignoring volume event, too close to Caps Lock")
                 return
             }
-            let keyFlags = Int(event.data1 & 0x0000_FFFF)
-            let keyPressed = (keyFlags & 0xFF00) >> 8
 
-            // Handle volume key events
-            switch keyPressed {
-            case 10:  // Volume down key (0x0A)
-                print("Volume key detected while at limit boundary - keyPressed=\(keyPressed)")
+            let data1 = Int(event.data1)
+            let keyCode = (data1 & 0xFFFF_0000) >> 16
+            let keyFlags = data1 & 0x0000_FFFF
+            let keyPressed = (keyFlags & 0xFF00) >> 8
+            let keyState = (keyFlags & 0xFF00) >> 8  // 0x0A = keyDown, 0x0B = keyUp
+
+            let isKeyDown = keyState == 0x0A
+            guard isKeyDown else { return }
+
+            // NX key codes: 0 = vol up, 1 = vol down, 7 = mute
+            switch keyCode {
+            case 1:  // Volume down
+                print(
+                    "KEY: Volume down (keyCode=\(keyCode), keyPressed=\(keyPressed))"
+                )
                 Task { @MainActor in
                     self.showHUDForVolumeKeyPress(isVolumeUp: false)
                 }
-            case 11:  // Volume up key (0x0B)
-                print("Volume key detected while at limit boundary - keyPressed=\(keyPressed)")
+            case 0:  // Volume up
+                print(
+                    "KEY: Volume up (keyCode=\(keyCode), keyPressed=\(keyPressed))"
+                )
                 Task { @MainActor in
                     self.showHUDForVolumeKeyPress(isVolumeUp: true)
                 }
@@ -282,7 +293,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             // Debounce log messages as macOS seems to fire key events twice
             if currentTime - lastVolumeKeyLogTime > 0.1 {
                 print(
-                    "Volume key detected but volume is \(Int(currentVol * 100))% (keys only trigger HUD when volume is 0% or 100%)"
+                    "NOTE: Key press detected at \(Int(currentVol * 100))% but will only trigger HUD at 0% or 100%"
                 )
                 lastVolumeKeyLogTime = currentTime
             }
@@ -293,7 +304,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         hudController?.showVolumeHUD(volume: currentVol, isMuted: currentMuted)
 
         print(
-            "Showing HUD for volume key press at boundary: \(isVolumeUp ? "up" : "down"), current volume: \(Int(currentVol * 100))%, muted: \(currentMuted)"
+            "HUD: Showing for volume \(isVolumeUp ? "up" : "down") key press at boundary, current volume: \(Int(currentVol * 100))%, muted: \(currentMuted)"
         )
     }
 

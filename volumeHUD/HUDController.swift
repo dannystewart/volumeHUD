@@ -16,6 +16,8 @@ class HUDController: ObservableObject, @unchecked Sendable {
     private var hostingView: NSHostingView<VolumeHUDView>?
     private var hideTimer: Timer?
     weak var volumeMonitor: VolumeMonitor?
+    private var lastShownVolume: Float?
+    private var lastShownMuted: Bool?
 
     @MainActor
     func showVolumeHUD(volume: Float, isMuted: Bool) {
@@ -34,6 +36,18 @@ class HUDController: ObservableObject, @unchecked Sendable {
 
         // Update the content view
         if let window = hudWindow {
+            let shouldUpdateContent =
+                hostingView == nil
+                || lastShownVolume == nil
+                || abs((lastShownVolume ?? -1) - volume) > 0.0005
+                || (lastShownMuted ?? !isMuted) != isMuted
+
+            // If nothing changed and the window is already visible, just extend the timer
+            if window.isVisible && !shouldUpdateContent {
+                scheduleHideTimer()
+                return
+            }
+
             if hostingView == nil {
                 hostingView = NSHostingView(
                     rootView: VolumeHUDView(volume: volume, isMuted: isMuted, isVisible: true)
@@ -41,7 +55,7 @@ class HUDController: ObservableObject, @unchecked Sendable {
                 hostingView?.frame =
                     window.contentView?.bounds ?? NSRect(x: 0, y: 0, width: 210, height: 210)
                 window.contentView = hostingView
-            } else {
+            } else if shouldUpdateContent {
                 hostingView?.rootView = VolumeHUDView(
                     volume: volume,
                     isMuted: isMuted,
@@ -53,7 +67,16 @@ class HUDController: ObservableObject, @unchecked Sendable {
             isShowing = true
         }
 
-        // Set timer to hide the HUD after volume change
+        scheduleHideTimer()
+
+        // Remember last shown state to avoid redundant view rebuilds
+        lastShownVolume = volume
+        lastShownMuted = isMuted
+    }
+
+    @MainActor
+    private func scheduleHideTimer() {
+        hideTimer?.invalidate()
         hideTimer = Timer.scheduledTimer(withTimeInterval: 1.1, repeats: false) { _ in
             DispatchQueue.main.async {
                 self.hideHUD()
