@@ -8,6 +8,9 @@
         },
         {
             "path": "../PolyLog-Swift"
+        },
+        {
+            "path": "../polykit"
         }
     ],
     "settings": {

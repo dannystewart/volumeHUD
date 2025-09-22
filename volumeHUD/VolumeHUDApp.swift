@@ -16,7 +16,7 @@ private let kToggleNotificationName = Notification.Name("com.dannystewart.volume
 class AppDelegate: NSObject, NSApplicationDelegate {
     var volumeMonitor: VolumeMonitor!
     var hudController: HUDController!
-    let logger = PolyLog.getLogger("AppDelegate")
+    let logger = PolyLog.getLogger(nil, level: .debug)  // Automatically detects "volumeHUD.VolumeHUDApp"
 
     // Prevent multiple rapid quit attempts
     private var isQuitting = false
@@ -30,6 +30,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Keep the app headless and out of the Dock
         NSApplication.shared.setActivationPolicy(.accessory)
+
+        // Test the automatic logger name detection
+        logger.info("🚀 volumeHUD app started - PolyLog automatic name detection working!")
+        logger.debug("Debug message test")
+        logger.warning("Warning message test")
+        logger.error("Error message test")
 
         // Initialize the volume monitor and HUD controller
         volumeMonitor = VolumeMonitor()

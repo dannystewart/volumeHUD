@@ -19,7 +19,7 @@ class HUDController: ObservableObject, @unchecked Sendable {
     weak var volumeMonitor: VolumeMonitor?
     private var lastShownVolume: Float?
     private var lastShownMuted: Bool?
-    let logger = PolyLog.getLogger("HUDController", level: .debug)
+    let logger = PolyLog.getLogger(nil, level: .debug)  // Automatically detects "volumeHUD.HUDController"
 
     @MainActor
     func showVolumeHUD(volume: Float, isMuted: Bool) {
