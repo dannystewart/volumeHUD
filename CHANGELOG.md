@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog], and this project adheres to [Semantic Versioning].
 
+## [1.2.0] (2025-09-21)
+
+### Added
+
+- Adds volume key detection when audio is at minimum or maximum levels, enabling HUD display even when system blocks volume changes.
+- Adds Homebrew installation option as alternative to manual download.
+- Adds VS Code workspace configuration for development environment.
+
+### Changed
+
+- Changes startup notification to only appear on first run instead of every app launch.
+- Improves startup notification by including quit instructions.
+- Improves accessibility permission error messages to be more user-friendly and accurate.
+- Improves documentation clarity around notification behavior and usage.
+
+### Fixed
+
+- Fixes quit notification text to use past tense ("volumeHUD quit" instead of "Quitting volumeHUD").
+
 ## [1.1.0] (2025-09-21)
 
 ### Added
@@ -26,6 +45,7 @@ Initial release.
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
 <!-- Versions -->
+[1.2.0]: https://github.com/dannystewart/volumeHUD/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/dannystewart/volumeHUD/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/dannystewart/volumeHUD/releases/tag/v1.0...v1.0.1
 [1.0]: https://github.com/dannystewart/volumeHUD/releases/tag/v1.0
