@@ -24,6 +24,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
     private var previousMuteState: Bool = false
     private var systemEventMonitor: Any?
     private var lastCapsLockTime: TimeInterval = 0
+    private var lastVolumeKeyLogTime: TimeInterval = 0
     private var defaultDeviceListenerAdded = false
 
     weak var hudController: HUDController?
@@ -277,9 +278,14 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         let atMaxVolume = currentVol >= 0.999
 
         if !atMinVolume && !atMaxVolume {
-            print(
-                "Volume key press detected but volume is \(Int(currentVol * 100))% (volume change detection will handle it)"
-            )
+            let currentTime = Date().timeIntervalSince1970
+            // Debounce log messages as macOS seems to fire key events twice
+            if currentTime - lastVolumeKeyLogTime > 0.1 {
+                print(
+                    "Volume key detected but volume is \(Int(currentVol * 100))% (keys only trigger HUD when volume is 0% or 100%)"
+                )
+                lastVolumeKeyLogTime = currentTime
+            }
             return
         }
 
