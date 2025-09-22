@@ -12,7 +12,6 @@ import Combine
 import CoreAudio
 import Foundation
 import IOKit
-import IOKit.hid
 
 class VolumeMonitor: ObservableObject, @unchecked Sendable {
     @Published var currentVolume: Float = 0.0
@@ -24,7 +23,6 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
     private var previousVolume: Float = 0.0
     private var previousMuteState: Bool = false
     private var systemEventMonitor: Any?
-    private var hidManager: IOHIDManager?
     private var lastCapsLockTime: TimeInterval = 0
     private var defaultDeviceListenerAdded = false
 
@@ -76,9 +74,6 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         // Start monitoring system-defined events for volume key presses
         startSystemEventMonitoring()
 
-        // Also try IOHIDManager approach as fallback
-        startHIDMonitoring()
-
         // Monitor for default device changes
         startDefaultDeviceMonitoring()
 
@@ -94,9 +89,6 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
 
         // Stop system event monitoring
         stopSystemEventMonitoring()
-
-        // Stop HID monitoring
-        stopHIDMonitoring()
 
         // Stop default device monitoring
         stopDefaultDeviceMonitoring()
@@ -297,85 +289,6 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         print(
             "Showing HUD for volume key press at boundary: \(isVolumeUp ? "up" : "down"), current volume: \(Int(currentVol * 100))%, muted: \(currentMuted)"
         )
-    }
-
-    // MARK: - HID Monitoring
-
-    private func startHIDMonitoring() {
-        print("Starting HID monitoring for volume keys...")
-
-        hidManager = IOHIDManagerCreate(kCFAllocatorDefault, IOOptionBits(kIOHIDOptionsTypeNone))
-        guard let manager = hidManager else {
-            print("Failed to create HID manager")
-            return
-        }
-
-        // Set up matching criteria for consumer devices (volume keys)
-        let matchingDict: [String: Any] = [
-            kIOHIDDeviceUsagePageKey: kHIDPage_Consumer,
-            kIOHIDDeviceUsageKey: kHIDUsage_Csmr_ConsumerControl,
-        ]
-
-        IOHIDManagerSetDeviceMatching(manager, matchingDict as CFDictionary)
-
-        // Set up input value callback
-        let callback: IOHIDValueCallback = { context, result, sender, value in
-            guard let context = context else { return }
-            let volumeMonitor = Unmanaged<VolumeMonitor>.fromOpaque(context).takeUnretainedValue()
-            volumeMonitor.handleHIDValue(value)
-        }
-
-        let selfPtr = UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
-        IOHIDManagerRegisterInputValueCallback(manager, callback, selfPtr)
-
-        // Open the manager
-        let openResult = IOHIDManagerOpen(manager, IOOptionBits(kIOHIDOptionsTypeNone))
-        guard openResult == kIOReturnSuccess else {
-            print("Failed to open HID manager: \(openResult)")
-            return
-        }
-
-        // Schedule with run loop
-        IOHIDManagerScheduleWithRunLoop(
-            manager, CFRunLoopGetCurrent(), CFRunLoopMode.defaultMode.rawValue)
-
-        print("HID monitoring started successfully")
-    }
-
-    private func stopHIDMonitoring() {
-        if let manager = hidManager {
-            IOHIDManagerUnscheduleFromRunLoop(
-                manager, CFRunLoopGetCurrent(), CFRunLoopMode.defaultMode.rawValue)
-            IOHIDManagerClose(manager, IOOptionBits(kIOHIDOptionsTypeNone))
-            hidManager = nil
-            print("HID monitoring stopped")
-        }
-    }
-
-    private func handleHIDValue(_ value: IOHIDValue) {
-        let element = IOHIDValueGetElement(value)
-        let usage = IOHIDElementGetUsage(element)
-        let usagePage = IOHIDElementGetUsagePage(element)
-
-        print("HID event: usagePage=\(usagePage), usage=\(usage)")
-
-        // Check for volume keys in consumer usage page
-        if usagePage == kHIDPage_Consumer {
-            switch usage {
-            case UInt32(kHIDUsage_Csmr_VolumeIncrement):
-                print("Volume UP key detected via HID")
-                Task { @MainActor in
-                    self.showHUDForVolumeKeyPress(isVolumeUp: true)
-                }
-            case UInt32(kHIDUsage_Csmr_VolumeDecrement):
-                print("Volume DOWN key detected via HID")
-                Task { @MainActor in
-                    self.showHUDForVolumeKeyPress(isVolumeUp: false)
-                }
-            default:
-                break
-            }
-        }
     }
 
     // MARK: - Default Device Monitoring
