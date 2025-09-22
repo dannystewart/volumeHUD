@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog], and this project adheres to [Semantic Versioning].
 
+## [1.2.1] (2025-09-22)
+
+### Fixed
+
+- Fixes an issue where the app would no longer update the volume HUD after changing audio output devices.
+
 ## [1.2.0] (2025-09-21)
 
 ### Added
@@ -45,6 +51,7 @@ Initial release.
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
 <!-- Versions -->
+[1.2.1]: https://github.com/dannystewart/volumeHUD/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/dannystewart/volumeHUD/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/dannystewart/volumeHUD/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/dannystewart/volumeHUD/releases/tag/v1.0...v1.0.1
