@@ -6,6 +6,7 @@
 //
 
 import AppKit
+import PolyLog
 import SwiftUI
 @preconcurrency import UserNotifications
 
@@ -15,6 +16,7 @@ private let kToggleNotificationName = Notification.Name("com.dannystewart.volume
 class AppDelegate: NSObject, NSApplicationDelegate {
     var volumeMonitor: VolumeMonitor!
     var hudController: HUDController!
+    let logger = PolyLog.getLogger("AppDelegate")
 
     // Prevent multiple rapid quit attempts
     private var isQuitting = false
@@ -52,7 +54,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Start monitoring volume changes
         volumeMonitor.startMonitoring()
-        print("Started monitoring volume changes from AppDelegate")
+        logger.info("Started monitoring volume changes from AppDelegate.")
     }
 
     // Handle attempts to launch the app a second time
@@ -84,7 +86,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func gracefulTerminate() {
-        print("Stopping monitoring and quitting")
+        logger.info("Stopping monitoring and quitting.")
         volumeMonitor?.stopMonitoring()
         postUserNotification(title: "volumeHUD quit", body: nil)
 

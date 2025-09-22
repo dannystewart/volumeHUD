@@ -7,6 +7,7 @@
 
 import AppKit
 import Combine
+import PolyLog
 import SwiftUI
 
 class HUDController: ObservableObject, @unchecked Sendable {
@@ -18,6 +19,7 @@ class HUDController: ObservableObject, @unchecked Sendable {
     weak var volumeMonitor: VolumeMonitor?
     private var lastShownVolume: Float?
     private var lastShownMuted: Bool?
+    let logger = PolyLog.getLogger("HUDController", level: .debug)
 
     @MainActor
     func showVolumeHUD(volume: Float, isMuted: Bool) {
@@ -124,7 +126,7 @@ class HUDController: ObservableObject, @unchecked Sendable {
         // Start the window hidden (only show when volume changes)
         window.orderOut(nil)
 
-        print("Created HUD window at: \(windowRect)")
+        logger.debug("Created HUD window at: \(windowRect)")
     }
 
     @MainActor
