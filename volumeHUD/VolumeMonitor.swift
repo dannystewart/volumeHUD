@@ -252,10 +252,13 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
 
         if !accessibilityEnabled {
             print(
-                "Accessibility permissions not granted. Volume key detection at limits will not work."
+                "Accessibility permissions not granted, so volume keys cannot be detected."
             )
             print(
-                "Please grant accessibility permissions in System Settings > Privacy & Security > Accessibility"
+                "This means the HUD will not be displayed when pressing volume keys to go past min or max volume limits."
+            )
+            print(
+                "If you want this to work, please grant accessibility permissions in System Settings > Privacy & Security > Input Monitoring."
             )
             return
         }
@@ -269,12 +272,6 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         // Also monitor key events to catch volume keys that might not generate system-defined events
         let keyEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.keyDown, .keyUp]) {
             event in
-            // Only log volume-related key codes to avoid spam
-            if event.keyCode == 27 || event.keyCode == 24 {  // Volume keys
-                print(
-                    "Volume key event: type=\(event.type.rawValue), keyCode=\(event.keyCode), modifierFlags=\(event.modifierFlags.rawValue)"
-                )
-            }
         }
 
         // Store both monitors for cleanup
@@ -304,11 +301,6 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             return
         }
 
-        // Debug: Log ALL system-defined events to catch Caps Lock
-        print(
-            "System-defined event: subtype=\(event.subtype.rawValue), data1=\(String(format: "0x%08X", event.data1))"
-        )
-
         // Volume keys generate NSSystemDefined events with subtype 8
         if event.subtype.rawValue == 8 {
             // Ignore volume events that happen within 0.5 seconds of Caps Lock
@@ -316,32 +308,22 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
                 print("Ignoring volume event, too close to Caps Lock")
                 return
             }
-            let keyCode = Int((event.data1 & 0xFFFF_0000) >> 16)
             let keyFlags = Int(event.data1 & 0x0000_FFFF)
             let keyPressed = (keyFlags & 0xFF00) >> 8
 
-            print(
-                "Volume key event: keyCode=\(keyCode), keyFlags=\(String(format: "0x%04X", keyFlags)), keyPressed=\(keyPressed)"
-            )
-
-            // Handle volume key events - check the keyPressed value (which contains the actual key info)
+            // Handle volume key events
             switch keyPressed {
             case 10:  // Volume down key (0x0A)
-                print("✅ Volume down key detected (at limit detection) - keyPressed=\(keyPressed)")
+                print("Volume key detected while at limit boundary - keyPressed=\(keyPressed)")
                 Task { @MainActor in
                     self.showHUDForVolumeKeyPress(isVolumeUp: false)
                 }
             case 11:  // Volume up key (0x0B)
-                print("✅ Volume up key detected (at limit detection) - keyPressed=\(keyPressed)")
+                print("Volume key detected while at limit boundary - keyPressed=\(keyPressed)")
                 Task { @MainActor in
                     self.showHUDForVolumeKeyPress(isVolumeUp: true)
                 }
             default:
-                // Only log if it's not a volume key to avoid spam
-                if keyPressed != 0 {
-                    print(
-                        "⚠️ Non-volume system event - keyPressed=\(keyPressed), keyCode=\(keyCode)")
-                }
                 break
             }
         }
@@ -360,7 +342,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         )
     }
 
-    // MARK: - HID Monitoring (Alternative Approach)
+    // MARK: - HID Monitoring
 
     private func startHIDMonitoring() {
         print("Starting HID monitoring for volume keys...")
