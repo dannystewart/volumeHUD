@@ -26,6 +26,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
     private var systemEventMonitor: Any?
     private var hidManager: IOHIDManager?
     private var lastCapsLockTime: TimeInterval = 0
+    private var defaultDeviceListenerAdded = false
 
     weak var hudController: HUDController?
 
@@ -70,50 +71,16 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         updateVolumeValuesOnStartup()
 
         // Register for volume change notifications
-        let selfPtr = UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
-
-        AudioObjectAddPropertyListener(
-            deviceID,
-            &audioObjectPropertyAddress,
-            { (inObjectID, inNumberAddresses, inAddresses, inClientData) -> OSStatus in
-                guard let clientData = inClientData else { return noErr }
-                let volumeMonitor = Unmanaged<VolumeMonitor>.fromOpaque(clientData)
-                    .takeUnretainedValue()
-                DispatchQueue.main.async {
-                    volumeMonitor.updateVolumeValues()
-                }
-                return noErr
-            },
-            selfPtr
-        )
-
-        // Also monitor mute state
-        var muteAddress = AudioObjectPropertyAddress(
-            mSelector: kAudioDevicePropertyMute,
-            mScope: kAudioDevicePropertyScopeOutput,
-            mElement: kAudioObjectPropertyElementMain
-        )
-
-        AudioObjectAddPropertyListener(
-            deviceID,
-            &muteAddress,
-            { (inObjectID, inNumberAddresses, inAddresses, inClientData) -> OSStatus in
-                guard let clientData = inClientData else { return noErr }
-                let volumeMonitor = Unmanaged<VolumeMonitor>.fromOpaque(clientData)
-                    .takeUnretainedValue()
-                DispatchQueue.main.async {
-                    volumeMonitor.updateVolumeValues()
-                }
-                return noErr
-            },
-            selfPtr
-        )
+        addVolumeListeners()
 
         // Start monitoring system-defined events for volume key presses
         startSystemEventMonitoring()
 
         // Also try IOHIDManager approach as fallback
         startHIDMonitoring()
+
+        // Monitor for default device changes
+        startDefaultDeviceMonitoring()
 
         isMonitoring = true
         print("Started monitoring volume changes")
@@ -122,39 +89,17 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
     func stopMonitoring() {
         guard isMonitoring else { return }
 
-        let selfPtr = UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
-
-        // Remove volume listener
-        AudioObjectRemovePropertyListener(
-            deviceID,
-            &audioObjectPropertyAddress,
-            { (inObjectID, inNumberAddresses, inAddresses, inClientData) -> OSStatus in
-                return noErr
-            },
-            selfPtr
-        )
-
-        // Remove mute listener
-        var muteAddress = AudioObjectPropertyAddress(
-            mSelector: kAudioDevicePropertyMute,
-            mScope: kAudioDevicePropertyScopeOutput,
-            mElement: kAudioObjectPropertyElementMain
-        )
-
-        AudioObjectRemovePropertyListener(
-            deviceID,
-            &muteAddress,
-            { (inObjectID, inNumberAddresses, inAddresses, inClientData) -> OSStatus in
-                return noErr
-            },
-            selfPtr
-        )
+        // Remove volume listeners
+        removeVolumeListeners()
 
         // Stop system event monitoring
         stopSystemEventMonitoring()
 
         // Stop HID monitoring
         stopHIDMonitoring()
+
+        // Stop default device monitoring
+        stopDefaultDeviceMonitoring()
 
         isMonitoring = false
         print("Stopped monitoring volume changes")
@@ -419,5 +364,178 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
                 break
             }
         }
+    }
+
+    // MARK: - Default Device Monitoring
+
+    private func startDefaultDeviceMonitoring() {
+        guard !defaultDeviceListenerAdded else { return }
+
+        let selfPtr = UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
+
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDefaultOutputDevice,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+
+        let status = AudioObjectAddPropertyListener(
+            AudioObjectID(kAudioObjectSystemObject),
+            &address,
+            { (inObjectID, inNumberAddresses, inAddresses, inClientData) -> OSStatus in
+                guard let clientData = inClientData else { return noErr }
+                let volumeMonitor = Unmanaged<VolumeMonitor>.fromOpaque(clientData)
+                    .takeUnretainedValue()
+                DispatchQueue.main.async {
+                    volumeMonitor.handleDefaultDeviceChanged()
+                }
+                return noErr
+            },
+            selfPtr
+        )
+
+        if status == noErr {
+            defaultDeviceListenerAdded = true
+            print("Started monitoring default output device changes")
+        } else {
+            print("Failed to start monitoring default output device changes: \(status)")
+        }
+    }
+
+    private func stopDefaultDeviceMonitoring() {
+        guard defaultDeviceListenerAdded else { return }
+
+        let selfPtr = UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
+
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDefaultOutputDevice,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+
+        AudioObjectRemovePropertyListener(
+            AudioObjectID(kAudioObjectSystemObject),
+            &address,
+            { (inObjectID, inNumberAddresses, inAddresses, inClientData) -> OSStatus in
+                return noErr
+            },
+            selfPtr
+        )
+
+        defaultDeviceListenerAdded = false
+        print("Stopped monitoring default output device changes")
+    }
+
+    private func handleDefaultDeviceChanged() {
+        print("Default output device changed, re-registering volume listeners")
+
+        // Remove old listeners
+        removeVolumeListeners()
+
+        // Get new default device
+        var newDeviceID: AudioDeviceID = kAudioObjectUnknown
+        var size = UInt32(MemoryLayout<AudioDeviceID>.size)
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDefaultOutputDevice,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+
+        let status = AudioObjectGetPropertyData(
+            AudioObjectID(kAudioObjectSystemObject),
+            &address,
+            0,
+            nil,
+            &size,
+            &newDeviceID
+        )
+
+        guard status == noErr else {
+            print("Failed to get new default output device")
+            return
+        }
+
+        // Update device ID
+        deviceID = newDeviceID
+
+        // Add new listeners
+        addVolumeListeners()
+
+        // Update volume values for the new device
+        updateVolumeValuesOnStartup()
+
+        print("Successfully switched to new device: \(newDeviceID)")
+    }
+
+    private func removeVolumeListeners() {
+        let selfPtr = UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
+
+        // Remove volume listener
+        AudioObjectRemovePropertyListener(
+            deviceID,
+            &audioObjectPropertyAddress,
+            { (inObjectID, inNumberAddresses, inAddresses, inClientData) -> OSStatus in
+                return noErr
+            },
+            selfPtr
+        )
+
+        // Remove mute listener
+        var muteAddress = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyMute,
+            mScope: kAudioDevicePropertyScopeOutput,
+            mElement: kAudioObjectPropertyElementMain
+        )
+
+        AudioObjectRemovePropertyListener(
+            deviceID,
+            &muteAddress,
+            { (inObjectID, inNumberAddresses, inAddresses, inClientData) -> OSStatus in
+                return noErr
+            },
+            selfPtr
+        )
+    }
+
+    private func addVolumeListeners() {
+        let selfPtr = UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
+
+        // Register for volume change notifications
+        AudioObjectAddPropertyListener(
+            deviceID,
+            &audioObjectPropertyAddress,
+            { (inObjectID, inNumberAddresses, inAddresses, inClientData) -> OSStatus in
+                guard let clientData = inClientData else { return noErr }
+                let volumeMonitor = Unmanaged<VolumeMonitor>.fromOpaque(clientData)
+                    .takeUnretainedValue()
+                DispatchQueue.main.async {
+                    volumeMonitor.updateVolumeValues()
+                }
+                return noErr
+            },
+            selfPtr
+        )
+
+        // Also monitor mute state
+        var muteAddress = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyMute,
+            mScope: kAudioDevicePropertyScopeOutput,
+            mElement: kAudioObjectPropertyElementMain
+        )
+
+        AudioObjectAddPropertyListener(
+            deviceID,
+            &muteAddress,
+            { (inObjectID, inNumberAddresses, inAddresses, inClientData) -> OSStatus in
+                guard let clientData = inClientData else { return noErr }
+                let volumeMonitor = Unmanaged<VolumeMonitor>.fromOpaque(clientData)
+                    .takeUnretainedValue()
+                DispatchQueue.main.async {
+                    volumeMonitor.updateVolumeValues()
+                }
+                return noErr
+            },
+            selfPtr
+        )
     }
 }
