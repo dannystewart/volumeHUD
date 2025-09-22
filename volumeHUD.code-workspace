@@ -5,9 +5,6 @@
         },
         {
             "path": "../homebrew-apps"
-        },
-        {
-            "path": "../PolyLog-Swift"
         }
     ],
     "settings": {

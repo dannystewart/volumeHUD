@@ -13,7 +13,9 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "git@github.com:dannystewart/PolyLog-Swift.git", branch: "main")
+        .package(
+            url: "https://github.com/dannystewart/PolyLog-Swift.git", branch: "main"
+        )
     ],
     targets: [
         .executableTarget(

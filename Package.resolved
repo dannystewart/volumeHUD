@@ -1,13 +1,13 @@
 {
-  "originHash" : "84a35928cb2f9e1773a4e39954d07c07007b82545848612f75bd121ace9f49f1",
+  "originHash" : "1de8aa204de5367b8c70d2515a431c66f4f0569b5ce2aee7425ce2afb52c651f",
   "pins" : [
     {
       "identity" : "polylog-swift",
       "kind" : "remoteSourceControl",
-      "location" : "git@github.com:dannystewart/PolyLog-Swift.git",
+      "location" : "https://github.com/dannystewart/PolyLog-Swift.git",
       "state" : {
         "branch" : "main",
-        "revision" : "de510cf1a316759d735f5f440b058c4bc793016e"
+        "revision" : "460071c5fef4ca1ef1c79540f0c4e0af7e13d94b"
       }
     }
   ],
