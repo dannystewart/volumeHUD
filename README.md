@@ -12,7 +12,6 @@ So I felt compelled to pick up Xcode and write my first ever Mac app to bring ba
 - Appears on volume change and disappears a few moments later
 - Uses standard macOS materials and SF Symbols to ensure a native look
 - Runs transparently in the background
-- Can be quit simply by launching it a second time
 
 ## How to Use It
 
@@ -22,7 +21,9 @@ The app is available for download from the [Releases](https://github.com/dannyst
 brew install dannystewart/apps/volumehud
 ```
 
-Just place it in your Applications folder (or wherever) and run it. It asks for permission to use notifications, but this is optional and only used to tell you when the app opens or quits. I hate gratuitous menu bar icons and I have no desire to inflict more of them upon myself or you, so there is no UI. You can quit the app by simply launching it again.
+Just place it in your Applications folder (or wherever) and run it. I hate gratuitous menu bar icons and I have no desire to inflict more of them upon myself or you, so there is no UI. You can quit the app by simply launching it again.
+
+It asks for permission to display notifications, but this is optional. A notification is displayed once on first run to say that it's started and tell you how to quit the app. After that, it's not shown again. There is still a notification when you quit, because otherwise it may be unclear that you did.
 
 To run on startup, you can add it to **System Settings** > **General** > **Login Items & Extensions** > **Open at Login**.
 
