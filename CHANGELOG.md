@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog], and this project adheres to [Semantic Versioning].
 
+## [1.2.2] (2025-09-22)
+
+### Changed
+
+- Simplifies volume key detection by removing redundant HID monitoring fallback code that was nonfunctional in sandboxed apps anyway.
+
+### Fixed
+
+- Fixes the HUD incorrectly triggering from non-volume media keys by restricting key detection to only activate at 0% and 100% volume boundaries and relying solely on volume change detection otherwise.
+
 ## [1.2.1] (2025-09-22)
 
 ### Fixed
@@ -51,6 +61,7 @@ Initial release.
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
 <!-- Versions -->
+[1.2.2]: https://github.com/dannystewart/volumeHUD/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/dannystewart/volumeHUD/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/dannystewart/volumeHUD/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/dannystewart/volumeHUD/compare/v1.0.1...v1.1.0
