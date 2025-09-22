@@ -41,7 +41,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             if granted {
                 // Ensure AppKit usage on main actor
                 Task { @MainActor in
-                    self.postUserNotification(title: "volumeHUD started", body: nil)
+                    self.postUserNotification(
+                        title: "volumeHUD started (launch again to quit)", body: nil)
                 }
             }
         }
