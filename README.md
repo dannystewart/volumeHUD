@@ -16,11 +16,15 @@ So I felt compelled to pick up Xcode and write my first ever Mac app to bring ba
 
 ## How to Use It
 
-The app is available for download from the [Releases](https://github.com/dannystewart/volumeHUD/releases) page. Just place it in your Applications folder (or wherever) and run it.
+The app is available for download from the [Releases](https://github.com/dannystewart/volumeHUD/releases) page. Even better, you can install it via Homebrew:
 
-It will request permission to use notifications, but this is completely optional. It's only used to tell you when the app opens or quits.
+```bash
+brew install dannystewart/apps/volumehud
+```
 
-For it to run on startup, you can add it to **System Settings** > **General** > **Login Items & Extensions** > **Open at Login**.
+Just place it in your Applications folder (or wherever) and run it. It asks for permission to use notifications, but this is optional and only used to tell you when the app opens or quits. I hate gratuitous menu bar icons and I have no desire to inflict more of them upon myself or you, so there is no UI. You can quit the app by simply launching it again.
+
+To run on startup, you can add it to **System Settings** > **General** > **Login Items & Extensions** > **Open at Login**.
 
 ### Building with Xcode
 
