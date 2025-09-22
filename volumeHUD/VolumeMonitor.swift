@@ -279,11 +279,23 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         // Get current volume and mute state
         let (currentVol, currentMuted) = getCurrentVolumeAndMuteState()
 
+        // Only show HUD on key presses if we're at volume boundaries (0% or 100%)
+        // This prevents media keys from triggering the HUD when volume is between 1-99%
+        let atMinVolume = currentVol <= 0.001
+        let atMaxVolume = currentVol >= 0.999
+
+        if !atMinVolume && !atMaxVolume {
+            print(
+                "Volume key press detected but volume is \(Int(currentVol * 100))% (volume change detection will handle it)"
+            )
+            return
+        }
+
         // Show HUD with current state
         hudController?.showVolumeHUD(volume: currentVol, isMuted: currentMuted)
 
         print(
-            "Showing HUD for volume key press: \(isVolumeUp ? "up" : "down"), current volume: \(Int(currentVol * 100))%, muted: \(currentMuted)"
+            "Showing HUD for volume key press at boundary: \(isVolumeUp ? "up" : "down"), current volume: \(Int(currentVol * 100))%, muted: \(currentMuted)"
         )
     }
 
