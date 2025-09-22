@@ -11,11 +11,16 @@ So I felt compelled to pick up Xcode and write my first ever Mac app to bring ba
 - Shows a nice overlay with volume bars and speaker icon
 - Appears on volume change and disappears a few moments later
 - Uses standard macOS materials and SF Symbols to ensure a native look
-- Runs transparently in the background _(but note point 1 under [Known Issues](#known-issues))_
+- Runs transparently in the background
+- Can be quit simply by launching it a second time
 
 ## How to Use It
 
-The app is available for download from the [Releases](https://github.com/dannystewart/volumeHUD/releases) page. Just place it in your Applications folder (or wherever) and run it. To have it run on startup, you can add it to **System Settings** > **General** > **Login Items & Extensions** > **Open at Login**.
+The app is available for download from the [Releases](https://github.com/dannystewart/volumeHUD/releases) page. Just place it in your Applications folder (or wherever) and run it.
+
+It will request permission to use notifications, but this is completely optional. It's only used to tell you when the app opens or quits.
+
+For it to run on startup, you can add it to **System Settings** > **General** > **Login Items & Extensions** > **Open at Login**.
 
 ### Building with Xcode
 
@@ -33,8 +38,7 @@ Open `volumeHUD.xcodeproj` in Xcode and either **Build and Run** (⌘R) or just 
 
 ## Known Issues
 
-1. There's currently no GUI to quit the app. Use `pkill -f volumeHUD`.
-2. The HUD won't show if you press volume down when at 0% or volume up when at 100% because there's no volume change to detect. I'd need to watch for key presses, which I haven't figured out how to do and would require Accessibility permissions which I'm hesitant to request.
+The HUD won't show if you press volume down when at 0% or volume up when at 100% because there's no volume change to detect. I'd need to watch for key presses, which I haven't figured out how to do and would require Accessibility permissions which I'm hesitant to request.
 
 ## License
 
