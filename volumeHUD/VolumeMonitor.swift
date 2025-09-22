@@ -31,7 +31,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
 
     weak var hudController: HUDController?
 
-    let logger = PolyLog.getLogger(nil, level: .debug)  // Automatically detects "volumeHUD.VolumeMonitor"
+    let logger = PolyLog.getLogger("VolumeMonitor")
 
     init() {
         // Set up the property address for volume changes
