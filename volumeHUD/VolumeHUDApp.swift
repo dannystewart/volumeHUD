@@ -35,14 +35,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         hudController.volumeMonitor = volumeMonitor
         volumeMonitor.hudController = hudController
 
-        // Request notification permission and post "started" notification
+        // Request notification permission and post "started" notification (only on first run)
         requestNotificationAuthorizationIfNeeded { [weak self] granted in
             guard let self else { return }
             if granted {
-                // Ensure AppKit usage on main actor
-                Task { @MainActor in
-                    self.postUserNotification(
-                        title: "volumeHUD started (launch again to quit)", body: nil)
+                // Only show startup notification on first run
+                if !UserDefaults.standard.bool(forKey: "hasShownStartupNotification") {
+                    Task { @MainActor in
+                        self.postUserNotification(
+                            title: "volumeHUD started (launch again to quit)", body: nil)
+                        UserDefaults.standard.set(true, forKey: "hasShownStartupNotification")
+                    }
                 }
             }
         }
@@ -83,7 +86,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func gracefulTerminate() {
         print("Stopping monitoring and quitting")
         volumeMonitor?.stopMonitoring()
-        postUserNotification(title: "volumeHUD stopped", body: nil)
+        postUserNotification(title: "Quitting volumeHUD", body: nil)
 
         // Terminate without activating the app
         NSApp.terminate(nil)
