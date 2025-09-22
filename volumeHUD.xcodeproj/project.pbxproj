@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		303F102F2E81B67D00A7923C /* PolyLog in Frameworks */ = {isa = PBXBuildFile; productRef = 303F102E2E81B67D00A7923C /* PolyLog */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		30C937682E806B79004B5AF5 /* volumeHUD.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = volumeHUD.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +27,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				303F102F2E81B67D00A7923C /* PolyLog in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +70,7 @@
 			);
 			name = volumeHUD;
 			packageProductDependencies = (
+				303F102E2E81B67D00A7923C /* PolyLog */,
 			);
 			productName = volumeHUD;
 			productReference = 30C937682E806B79004B5AF5 /* volumeHUD.app */;
@@ -94,6 +100,9 @@
 			);
 			mainGroup = 30C9375F2E806B79004B5AF5;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				303F102D2E81B67D00A7923C /* XCLocalSwiftPackageReference "../PolyLog-Swift" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 30C937692E806B79004B5AF5 /* Products */;
 			projectDirPath = "";
@@ -341,6 +350,20 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		303F102D2E81B67D00A7923C /* XCLocalSwiftPackageReference "../PolyLog-Swift" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "../PolyLog-Swift";
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		303F102E2E81B67D00A7923C /* PolyLog */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PolyLog;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 30C937602E806B79004B5AF5 /* Project object */;
 }
