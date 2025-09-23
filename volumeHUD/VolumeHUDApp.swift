@@ -54,6 +54,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Start monitoring volume changes
         volumeMonitor.startMonitoring()
+
+        // Start monitoring display configuration changes
+        hudController.startDisplayChangeMonitoring()
+
         logger.info("Started monitoring volume changes from AppDelegate.")
     }
 
@@ -88,6 +92,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func gracefulTerminate() {
         logger.info("Stopping monitoring and quitting.")
         volumeMonitor?.stopMonitoring()
+        hudController?.stopDisplayChangeMonitoring()
         postUserNotification(title: "volumeHUD quit", body: nil)
 
         // Terminate without activating the app

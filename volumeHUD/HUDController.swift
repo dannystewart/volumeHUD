@@ -19,11 +19,81 @@ class HUDController: ObservableObject, @unchecked Sendable {
     weak var volumeMonitor: VolumeMonitor?
     private var lastShownVolume: Float?
     private var lastShownMuted: Bool?
+    private var isObservingDisplayChanges = false
     let logger = PolyLog.getLogger("HUDController", level: .debug)
 
     @MainActor
     func showVolumeHUD(volume: Float, isMuted: Bool) {
         self.displayHUD(volume: volume, isMuted: isMuted)
+    }
+
+    @MainActor
+    func startDisplayChangeMonitoring() {
+        guard !isObservingDisplayChanges else { return }
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(displayConfigurationDidChange(_:)),
+            name: NSApplication.didChangeScreenParametersNotification,
+            object: nil
+        )
+        isObservingDisplayChanges = true
+
+        logger.debug("Started monitoring display configuration changes.")
+    }
+
+    @MainActor
+    func stopDisplayChangeMonitoring() {
+        guard isObservingDisplayChanges else { return }
+        NotificationCenter.default.removeObserver(
+            self,
+            name: NSApplication.didChangeScreenParametersNotification,
+            object: nil
+        )
+        isObservingDisplayChanges = false
+
+        logger.debug("Stopped monitoring display configuration changes.")
+    }
+
+    @objc
+    private func displayConfigurationDidChange(_ notification: Notification) {
+        // Ensure we hop to the main actor for UI work
+        Task { @MainActor in
+            self.handleDisplayConfigurationChange()
+        }
+    }
+
+    @MainActor
+    private func handleDisplayConfigurationChange() {
+        logger.debug("Display configuration changed, updating HUD position.")
+
+        // If the HUD window exists, update its position
+        if let _ = hudWindow {
+            updateWindowPosition()
+        }
+    }
+
+    @MainActor
+    private func updateWindowPosition() {
+        guard let window = hudWindow else { return }
+
+        let windowSize = NSSize(width: 210, height: 210)
+
+        // Get the current main screen
+        guard let screen = NSScreen.main else { return }
+
+        // Calculate new position
+        let screenFrame = screen.frame
+        let newWindowRect = NSRect(
+            x: (screenFrame.width - windowSize.width) / 2,
+            y: screenFrame.height * 0.17,  // Distance from bottom of screen
+            width: windowSize.width,
+            height: windowSize.height
+        )
+
+        // Update the window frame
+        window.setFrame(newWindowRect, display: true)
+
+        logger.debug("Updated HUD window position to: \(newWindowRect)")
     }
 
     @MainActor
@@ -88,23 +158,9 @@ class HUDController: ObservableObject, @unchecked Sendable {
 
     @MainActor
     private func createHUDWindow() {
-        let windowSize = NSSize(width: 210, height: 210)
-
-        // Get the main screen
-        guard let screen = NSScreen.main else { return }
-
-        // Position the window lower on screen
-        let screenFrame = screen.frame
-        let windowRect = NSRect(
-            x: (screenFrame.width - windowSize.width) / 2,
-            y: screenFrame.height * 0.17,  // Distance from bottom of screen
-            width: windowSize.width,
-            height: windowSize.height
-        )
-
         // Create the window with special properties for overlay
         hudWindow = NSWindow(
-            contentRect: windowRect,
+            contentRect: NSRect(x: 0, y: 0, width: 210, height: 210),
             styleMask: [.borderless],
             backing: .buffered,
             defer: false
@@ -123,10 +179,13 @@ class HUDController: ObservableObject, @unchecked Sendable {
         // Make sure window appears on all spaces and can't be activated
         window.canHide = false
 
+        // Set the initial position
+        updateWindowPosition()
+
         // Start the window hidden (only show when volume changes)
         window.orderOut(nil)
 
-        logger.debug("Created HUD window at: \(windowRect)")
+        logger.debug("Created HUD window.")
     }
 
     @MainActor
@@ -140,5 +199,14 @@ class HUDController: ObservableObject, @unchecked Sendable {
         // The window will be cleaned up when the app terminates
         hideTimer?.invalidate()
         hostingView = nil
+
+        // Clean up display change monitoring
+        if isObservingDisplayChanges {
+            NotificationCenter.default.removeObserver(
+                self,
+                name: NSApplication.didChangeScreenParametersNotification,
+                object: nil
+            )
+        }
     }
 }
