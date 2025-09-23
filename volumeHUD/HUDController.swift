@@ -7,8 +7,11 @@
 
 import AppKit
 import Combine
-import PolyLog
 import SwiftUI
+
+#if canImport(PolyLog)
+    import PolyLog
+#endif
 
 class HUDController: ObservableObject, @unchecked Sendable {
     @Published var isShowing = false
@@ -20,7 +23,13 @@ class HUDController: ObservableObject, @unchecked Sendable {
     private var lastShownVolume: Float?
     private var lastShownMuted: Bool?
     private var isObservingDisplayChanges = false
-    let logger = PolyLog.getLogger("HUDController", level: .debug)
+
+    // For some reason, this ONE file refuses to believe PolyLog exists, so this is a workaround
+    #if canImport(PolyLog)
+        let logger = PolyLog.getLogger("HUDController")
+    #else
+        let logger = NoOpLogger()
+    #endif
 
     @MainActor
     func showVolumeHUD(volume: Float, isMuted: Bool) {
@@ -67,7 +76,7 @@ class HUDController: ObservableObject, @unchecked Sendable {
         logger.debug("Display configuration changed, updating HUD position.")
 
         // If the HUD window exists, update its position
-        if let _ = hudWindow {
+        if hudWindow != nil {
             updateWindowPosition()
         }
     }
