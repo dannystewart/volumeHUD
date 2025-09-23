@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog], and this project adheres to [Semantic Versioning].
 
+## [1.2.3] (2025-09-23)
+
+### Added
+
+- Adds automatic HUD repositioning when display configuration changes in multi-monitor setups.
+- Adds structured logging framework to improve debugging capabilities and log management.
+
+### Changed
+
+- Updates dependency URL format from SSH to HTTPS for better accessibility.
+- Simplifies and improves README content with clearer installation instructions and feature descriptions.
+
+### Fixed
+
+- Fixes conditional import handling for PolyLog dependency with fallback when unavailable.
+- Fixes redundant UI updates by tracking state changes and only updating when volume or mute status actually changes.
+- Fixes volume key event handling with proper key code parsing and improved event monitoring cleanup.
+
+### Removed
+
+- Removes obsolete test UI interface file from early development.
+
 ## [1.2.2] (2025-09-22)
 
 ### Changed
@@ -61,6 +83,7 @@ Initial release.
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
 <!-- Versions -->
+[1.2.3]: https://github.com/dannystewart/volumeHUD/compare/v1.2.2...v1.2.3
 [1.2.2]: https://github.com/dannystewart/volumeHUD/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/dannystewart/volumeHUD/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/dannystewart/volumeHUD/compare/v1.1.0...v1.2.0
