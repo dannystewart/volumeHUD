@@ -4,14 +4,9 @@ A simple macOS app that displays a volume overlay when you change your volume, j
 
 ## Why This Exists
 
-With macOS Tahoe, Apple has completely revamped Control Center, and as part of this they decided to replace the nice, reliable volume indicator of 25 years with a tiny popover in the corner of the screen, even smaller than a notification. It is barely visible, especially against light backgrounds, and it disappears faster than I remember where to look for it. Even after months on the Tahoe beta, I still can't get used to it and I still don't like it.
+With macOS Tahoe, Apple has revamped Control Center, and as part of this they decided to replace the nice reliable volume indicator of 25 years with a tiny popover in the corner of the screen that's even smaller than a notification. It's barely visible, especially against light backgrounds, and it disappears faster than I remember where to look for it. Even after months on the Tahoe beta, I still haven't gotten used to it. It's bad UI, period.
 
-So I felt compelled to pick up Xcode and write my first ever Mac app to bring back the classic macOS volume experience we all know and love (except Apple, apparently). The features are not terribly exciting because they're exactly what the old one did:
-
-- Shows a nice overlay with volume bars and speaker icon
-- Appears on volume change and disappears a few moments later
-- Uses standard macOS materials and SF Symbols to ensure a native look
-- Runs transparently in the background
+So I did what any sane person would do: I picked up Xcode and wrote my first ever Mac app to bring back the classic macOS volume experience we all know and love (except Apple, apparently). It does what any good volume indicator should do: it tells you what your volume is when you change it and then it goes away. And get this—you can actually *see it*. A groundbreaking feature in 2025.
 
 ## What It Looks Like
 
@@ -19,25 +14,27 @@ So I felt compelled to pick up Xcode and write my first ever Mac app to bring ba
 
 ## How to Use It
 
-The app is available for download from the [Releases](https://github.com/dannystewart/volumeHUD/releases) page. Even better, you can install it via Homebrew:
+You can build it from the repo, download it from the [Releases](https://github.com/dannystewart/volumeHUD/releases) page, or, best of all, install it via Homebrew:
 
 ```bash
 brew install dannystewart/apps/volumehud
 ```
 
-You can also build it yourself if you're so inclined. Just clone the repo, open `volumeHUD.xcodeproj`, and build. Note that you'll need Xcode 16.
+Place it in your Applications folder (or wherever) and run it. From that point forward, you'll actually know what your volume is when you change it.
 
-Place the app in your Applications folder (or wherever) and run it. I hate gratuitous menu bar icons and I have no desire to inflict more of them upon myself or you, so there is no UI. You can quit the app by simply launching it again.
+I can't stand gratuitous menu bar icons and have no desire to inflict more of them on you (or me), so there is no UI. To quit, simply launch the app a second time, like how many apps show settings when they don't have an icon.
 
-To run on startup, you can add it to **System Settings** > **General** > **Login Items & Extensions** > **Open at Login**.
+To run it on startup, you can add it to **System Settings** > **General** > **Login Items & Extensions** > **Open at Login**.
 
 ## Permissions
 
-The app will ask you for two permissions, both of which are completely optional:
+The app will ask for two permissions, both of which are **completely optional:**
 
-- **Accessibility (Input Monitoring):** Without this, the HUD won't be shown if you press volume down when at 0% or volume up when at 100%, because there are no volume changes to detect. To get that, it needs to watch for key presses. You're free to leave this off and you just won't have that functionality, but everything else will still work fine.
-- **Notifications:** A notification is displayed on first run to say the app has started and explain how to quit. After that, it's not shown again. There is also a notification when you quit, because otherwise it can be unclear that you did. You're free to leave notifications off if you don't find them helpful.
+- **Accessibility:** The app works by detecting volume changes, so the HUD won't be shown when you press volume down when at 0% or volume up when at 100% because the volume doesn't change. Input monitoring watches for volume key presses to work around that. You can leave it off with no impact on anything else.
+- **Notifications:** A single notification is displayed on first run to say the app has started and explain how to quit. After that, it's not shown again. There is also a notification when you quit, because otherwise it may not be clear that you actually did. You're free to leave notifications off if you don't find them helpful.
 
 ## License
 
 This project is open source under the [MIT License](./LICENSE). Feel free to do what you like with it, or contribute!
+
+<a href="https://www.buymeacoffee.com/dannystewart" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-blue.png" alt="Buy Me A Coffee" height="41" width="174"></a>
