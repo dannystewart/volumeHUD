@@ -22,11 +22,13 @@ class HUDController: ObservableObject, @unchecked Sendable {
     weak var volumeMonitor: VolumeMonitor?
     private var lastShownVolume: Float?
     private var lastShownMuted: Bool?
-    private var isObservingDisplayChanges = false
+    private var displayChangeObserver: NSObjectProtocol?
+    private var workspaceObserver: NSObjectProtocol?
+    private var positionCheckTimer: Timer?
 
     // For some reason, this ONE file refuses to believe PolyLog exists, so this is a workaround
     #if canImport(PolyLog)
-        let logger = PolyLog.getLogger("HUDController")
+        let logger = PolyLog.getLogger("HUDController", level: .debug)
     #else
         let logger = NoOpLogger()
     #endif
@@ -37,38 +39,80 @@ class HUDController: ObservableObject, @unchecked Sendable {
     }
 
     @MainActor
+    func forceUpdatePosition() {
+        logger.debug("Manually forcing position update.")
+        updateWindowPosition()
+    }
+
+    @MainActor
     func startDisplayChangeMonitoring() {
-        guard !isObservingDisplayChanges else { return }
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(displayConfigurationDidChange(_:)),
-            name: NSApplication.didChangeScreenParametersNotification,
-            object: nil
-        )
-        isObservingDisplayChanges = true
+        // Monitor for display configuration changes using NSApplication notification
+        displayChangeObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didChangeScreenParametersNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleDisplayConfigurationChange()
+        }
+
+        // Also monitor for workspace screen changes
+        workspaceObserver = NotificationCenter.default.addObserver(
+            forName: NSWorkspace.screensDidSleepNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleDisplayConfigurationChange()
+        }
+
+        // Add a periodic check as a fallback
+        positionCheckTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) {
+            [weak self] _ in
+            Task { @MainActor in
+                self?.checkAndUpdatePosition()
+            }
+        }
 
         logger.debug("Started monitoring display configuration changes.")
     }
 
     @MainActor
-    func stopDisplayChangeMonitoring() {
-        guard isObservingDisplayChanges else { return }
-        NotificationCenter.default.removeObserver(
-            self,
-            name: NSApplication.didChangeScreenParametersNotification,
-            object: nil
-        )
-        isObservingDisplayChanges = false
+    private func checkAndUpdatePosition() {
+        guard let window = hudWindow else { return }
 
-        logger.debug("Stopped monitoring display configuration changes.")
+        // Get current screen info
+        guard let screen = NSScreen.main else { return }
+        let screenFrame = screen.frame
+
+        // Check if the window is positioned correctly relative to the current screen
+        let expectedX = (screenFrame.width - 210) / 2
+        let expectedY = screenFrame.height * 0.17
+        let currentFrame = window.frame
+
+        // If the position is significantly off, update it
+        if abs(currentFrame.origin.x - expectedX) > 50
+            || abs(currentFrame.origin.y - expectedY) > 50
+        {
+            logger.debug("Position check detected misalignment, updating position.")
+            updateWindowPosition()
+        }
     }
 
-    @objc
-    private func displayConfigurationDidChange(_ notification: Notification) {
-        // Ensure we hop to the main actor for UI work
-        Task { @MainActor in
-            self.handleDisplayConfigurationChange()
+    @MainActor
+    func stopDisplayChangeMonitoring() {
+        if let observer = displayChangeObserver {
+            NotificationCenter.default.removeObserver(observer)
+            displayChangeObserver = nil
         }
+
+        if let observer = workspaceObserver {
+            NotificationCenter.default.removeObserver(observer)
+            workspaceObserver = nil
+        }
+
+        positionCheckTimer?.invalidate()
+        positionCheckTimer = nil
+
+        logger.debug("Stopped monitoring display configuration changes.")
     }
 
     @MainActor
@@ -83,12 +127,18 @@ class HUDController: ObservableObject, @unchecked Sendable {
 
     @MainActor
     private func updateWindowPosition() {
-        guard let window = hudWindow else { return }
+        guard let window = hudWindow else {
+            logger.debug("No HUD window to update position for.")
+            return
+        }
 
         let windowSize = NSSize(width: 210, height: 210)
 
         // Get the current main screen
-        guard let screen = NSScreen.main else { return }
+        guard let screen = NSScreen.main else {
+            logger.debug("No main screen available.")
+            return
+        }
 
         // Calculate new position
         let screenFrame = screen.frame
@@ -98,6 +148,10 @@ class HUDController: ObservableObject, @unchecked Sendable {
             width: windowSize.width,
             height: windowSize.height
         )
+
+        logger.debug("Screen frame: \(screenFrame)")
+        logger.debug("Calculated new window rect: \(newWindowRect)")
+        logger.debug("Current window frame: \(window.frame)")
 
         // Update the window frame
         window.setFrame(newWindowRect, display: true)
@@ -210,12 +264,14 @@ class HUDController: ObservableObject, @unchecked Sendable {
         hostingView = nil
 
         // Clean up display change monitoring
-        if isObservingDisplayChanges {
-            NotificationCenter.default.removeObserver(
-                self,
-                name: NSApplication.didChangeScreenParametersNotification,
-                object: nil
-            )
+        if let observer = displayChangeObserver {
+            NotificationCenter.default.removeObserver(observer)
         }
+
+        if let observer = workspaceObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+
+        positionCheckTimer?.invalidate()
     }
 }
