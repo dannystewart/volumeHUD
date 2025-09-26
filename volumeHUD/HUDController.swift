@@ -5,7 +5,7 @@
 //  Created by Danny Stewart on 9/21/25.
 //
 
-import AppKit
+@preconcurrency import AppKit
 import Combine
 import PolyLog
 import SwiftUI
