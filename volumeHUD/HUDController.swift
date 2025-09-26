@@ -5,12 +5,13 @@
 //  Created by Danny Stewart on 9/21/25.
 //
 
-@preconcurrency import AppKit
+import AppKit
 import Combine
 import PolyLog
 import SwiftUI
 
-class HUDController: ObservableObject, @unchecked Sendable {
+@MainActor
+class HUDController: ObservableObject {
     @Published var isShowing = false
 
     private var hudWindow: NSWindow?
@@ -32,84 +33,38 @@ class HUDController: ObservableObject, @unchecked Sendable {
     }
 
     @MainActor
-    func forceUpdatePosition() {
-        logger.debug("Manually forcing position update.")
-        updateWindowPosition()
-    }
-
-    @MainActor
     func startDisplayChangeMonitoring() {
-        // Monitor for display configuration changes using NSApplication notification
-        displayChangeObserver = NotificationCenter.default.addObserver(
-            forName: NSApplication.didChangeScreenParametersNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor in
-                self?.handleDisplayConfigurationChange()
-            }
-        }
-
-        // Also monitor for workspace screen changes
-        workspaceObserver = NotificationCenter.default.addObserver(
-            forName: NSWorkspace.screensDidSleepNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor in
-                self?.handleDisplayConfigurationChange()
-            }
-        }
-
-        // Add a periodic check as a fallback
-        positionCheckTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) {
-            [weak self] _ in
-            Task { @MainActor in
-                self?.checkAndUpdatePosition()
-            }
-        }
+        guard !isObservingDisplayChanges else { return }
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(displayConfigurationDidChange(_:)),
+            name: NSApplication.didChangeScreenParametersNotification,
+            object: nil
+        )
+        isObservingDisplayChanges = true
 
         logger.debug("Started monitoring display configuration changes.")
     }
 
     @MainActor
-    private func checkAndUpdatePosition() {
-        guard let window = hudWindow else { return }
-
-        // Get current screen info
-        guard let screen = NSScreen.main else { return }
-        let screenFrame = screen.frame
-
-        // Check if the window is positioned correctly relative to the current screen
-        let expectedX = (screenFrame.width - 210) / 2
-        let expectedY = screenFrame.height * 0.17
-        let currentFrame = window.frame
-
-        // If the position is significantly off, update it
-        if abs(currentFrame.origin.x - expectedX) > 50
-            || abs(currentFrame.origin.y - expectedY) > 50
-        {
-            logger.debug("Position check detected misalignment, updating position.")
-            updateWindowPosition()
-        }
-    }
-
-    @MainActor
     func stopDisplayChangeMonitoring() {
-        if let observer = displayChangeObserver {
-            NotificationCenter.default.removeObserver(observer)
-            displayChangeObserver = nil
-        }
-
-        if let observer = workspaceObserver {
-            NotificationCenter.default.removeObserver(observer)
-            workspaceObserver = nil
-        }
-
-        positionCheckTimer?.invalidate()
-        positionCheckTimer = nil
+        guard isObservingDisplayChanges else { return }
+        NotificationCenter.default.removeObserver(
+            self,
+            name: NSApplication.didChangeScreenParametersNotification,
+            object: nil
+        )
+        isObservingDisplayChanges = false
 
         logger.debug("Stopped monitoring display configuration changes.")
+    }
+
+    @objc
+    private func displayConfigurationDidChange(_ notification: Notification) {
+        // Ensure we hop to the main actor for UI work
+        Task { @MainActor in
+            self.handleDisplayConfigurationChange()
+        }
     }
 
     @MainActor
@@ -124,18 +79,12 @@ class HUDController: ObservableObject, @unchecked Sendable {
 
     @MainActor
     private func updateWindowPosition() {
-        guard let window = hudWindow else {
-            logger.debug("No HUD window to update position for.")
-            return
-        }
+        guard let window = hudWindow else { return }
 
         let windowSize = NSSize(width: 210, height: 210)
 
         // Get the current main screen
-        guard let screen = NSScreen.main else {
-            logger.debug("No main screen available.")
-            return
-        }
+        guard let screen = NSScreen.main else { return }
 
         // Calculate new position
         let screenFrame = screen.frame
@@ -145,10 +94,6 @@ class HUDController: ObservableObject, @unchecked Sendable {
             width: windowSize.width,
             height: windowSize.height
         )
-
-        logger.debug("Screen frame: \(screenFrame)")
-        logger.debug("Calculated new window rect: \(newWindowRect)")
-        logger.debug("Current window frame: \(window.frame)")
 
         // Update the window frame
         window.setFrame(newWindowRect, display: true)
@@ -209,9 +154,9 @@ class HUDController: ObservableObject, @unchecked Sendable {
     @MainActor
     private func scheduleHideTimer() {
         hideTimer?.invalidate()
-        hideTimer = Timer.scheduledTimer(withTimeInterval: 1.1, repeats: false) { _ in
-            DispatchQueue.main.async {
-                self.hideHUD()
+        hideTimer = Timer.scheduledTimer(withTimeInterval: 1.1, repeats: false) { [weak self] _ in
+            Task { @MainActor in
+                self?.hideHUD()
             }
         }
     }
@@ -226,7 +171,10 @@ class HUDController: ObservableObject, @unchecked Sendable {
             defer: false
         )
 
-        guard let window = hudWindow else { return }
+        guard let window = hudWindow else {
+            logger.error("createHUDWindow: failed to create NSWindow (hudWindow is nil)")
+            return
+        }
 
         // Configure window properties for overlay behavior
         window.level = .statusBar + 1  // Above menu bar
@@ -254,22 +202,5 @@ class HUDController: ObservableObject, @unchecked Sendable {
         isShowing = false
     }
 
-    deinit {
-        // Clean up resources synchronously in deinit
-        // The window will be cleaned up when the app terminates
-        DispatchQueue.main.sync {
-            hideTimer?.invalidate()
-            positionCheckTimer?.invalidate()
-            hostingView = nil
-
-            // Clean up display change monitoring
-            if let observer = displayChangeObserver {
-                NotificationCenter.default.removeObserver(observer)
-            }
-
-            if let observer = workspaceObserver {
-                NotificationCenter.default.removeObserver(observer)
-            }
-        }
-    }
+    deinit {}
 }

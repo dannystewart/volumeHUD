@@ -28,6 +28,8 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
     private var lastCapsLockTime: TimeInterval = 0
     private var lastVolumeKeyLogTime: TimeInterval = 0
     private var defaultDeviceListenerAdded = false
+    private var volumeListenerBlock: ((UInt32, UnsafePointer<AudioObjectPropertyAddress>) -> Void)?
+    private var muteListenerBlock: ((UInt32, UnsafePointer<AudioObjectPropertyAddress>) -> Void)?
 
     weak var hudController: HUDController?
 
@@ -171,10 +173,10 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         let muteChanged = newMuted != previousMuteState
 
         if volumeChanged || muteChanged {
-            logger.info("CHANGE: Volume updated: \(Int(newVolume * 100))%, Muted: \(newMuted)")
+            logger.info("Volume updated: \(Int(newVolume * 100))%, Muted: \(newMuted)")
 
-            // Update @Published properties and show HUD on main thread
-            DispatchQueue.main.async {
+            // Update @Published properties and show HUD on main actor
+            Task { @MainActor in
                 self.currentVolume = newVolume
                 self.isMuted = newMuted
                 self.hudController?.showVolumeHUD(volume: newVolume, isMuted: newMuted)
@@ -208,13 +210,26 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         // Monitor system-defined events for volume key presses
         systemEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: .systemDefined) {
             [weak self] event in
-            self?.handleSystemDefinedEvent(event)
+            guard let self else { return }
+            // Extract only primitive fields on the monitoring thread to avoid
+            // crossing threads with non-Sendable NSEvent
+            let subtype = Int(event.subtype.rawValue)
+            let data1 = Int(event.data1)
+            let keyCode = (data1 & 0xFFFF_0000) >> 16
+            let keyFlags = data1 & 0x0000_FFFF
+            let keyState = (keyFlags & 0xFF00) >> 8  // 0x0A = keyDown, 0x0B = keyUp
+            let isKeyDown = keyState == 0x0A
+
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.handleSystemDefinedEventData(
+                    subtype: subtype, keyCode: keyCode, keyPressed: (keyFlags & 0xFF00) >> 8,
+                    isKeyDown: isKeyDown)
+            }
         }
 
         // Also monitor key events to catch volume keys that might not generate system-defined events
-        keyEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.keyDown, .keyUp]) {
-            _ in
-        }
+        keyEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.keyDown, .keyUp]) { _ in }
 
         logger.info("Started monitoring system-defined events for volume keys.")
         logger.info("Accessibility permissions: \(accessibilityEnabled ? "GRANTED" : "DENIED")")
@@ -232,48 +247,38 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         }
     }
 
-    private func handleSystemDefinedEvent(_ event: NSEvent) {
+    @MainActor
+    private func handleSystemDefinedEventData(
+        subtype: Int, keyCode: Int, keyPressed: Int, isKeyDown: Bool
+    ) {
         let currentTime = Date().timeIntervalSince1970
 
         // Track Caps Lock events
-        if event.subtype.rawValue == 211 {
+        if subtype == 211 {
             lastCapsLockTime = currentTime
             logger.debug("Caps Lock event detected, ignoring volume events for 0.5 seconds.")
             return
         }
 
         // Volume keys generate NSSystemDefined events with subtype 8
-        if event.subtype.rawValue == 8 {
+        if subtype == 8 {
             // Ignore volume events that happen within 0.5 seconds of Caps Lock
             if currentTime - lastCapsLockTime < 0.5 {
                 logger.debug("Ignoring volume event, too close to Caps Lock.")
                 return
             }
 
-            let data1 = Int(event.data1)
-            let keyCode = (data1 & 0xFFFF_0000) >> 16
-            let keyFlags = data1 & 0x0000_FFFF
-            let keyPressed = (keyFlags & 0xFF00) >> 8
-            let keyState = (keyFlags & 0xFF00) >> 8  // 0x0A = keyDown, 0x0B = keyUp
-
-            let isKeyDown = keyState == 0x0A
             guard isKeyDown else { return }
 
             // NX key codes: 0 = vol up, 1 = vol down, 7 = mute
             switch keyCode {
             case 1:  // Volume down
-                logger.debug(
-                    "Volume down (keyCode=\(keyCode), keyPressed=\(keyPressed))."
-                )
-                Task { @MainActor in
-                    self.showHUDForVolumeKeyPress(isVolumeUp: false)
+                Task { @MainActor [weak self] in
+                    self?.showHUDForVolumeKeyPress(isVolumeUp: false)
                 }
             case 0:  // Volume up
-                logger.debug(
-                    "Volume up (keyCode=\(keyCode), keyPressed=\(keyPressed))."
-                )
-                Task { @MainActor in
-                    self.showHUDForVolumeKeyPress(isVolumeUp: true)
+                Task { @MainActor [weak self] in
+                    self?.showHUDForVolumeKeyPress(isVolumeUp: true)
                 }
             default:
                 break
@@ -283,8 +288,9 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
 
     @MainActor
     private func showHUDForVolumeKeyPress(isVolumeUp: Bool) {
-        // Get current volume and mute state
-        let (currentVol, currentMuted) = getCurrentVolumeAndMuteState()
+        // Avoid CoreAudio calls during key event; use cached state
+        let currentVol = currentVolume
+        let currentMuted = isMuted
 
         // Only show HUD on key presses if we're at volume boundaries (0% or 100%)
         // This prevents media keys from triggering the HUD when volume is between 1-99%
@@ -296,7 +302,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             // Debounce log messages as macOS seems to fire key events twice
             if currentTime - lastVolumeKeyLogTime > 0.1 {
                 logger.debug(
-                    "Key press detected while at \(Int(currentVol * 100))%, but will only trigger HUD at 0% or 100%."
+                    "Key press detected, but keys are ignored unless volume is 0% or 100%."
                 )
                 lastVolumeKeyLogTime = currentTime
             }
@@ -331,7 +337,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
                 guard let clientData = inClientData else { return noErr }
                 let volumeMonitor = Unmanaged<VolumeMonitor>.fromOpaque(clientData)
                     .takeUnretainedValue()
-                DispatchQueue.main.async {
+                Task { @MainActor in
                     volumeMonitor.handleDefaultDeviceChanged()
                 }
                 return noErr
@@ -413,53 +419,46 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
     }
 
     private func removeVolumeListeners() {
-        let selfPtr = UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
+        if let block = volumeListenerBlock {
+            AudioObjectRemovePropertyListenerBlock(
+                deviceID,
+                &audioObjectPropertyAddress,
+                DispatchQueue.main,
+                block
+            )
+            volumeListenerBlock = nil
+        }
 
-        // Remove volume listener
-        AudioObjectRemovePropertyListener(
-            deviceID,
-            &audioObjectPropertyAddress,
-            { (inObjectID, inNumberAddresses, inAddresses, inClientData) -> OSStatus in
-                return noErr
-            },
-            selfPtr
-        )
-
-        // Remove mute listener
         var muteAddress = AudioObjectPropertyAddress(
             mSelector: kAudioDevicePropertyMute,
             mScope: kAudioDevicePropertyScopeOutput,
             mElement: kAudioObjectPropertyElementMain
         )
-
-        AudioObjectRemovePropertyListener(
-            deviceID,
-            &muteAddress,
-            { (inObjectID, inNumberAddresses, inAddresses, inClientData) -> OSStatus in
-                return noErr
-            },
-            selfPtr
-        )
+        if let block = muteListenerBlock {
+            AudioObjectRemovePropertyListenerBlock(
+                deviceID,
+                &muteAddress,
+                DispatchQueue.main,
+                block
+            )
+            muteListenerBlock = nil
+        }
     }
 
     private func addVolumeListeners() {
-        let selfPtr = UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
-
-        // Register for volume change notifications
-        AudioObjectAddPropertyListener(
-            deviceID,
-            &audioObjectPropertyAddress,
-            { (inObjectID, inNumberAddresses, inAddresses, inClientData) -> OSStatus in
-                guard let clientData = inClientData else { return noErr }
-                let volumeMonitor = Unmanaged<VolumeMonitor>.fromOpaque(clientData)
-                    .takeUnretainedValue()
-                DispatchQueue.main.async {
-                    volumeMonitor.updateVolumeValues()
-                }
-                return noErr
-            },
-            selfPtr
-        )
+        // Register for volume change notifications using block on main queue
+        volumeListenerBlock = { [weak self] _, _ in
+            guard let self else { return }
+            self.updateVolumeValues()
+        }
+        if let block = volumeListenerBlock {
+            AudioObjectAddPropertyListenerBlock(
+                deviceID,
+                &audioObjectPropertyAddress,
+                DispatchQueue.main,
+                block
+            )
+        }
 
         // Also monitor mute state
         var muteAddress = AudioObjectPropertyAddress(
@@ -467,20 +466,17 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             mScope: kAudioDevicePropertyScopeOutput,
             mElement: kAudioObjectPropertyElementMain
         )
-
-        AudioObjectAddPropertyListener(
-            deviceID,
-            &muteAddress,
-            { (inObjectID, inNumberAddresses, inAddresses, inClientData) -> OSStatus in
-                guard let clientData = inClientData else { return noErr }
-                let volumeMonitor = Unmanaged<VolumeMonitor>.fromOpaque(clientData)
-                    .takeUnretainedValue()
-                DispatchQueue.main.async {
-                    volumeMonitor.updateVolumeValues()
-                }
-                return noErr
-            },
-            selfPtr
-        )
+        muteListenerBlock = { [weak self] _, _ in
+            guard let self else { return }
+            self.updateVolumeValues()
+        }
+        if let block = muteListenerBlock {
+            AudioObjectAddPropertyListenerBlock(
+                deviceID,
+                &muteAddress,
+                DispatchQueue.main,
+                block
+            )
+        }
     }
 }
