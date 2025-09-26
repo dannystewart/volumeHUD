@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog], and this project adheres to [Semantic Versioning].
 
+## [1.2.4] (2025-09-26)
+
+### Added
+
+- Adopts Apple generic versioning to standardize build versions.
+
+### Changed
+
+- Upgrades Swift version from 5.0 to 6.0 to leverage newer language features, performance improvements, and enhanced concurrency support.
+- Migrates `PolyLog` dependency from local package reference to my new `polykit-swift` library on GitHub for proper dependency management.
+- Simplifies `PolyLog` initialization by removing conditional import workarounds and using direct instantiation now that it's working correctly.
+- Improves user notification messages to be more friendly and informative with clearer success messaging.
+
+### Fixed
+
+- Improves display monitoring robustness with comprehensive change detection, fallback timer mechanism for positioning issues, and enhanced observer cleanup to prevent memory leaks.
+- Fixes thread safety issues in HUD cleanup operations by ensuring UI-related cleanup occurs on the main thread.
+- Fixes potential threading issues in display configuration change handlers by executing on the main actor.
+
 ## [1.2.3] (2025-09-23)
 
 ### Added
@@ -83,6 +102,7 @@ Initial release.
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
 <!-- Versions -->
+[1.2.4]: https://github.com/dannystewart/volumeHUD/compare/v1.2.3...v1.2.4
 [1.2.3]: https://github.com/dannystewart/volumeHUD/compare/v1.2.2...v1.2.3
 [1.2.2]: https://github.com/dannystewart/volumeHUD/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/dannystewart/volumeHUD/compare/v1.2.0...v1.2.1
