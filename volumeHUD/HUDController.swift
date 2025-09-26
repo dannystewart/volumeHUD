@@ -45,7 +45,9 @@ class HUDController: ObservableObject, @unchecked Sendable {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.handleDisplayConfigurationChange()
+            Task { @MainActor in
+                self?.handleDisplayConfigurationChange()
+            }
         }
 
         // Also monitor for workspace screen changes
@@ -54,7 +56,9 @@ class HUDController: ObservableObject, @unchecked Sendable {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.handleDisplayConfigurationChange()
+            Task { @MainActor in
+                self?.handleDisplayConfigurationChange()
+            }
         }
 
         // Add a periodic check as a fallback
@@ -253,18 +257,19 @@ class HUDController: ObservableObject, @unchecked Sendable {
     deinit {
         // Clean up resources synchronously in deinit
         // The window will be cleaned up when the app terminates
-        hideTimer?.invalidate()
-        hostingView = nil
+        DispatchQueue.main.sync {
+            hideTimer?.invalidate()
+            positionCheckTimer?.invalidate()
+            hostingView = nil
 
-        // Clean up display change monitoring
-        if let observer = displayChangeObserver {
-            NotificationCenter.default.removeObserver(observer)
+            // Clean up display change monitoring
+            if let observer = displayChangeObserver {
+                NotificationCenter.default.removeObserver(observer)
+            }
+
+            if let observer = workspaceObserver {
+                NotificationCenter.default.removeObserver(observer)
+            }
         }
-
-        if let observer = workspaceObserver {
-            NotificationCenter.default.removeObserver(observer)
-        }
-
-        positionCheckTimer?.invalidate()
     }
 }
