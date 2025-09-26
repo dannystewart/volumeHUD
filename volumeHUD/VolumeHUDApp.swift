@@ -46,7 +46,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 if !UserDefaults.standard.bool(forKey: "hasShownStartupNotification") {
                     Task { @MainActor in
                         self.postUserNotification(
-                            title: "volumeHUD started (launch again to quit)", body: nil)
+                            title: "volumeHUD started! (launch again to quit)", body: nil)
                         UserDefaults.standard.set(true, forKey: "hasShownStartupNotification")
                     }
                 }
@@ -94,7 +94,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         logger.info("Stopping monitoring and quitting.")
         volumeMonitor?.stopMonitoring()
         hudController?.stopDisplayChangeMonitoring()
-        postUserNotification(title: "volumeHUD quit", body: nil)
+        postUserNotification(title: "volumeHUD quit successfully!", body: nil)
 
         // Terminate without activating the app
         NSApp.terminate(nil)
