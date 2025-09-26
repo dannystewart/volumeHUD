@@ -4,7 +4,7 @@ A simple macOS app that displays a volume overlay when you change your volume, j
 
 ## Why This Exists
 
-With macOS Tahoe, Apple has revamped Control Center, and as part of this they decided to replace the nice reliable volume indicator of 25 years with a tiny popover in the corner of the screen that's even smaller than a notification. It's barely visible, especially against light backgrounds, and it disappears faster than I remember where to look for it. Even after months on the Tahoe beta, I still haven't gotten used to it. It's bad UI, period.
+With macOS Tahoe, Apple has revamped Control Center, and as part of this they decided to replace the nice reliable volume indicator of 25 years with a tiny popover in the corner of the screen that's even smaller than a notification. It's barely visible, especially against light backgrounds, and it disappears faster than I remember where to look for it. Even after months on the Tahoe beta, I still haven't gotten used to it. It's bad UI.
 
 So I did what any sane person would do: I picked up Xcode and wrote my first ever Mac app to bring back the classic macOS volume experience we all know and love (except Apple, apparently). It does what any good volume indicator should do: it tells you what your volume is when you change it and then it goes away. And get this—you can actually *see it*. A groundbreaking feature in 2025.
 
