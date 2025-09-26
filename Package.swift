@@ -13,14 +13,14 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(
-            url: "https://github.com/dannystewart/PolyLog-Swift.git", branch: "main"
-        )
+        .package(url: "https://github.com/dannystewart/polykit-swift.git", branch: "main")
     ],
     targets: [
         .executableTarget(
             name: "volumeHUD",
-            dependencies: ["PolyLog"],
+            dependencies: [
+                .product(name: "PolyLog", package: "polykit-swift")
+            ],
             path: "volumeHUD",
             resources: [
                 .process("Assets.xcassets")

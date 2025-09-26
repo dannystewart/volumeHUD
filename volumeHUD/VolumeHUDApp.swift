@@ -16,7 +16,8 @@ private let kToggleNotificationName = Notification.Name("com.dannystewart.volume
 class AppDelegate: NSObject, NSApplicationDelegate {
     var volumeMonitor: VolumeMonitor!
     var hudController: HUDController!
-    let logger = PolyLog.getLogger("AppDelegate")
+
+    let logger = PolyLog()
 
     // Prevent multiple rapid quit attempts
     private var isQuitting = false

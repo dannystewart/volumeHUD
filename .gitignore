@@ -1,6 +1,21 @@
-.build
-.DS_Store
+# Build artifacts
+.build/
+build/
+DerivedData/
+
+# Swift package files
+.swiftpm/
+*.xcodeproj/xcuserdata/
+*.xcuserdata/
+*.xcworkspace/xcuserdata/
 **/UserInterfaceState.xcuserstate
-build
-release
-scripts
+Packages/
+
+# Local development
+.cursor/rules/
+.cursorindexingignore
+.DS_Store
+.specstory/
+*.tmp
+release/
+scripts/

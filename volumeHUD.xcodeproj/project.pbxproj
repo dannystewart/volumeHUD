@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		303F102F2E81B67D00A7923C /* PolyLog in Frameworks */ = {isa = PBXBuildFile; productRef = 303F102E2E81B67D00A7923C /* PolyLog */; };
+		308AA33C2E861AE200F2FFB2 /* PolyLog in Frameworks */ = {isa = PBXBuildFile; productRef = 308AA33B2E861AE200F2FFB2 /* PolyLog */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -27,7 +27,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				303F102F2E81B67D00A7923C /* PolyLog in Frameworks */,
+				308AA33C2E861AE200F2FFB2 /* PolyLog in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -70,7 +70,7 @@
 			);
 			name = volumeHUD;
 			packageProductDependencies = (
-				303F102E2E81B67D00A7923C /* PolyLog */,
+				308AA33B2E861AE200F2FFB2 /* PolyLog */,
 			);
 			productName = volumeHUD;
 			productReference = 30C937682E806B79004B5AF5 /* volumeHUD.app */;
@@ -101,7 +101,7 @@
 			mainGroup = 30C9375F2E806B79004B5AF5;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				303F102D2E81B67D00A7923C /* XCLocalSwiftPackageReference "../PolyLog-Swift" */,
+				308AA33A2E861AE200F2FFB2 /* XCRemoteSwiftPackageReference "polylog-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 30C937692E806B79004B5AF5 /* Products */;
@@ -355,16 +355,21 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCLocalSwiftPackageReference section */
-		303F102D2E81B67D00A7923C /* XCLocalSwiftPackageReference "../PolyLog-Swift" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = "../PolyLog-Swift";
+/* Begin XCRemoteSwiftPackageReference section */
+		308AA33A2E861AE200F2FFB2 /* XCRemoteSwiftPackageReference "polylog-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/dannystewart/polylog-swift.git";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
 		};
-/* End XCLocalSwiftPackageReference section */
+/* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		303F102E2E81B67D00A7923C /* PolyLog */ = {
+		308AA33B2E861AE200F2FFB2 /* PolyLog */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 308AA33A2E861AE200F2FFB2 /* XCRemoteSwiftPackageReference "polylog-swift" */;
 			productName = PolyLog;
 		};
 /* End XCSwiftPackageProductDependency section */
