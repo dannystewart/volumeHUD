@@ -1,10 +1,3 @@
-//
-//  VolumeMonitor.swift
-//  volumeHUD
-//
-//  Created by Danny Stewart on 9/21/25.
-//
-
 import AVFoundation
 import AppKit
 import AudioToolbox

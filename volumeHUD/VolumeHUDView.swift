@@ -1,10 +1,3 @@
-//
-//  VolumeHUDView.swift
-//  volumeHUD
-//
-//  Created by Danny Stewart on 9/21/25.
-//
-
 import SwiftUI
 
 struct VolumeHUDView: View {

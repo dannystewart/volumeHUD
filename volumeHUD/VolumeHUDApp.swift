@@ -1,10 +1,3 @@
-//
-//  VolumeHUDApp.swift
-//  volumeHUD
-//
-//  Created by Danny Stewart on 9/21/25.
-//
-
 import AppKit
 import PolyLog
 import SwiftUI
