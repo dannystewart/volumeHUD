@@ -56,9 +56,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     // Handle attempts to launch the app a second time
-    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool)
-        -> Bool
-    {
+    func applicationShouldHandleReopen(
+        _ sender: NSApplication, hasVisibleWindows flag: Bool
+    ) -> Bool {
         // Treat reopening as a toggle request without activating the app
         scheduleQuit()
         return false
