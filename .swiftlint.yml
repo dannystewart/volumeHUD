@@ -1,0 +1,17 @@
+# Rules to disable, at least for now
+disabled_rules:
+  - type_body_length # We might re-enable this as we get better
+
+# Exclude Packages (external code) and Package.swift (unique case)
+excluded:
+  - Packages
+  - Package.swift
+
+  # Check for updates to SwiftLint (gotta stay current!)
+check_for_updates: true
+
+# 110 characters seems like a good compromise between readability and code length
+line_length: 110
+
+# Use the Xcode reporter for better integration
+reporter: "xcode"
