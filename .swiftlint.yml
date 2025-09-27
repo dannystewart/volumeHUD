@@ -1,17 +1,10 @@
-# Rules to disable, at least for now
 disabled_rules:
+  - line_length # Line length should not be a warning, come on
+  - trailing_comma # This fights with other formatters
   - type_body_length # We might re-enable this as we get better
 
-# Exclude Packages (external code) and Package.swift (unique case)
 excluded:
-  - Packages
-  - Package.swift
+  - .build # Way too much random crap ends up in here to lint
+  - Packages # We can't trust others to meet our exacting standards
 
-  # Check for updates to SwiftLint (gotta stay current!)
 check_for_updates: true
-
-# 110 characters seems like a good compromise between readability and code length
-line_length: 110
-
-# Use the Xcode reporter for better integration
-reporter: "xcode"
