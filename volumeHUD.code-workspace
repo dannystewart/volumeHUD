@@ -40,7 +40,7 @@
             "release": true,
             "venv": true
         },
-        "swift.autoGenerateLaunchConfigurations": true,
+        "swift.autoGenerateLaunchConfigurations": false,
         "swift.buildArguments": [
             "-Xswiftc",
             "-target",
