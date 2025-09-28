@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog], and this project adheres to [Semantic Versioning].
 
+## [1.2.6] (2025-09-28)
+
+### Changed
+
+- Replaces event-based listeners with direct polling for audio device changes. This should be much more reliable and significantly reduce the risk of thread-based crashes when changing output device.
+
 ## [1.2.5] (2025-09-28)
 
 ### Added
@@ -116,6 +122,7 @@ Initial release.
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
 <!-- Versions -->
+[1.2.6]: https://github.com/dannystewart/volumeHUD/compare/v1.2.5...v1.2.6
 [1.2.5]: https://github.com/dannystewart/volumeHUD/compare/v1.2.4...v1.2.5
 [1.2.4]: https://github.com/dannystewart/volumeHUD/compare/v1.2.3...v1.2.4
 [1.2.3]: https://github.com/dannystewart/volumeHUD/compare/v1.2.2...v1.2.3
