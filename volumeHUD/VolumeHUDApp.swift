@@ -52,8 +52,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Start monitoring display configuration changes
         hudController.startDisplayChangeMonitoring()
-
-        logger.info("Started monitoring volume changes from AppDelegate.")
     }
 
     // Handle attempts to launch the app a second time
@@ -93,8 +91,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Terminate without activating the app
         NSApp.terminate(nil)
     }
-
-    // MARK: User Notifications
 
     private func requestNotificationAuthorizationIfNeeded(
         completion: @escaping @Sendable (Bool) -> Void

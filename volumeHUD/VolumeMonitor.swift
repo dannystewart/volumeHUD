@@ -23,6 +23,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
     private var defaultDeviceListenerAdded = false
     private var volumeListenerBlock: ((UInt32, UnsafePointer<AudioObjectPropertyAddress>) -> Void)?
     private var muteListenerBlock: ((UInt32, UnsafePointer<AudioObjectPropertyAddress>) -> Void)?
+    private var devicePollingTimer: Timer?
 
     weak var hudController: HUDController?
 
@@ -78,7 +79,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         startDefaultDeviceMonitoring()
 
         isMonitoring = true
-        logger.info("Started monitoring volume changes.")
+        logger.debug("Started monitoring for volume changes.")
     }
 
     func stopMonitoring() {
@@ -94,7 +95,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         stopDefaultDeviceMonitoring()
 
         isMonitoring = false
-        logger.info("Stopped monitoring volume changes.")
+        logger.debug("Stopped monitoring for volume changes.")
     }
 
     private func getCurrentVolumeAndMuteState() -> (volume: Float, isMuted: Bool) {
@@ -168,10 +169,10 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         if volumeChanged || muteChanged {
             logger.info("Volume updated: \(Int(newVolume * 100))%, Muted: \(newMuted)")
 
-            // Update @Published properties and show HUD on main actor
-            Task { @MainActor in
-                self.currentVolume = newVolume
-                self.isMuted = newMuted
+            // Update @Published properties and show HUD
+            currentVolume = newVolume
+            isMuted = newMuted
+            DispatchQueue.main.async {
                 self.hudController?.showVolumeHUD(volume: newVolume, isMuted: newMuted)
             }
 
@@ -181,7 +182,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         }
     }
 
-    // MARK: - System Event Monitoring
+    // MARK: Key Press Monitoring
 
     private func startSystemEventMonitoring() {
         // Check if accessibility permissions are granted
@@ -225,15 +226,15 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         // Also monitor key events to catch volume keys that might not generate system-defined events
         keyEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.keyDown, .keyUp]) { _ in }
 
-        logger.info("Started monitoring system-defined events for volume keys.")
-        logger.info("Accessibility permissions: \(accessibilityEnabled ? "GRANTED" : "DENIED")")
+        logger.debug("Started monitoring system-defined events for volume keys.")
+        logger.debug("Accessibility permissions \(accessibilityEnabled ? "granted" : "denied").")
     }
 
     private func stopSystemEventMonitoring() {
         if let monitor = systemEventMonitor {
             NSEvent.removeMonitor(monitor)
             systemEventMonitor = nil
-            logger.info("Stopped monitoring system-defined events.")
+            logger.debug("Stopped monitoring system-defined events.")
         }
         if let keyMonitor = keyEventMonitor {
             NSEvent.removeMonitor(keyMonitor)
@@ -267,13 +268,9 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             // NX key codes: 0 = vol up, 1 = vol down, 7 = mute
             switch keyCode {
             case 1: // Volume down
-                Task { @MainActor [weak self] in
-                    self?.showHUDForVolumeKeyPress(isVolumeUp: false)
-                }
+                showHUDForVolumeKeyPress(isVolumeUp: false)
             case 0: // Volume up
-                Task { @MainActor [weak self] in
-                    self?.showHUDForVolumeKeyPress(isVolumeUp: true)
-                }
+                showHUDForVolumeKeyPress(isVolumeUp: true)
             default:
                 break
             }
@@ -296,7 +293,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             // Debounce log messages as macOS seems to fire key events twice
             if currentTime - lastVolumeKeyLogTime > 0.1 {
                 logger.debug(
-                    "Key press detected, but keys are ignored unless volume is 0% or 100%."
+                    "Key press ignored because volume is not 0% or 100%."
                 )
                 lastVolumeKeyLogTime = currentTime
             }
@@ -311,71 +308,51 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         )
     }
 
-    // MARK: - Default Device Monitoring
+    // MARK: Device Change Monitoring
 
     private func startDefaultDeviceMonitoring() {
-        guard !defaultDeviceListenerAdded else { return }
-
-        let selfPtr = UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
-
-        var address = AudioObjectPropertyAddress(
-            mSelector: kAudioHardwarePropertyDefaultOutputDevice,
-            mScope: kAudioObjectPropertyScopeGlobal,
-            mElement: kAudioObjectPropertyElementMain
-        )
-
-        let status = AudioObjectAddPropertyListener(
-            AudioObjectID(kAudioObjectSystemObject),
-            &address,
-            { _, _, _, inClientData -> OSStatus in
-                guard let clientData = inClientData else { return noErr }
-                let volumeMonitor = Unmanaged<VolumeMonitor>.fromOpaque(clientData)
-                    .takeUnretainedValue()
-                // Ensure we're on the main queue before calling @MainActor functions
-                DispatchQueue.main.async {
-                    Task { @MainActor in
-                        volumeMonitor.handleDefaultDeviceChanged()
-                    }
-                }
-                return noErr
-            },
-            selfPtr
-        )
-
-        if status == noErr {
-            defaultDeviceListenerAdded = true
-            logger.info("Started monitoring default output device changes.")
-        } else {
-            logger.error("Failed to start monitoring default output device changes: \(status)")
+        devicePollingTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            self?.checkForDeviceChange()
         }
+        logger.debug("Polling for changes to the default output device.")
     }
 
     private func stopDefaultDeviceMonitoring() {
-        guard defaultDeviceListenerAdded else { return }
+        devicePollingTimer?.invalidate()
+        devicePollingTimer = nil
+        logger.info("Stopped device monitoring.")
+    }
 
-        let selfPtr = UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
-
+    private func checkForDeviceChange() {
+        // Get current default device
+        var currentDeviceID: AudioDeviceID = kAudioObjectUnknown
+        var size = UInt32(MemoryLayout<AudioDeviceID>.size)
         var address = AudioObjectPropertyAddress(
             mSelector: kAudioHardwarePropertyDefaultOutputDevice,
             mScope: kAudioObjectPropertyScopeGlobal,
             mElement: kAudioObjectPropertyElementMain
         )
 
-        AudioObjectRemovePropertyListener(
+        let status = AudioObjectGetPropertyData(
             AudioObjectID(kAudioObjectSystemObject),
             &address,
-            { _, _, _, _ -> OSStatus in
-                return noErr
-            },
-            selfPtr
+            0,
+            nil,
+            &size,
+            &currentDeviceID
         )
 
-        defaultDeviceListenerAdded = false
-        logger.info("Stopped monitoring default output device changes.")
+        guard status == noErr else { return }
+
+        // Check if device changed
+        if currentDeviceID != deviceID {
+            logger.info("Default output device changed: \(deviceID) -> \(currentDeviceID)")
+            handleDefaultDeviceChanged()
+        }
     }
 
     private func handleDefaultDeviceChanged() {
-        logger.info("Default output device changed, re-registering volume listeners")
+        logger.debug("Re-registering volume listeners on device change.")
 
         // Remove old listeners
         removeVolumeListeners()
@@ -410,7 +387,9 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         addVolumeListeners()
 
         // Update volume values for the new device
-        updateVolumeValuesOnStartup()
+        DispatchQueue.main.async {
+            self.updateVolumeValuesOnStartup()
+        }
 
         logger.info("Successfully switched to new device: \(newDeviceID)")
     }
@@ -446,7 +425,6 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         // Register for volume change notifications using block on main queue
         volumeListenerBlock = { [weak self] _, _ in
             guard let self else { return }
-            // Ensure we're on the main queue before calling @MainActor functions
             DispatchQueue.main.async {
                 self.updateVolumeValues()
             }
@@ -468,7 +446,6 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         )
         muteListenerBlock = { [weak self] _, _ in
             guard let self else { return }
-            // Ensure we're on the main queue before calling @MainActor functions
             DispatchQueue.main.async {
                 self.updateVolumeValues()
             }
