@@ -17,11 +17,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // Delay to allow reopen/open/notification routing to settle
     private let quitDelay: TimeInterval = 0.3
 
-    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-        return false  // Keep app running even when main window is closed
+    func applicationShouldTerminateAfterLastWindowClosed(_: NSApplication) -> Bool {
+        return false // Keep app running even when main window is closed
     }
 
-    func applicationDidFinishLaunching(_ notification: Notification) {
+    func applicationDidFinishLaunching(_: Notification) {
         // Keep the app headless and out of the Dock
         NSApplication.shared.setActivationPolicy(.accessory)
 
@@ -39,7 +39,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 if !UserDefaults.standard.bool(forKey: "hasShownStartupNotification") {
                     Task { @MainActor in
                         self.postUserNotification(
-                            title: "volumeHUD started! (launch again to quit)", body: nil)
+                            title: "volumeHUD started! (launch again to quit)", body: nil
+                        )
                         UserDefaults.standard.set(true, forKey: "hasShownStartupNotification")
                     }
                 }
@@ -57,7 +58,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     // Handle attempts to launch the app a second time
     func applicationShouldHandleReopen(
-        _ sender: NSApplication, hasVisibleWindows flag: Bool
+        _: NSApplication, hasVisibleWindows _: Bool
     ) -> Bool {
         // Treat reopening as a toggle request without activating the app
         scheduleQuit()
@@ -65,7 +66,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     // If we get a new "open" event, also treat that as a toggle without activation
-    func application(_ application: NSApplication, open urls: [URL]) {
+    func application(_: NSApplication, open _: [URL]) {
         scheduleQuit()
     }
 
@@ -122,7 +123,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let request = UNNotificationRequest(
             identifier: UUID().uuidString,
             content: content,
-            trigger: nil)
+            trigger: nil
+        )
         UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
     }
 

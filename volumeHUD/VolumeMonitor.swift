@@ -1,6 +1,6 @@
-import AVFoundation
 import AppKit
 import AudioToolbox
+import AVFoundation
 import Combine
 import CoreAudio
 import Foundation
@@ -162,7 +162,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         let (newVolume, newMuted) = getCurrentVolumeAndMuteState()
 
         // Check if volume or mute state changed
-        let volumeChanged = abs(newVolume - previousVolume) > 0.001  // Smaller threshold for more responsiveness
+        let volumeChanged = abs(newVolume - previousVolume) > 0.001 // Smaller threshold for more responsiveness
         let muteChanged = newMuted != previousMuteState
 
         if volumeChanged || muteChanged {
@@ -210,14 +210,15 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             let data1 = Int(event.data1)
             let keyCode = (data1 & 0xFFFF_0000) >> 16
             let keyFlags = data1 & 0x0000_FFFF
-            let keyState = (keyFlags & 0xFF00) >> 8  // 0x0A = keyDown, 0x0B = keyUp
+            let keyState = (keyFlags & 0xFF00) >> 8 // 0x0A = keyDown, 0x0B = keyUp
             let isKeyDown = keyState == 0x0A
 
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.handleSystemDefinedEventData(
                     subtype: subtype, keyCode: keyCode, keyPressed: (keyFlags & 0xFF00) >> 8,
-                    isKeyDown: isKeyDown)
+                    isKeyDown: isKeyDown
+                )
             }
         }
 
@@ -242,7 +243,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
 
     @MainActor
     private func handleSystemDefinedEventData(
-        subtype: Int, keyCode: Int, keyPressed: Int, isKeyDown: Bool
+        subtype: Int, keyCode: Int, keyPressed _: Int, isKeyDown: Bool
     ) {
         let currentTime = Date().timeIntervalSince1970
 
@@ -265,11 +266,11 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
 
             // NX key codes: 0 = vol up, 1 = vol down, 7 = mute
             switch keyCode {
-            case 1:  // Volume down
+            case 1: // Volume down
                 Task { @MainActor [weak self] in
                     self?.showHUDForVolumeKeyPress(isVolumeUp: false)
                 }
-            case 0:  // Volume up
+            case 0: // Volume up
                 Task { @MainActor [weak self] in
                     self?.showHUDForVolumeKeyPress(isVolumeUp: true)
                 }
@@ -290,7 +291,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         let atMinVolume = currentVol <= 0.001
         let atMaxVolume = currentVol >= 0.999
 
-        if !atMinVolume && !atMaxVolume {
+        if !atMinVolume, !atMaxVolume {
             let currentTime = Date().timeIntervalSince1970
             // Debounce log messages as macOS seems to fire key events twice
             if currentTime - lastVolumeKeyLogTime > 0.1 {
@@ -326,12 +327,15 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         let status = AudioObjectAddPropertyListener(
             AudioObjectID(kAudioObjectSystemObject),
             &address,
-            { (inObjectID, inNumberAddresses, inAddresses, inClientData) -> OSStatus in
+            { _, _, _, inClientData -> OSStatus in
                 guard let clientData = inClientData else { return noErr }
                 let volumeMonitor = Unmanaged<VolumeMonitor>.fromOpaque(clientData)
                     .takeUnretainedValue()
-                Task { @MainActor in
-                    volumeMonitor.handleDefaultDeviceChanged()
+                // Ensure we're on the main queue before calling @MainActor functions
+                DispatchQueue.main.async {
+                    Task { @MainActor in
+                        volumeMonitor.handleDefaultDeviceChanged()
+                    }
                 }
                 return noErr
             },
@@ -360,7 +364,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         AudioObjectRemovePropertyListener(
             AudioObjectID(kAudioObjectSystemObject),
             &address,
-            { (inObjectID, inNumberAddresses, inAddresses, inClientData) -> OSStatus in
+            { _, _, _, _ -> OSStatus in
                 return noErr
             },
             selfPtr
@@ -442,7 +446,10 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         // Register for volume change notifications using block on main queue
         volumeListenerBlock = { [weak self] _, _ in
             guard let self else { return }
-            self.updateVolumeValues()
+            // Ensure we're on the main queue before calling @MainActor functions
+            DispatchQueue.main.async {
+                self.updateVolumeValues()
+            }
         }
         if let block = volumeListenerBlock {
             AudioObjectAddPropertyListenerBlock(
@@ -461,7 +468,10 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         )
         muteListenerBlock = { [weak self] _, _ in
             guard let self else { return }
-            self.updateVolumeValues()
+            // Ensure we're on the main queue before calling @MainActor functions
+            DispatchQueue.main.async {
+                self.updateVolumeValues()
+            }
         }
         if let block = muteListenerBlock {
             AudioObjectAddPropertyListenerBlock(

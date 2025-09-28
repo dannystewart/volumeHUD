@@ -22,7 +22,7 @@ class HUDController: ObservableObject {
 
     @MainActor
     func showVolumeHUD(volume: Float, isMuted: Bool) {
-        self.displayHUD(volume: volume, isMuted: isMuted)
+        displayHUD(volume: volume, isMuted: isMuted)
     }
 
     @MainActor
@@ -53,7 +53,7 @@ class HUDController: ObservableObject {
     }
 
     @objc
-    private func displayConfigurationDidChange(_ notification: Notification) {
+    private func displayConfigurationDidChange(_: Notification) {
         // Ensure we hop to the main actor for UI work
         Task { @MainActor in
             self.handleDisplayConfigurationChange()
@@ -83,7 +83,7 @@ class HUDController: ObservableObject {
         let screenFrame = screen.frame
         let newWindowRect = NSRect(
             x: (screenFrame.width - windowSize.width) / 2,
-            y: screenFrame.height * 0.17,  // Distance from bottom of screen
+            y: screenFrame.height * 0.17, // Distance from bottom of screen
             width: windowSize.width,
             height: windowSize.height
         )
@@ -108,12 +108,12 @@ class HUDController: ObservableObject {
         if let window = hudWindow {
             let shouldUpdateContent =
                 hostingView == nil
-                || lastShownVolume == nil
-                || abs((lastShownVolume ?? -1) - volume) > 0.0005
-                || (lastShownMuted ?? !isMuted) != isMuted
+                    || lastShownVolume == nil
+                    || abs((lastShownVolume ?? -1) - volume) > 0.0005
+                    || (lastShownMuted ?? !isMuted) != isMuted
 
             // If nothing changed and the window is already visible, just extend the timer
-            if window.isVisible && !shouldUpdateContent {
+            if window.isVisible, !shouldUpdateContent {
                 scheduleHideTimer()
                 return
             }
@@ -170,7 +170,7 @@ class HUDController: ObservableObject {
         }
 
         // Configure window properties for overlay behavior
-        window.level = .statusBar + 1  // Above menu bar
+        window.level = .statusBar + 1 // Above menu bar
         window.isOpaque = false
         window.backgroundColor = .clear
         window.hasShadow = false
