@@ -312,7 +312,9 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
 
     private func startDefaultDeviceMonitoring() {
         devicePollingTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            self?.checkForDeviceChange()
+            Task { @MainActor [weak self] in
+                self?.checkForDeviceChange()
+            }
         }
         logger.debug("Polling for changes to the default output device.")
     }
