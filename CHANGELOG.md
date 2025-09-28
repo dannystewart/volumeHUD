@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog], and this project adheres to [Semantic Versioning].
 
+## [1.2.5] (2025-09-28)
+
+### Added
+
+- Adds linting and VS Code workspace configurations.
+
+### Changed
+
+- Updates `polykit-swift` dependency to the latest revision for recent improvements and fixes, as well as
+
+### Fixed
+
+- Fixes a crash caused by a threading issue in volume monitoring by ensuring proper main queue dispatch for audio device changes.
+
 ## [1.2.4] (2025-09-26)
 
 ### Added
@@ -102,6 +116,7 @@ Initial release.
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
 <!-- Versions -->
+[1.2.5]: https://github.com/dannystewart/volumeHUD/compare/v1.2.4...v1.2.5
 [1.2.4]: https://github.com/dannystewart/volumeHUD/compare/v1.2.3...v1.2.4
 [1.2.3]: https://github.com/dannystewart/volumeHUD/compare/v1.2.2...v1.2.3
 [1.2.2]: https://github.com/dannystewart/volumeHUD/compare/v1.2.1...v1.2.2
