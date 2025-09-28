@@ -14,24 +14,28 @@ So I did what any sane person would do: I picked up Xcode and wrote my first eve
 
 ## How to Use It
 
-You can build it from the repo, download it from the [Releases](https://github.com/dannystewart/volumeHUD/releases) page, or, best of all, install it via Homebrew:
+### Installation
+
+You can get it from the repo, but I **strongly recommend** installing via Homebrew:
 
 ```bash
 brew install dannystewart/apps/volumehud
 ```
 
-Place it in your Applications folder (or wherever) and run it. From that point forward, you'll actually know what your volume is when you change it.
+The app has no updater, but Homebrew keeps you updated. It's my first Swift app, so there will be bug fixes!
 
-I can't stand gratuitous menu bar icons and have no desire to inflict more of them on you (or me), so there is no UI. To quit, simply launch the app a second time, like how many apps show settings when they don't have an icon.
+### Interface
 
-To run it on startup, you can add it to **System Settings** > **General** > **Login Items & Extensions** > **Open at Login**.
+I have no desire to inflict gratuitous menu bar icons on you (or me), so there is no UI. To quit, just launch the app a second time, like how some apps show their settings when they don't have an icon.
 
-## Permissions
+To run on startup, you can add it to **System Settings** > **General** > **Login Items & Extensions** > **Open at Login**.
+
+### Permissions
 
 The app will ask for two permissions, both of which are **completely optional:**
 
-- **Accessibility:** The app works by detecting volume changes, so the HUD won't be shown when you press volume down when at 0% or volume up when at 100% because the volume doesn't change. Input monitoring watches for volume key presses to work around that. You can leave it off with no impact on anything else.
-- **Notifications:** A single notification is displayed on first run to say the app has started and explain how to quit. After that, it's not shown again. There is also a notification when you quit, because otherwise it may not be clear that you actually did. You're free to leave notifications off if you don't find them helpful.
+- **Accessibility:** The app works by detecting volume changes, so the HUD doesn't appear when you press volume down at 0% or volume up at 100% because the volume doesn't change. Input monitoring works around that by watching for key presses. That's the only thing you'll lose if you leave it off.
+- **Notifications:** A single notification is displayed on first run to say the app has started and explain how to quit. After that, it's not shown again. There is also a notification when you quit, because otherwise it may not be clear that you actually did. You're free to leave them off if you don't find them helpful.
 
 ## License
 
