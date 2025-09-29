@@ -12,29 +12,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## [1.2.5] (2025-09-28)
 
-### Added
-
-- Adds linting and VS Code workspace configurations.
-
-### Changed
-
-- Updates `polykit-swift` dependency to the latest revision for recent improvements and fixes, as well as
-
 ### Fixed
 
 - Fixes a crash caused by a threading issue in volume monitoring by ensuring proper main queue dispatch for audio device changes.
 
 ## [1.2.4] (2025-09-26)
 
-### Added
-
-- Adopts Apple generic versioning to standardize build versions.
-
 ### Changed
 
-- Upgrades Swift version from 5.0 to 6.0 to leverage newer language features, performance improvements, and enhanced concurrency support.
-- Migrates `PolyLog` dependency from local package reference to my new `polykit-swift` library on GitHub for proper dependency management.
-- Simplifies `PolyLog` initialization by removing conditional import workarounds and using direct instantiation now that it's working correctly.
+- Upgrades Swift version from 5.0 to 6.0 for newer language features and enhanced concurrency.
 - Improves user notification messages to be more friendly and informative with clearer success messaging.
 
 ### Fixed
@@ -50,20 +36,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Adds automatic HUD repositioning when display configuration changes in multi-monitor setups.
 - Adds structured logging framework to improve debugging capabilities and log management.
 
-### Changed
-
-- Updates dependency URL format from SSH to HTTPS for better accessibility.
-- Simplifies and improves README content with clearer installation instructions and feature descriptions.
-
 ### Fixed
 
-- Fixes conditional import handling for PolyLog dependency with fallback when unavailable.
 - Fixes redundant UI updates by tracking state changes and only updating when volume or mute status actually changes.
 - Fixes volume key event handling with proper key code parsing and improved event monitoring cleanup.
-
-### Removed
-
-- Removes obsolete test UI interface file from early development.
 
 ## [1.2.2] (2025-09-22)
 
@@ -86,15 +62,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 ### Added
 
 - Adds volume key detection when audio is at minimum or maximum levels, enabling HUD display even when system blocks volume changes.
-- Adds Homebrew installation option as alternative to manual download.
-- Adds VS Code workspace configuration for development environment.
 
 ### Changed
 
 - Changes startup notification to only appear on first run instead of every app launch.
 - Improves startup notification by including quit instructions.
 - Improves accessibility permission error messages to be more user-friendly and accurate.
-- Improves documentation clarity around notification behavior and usage.
 
 ### Fixed
 
