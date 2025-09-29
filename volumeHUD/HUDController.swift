@@ -1,6 +1,6 @@
 import AppKit
 import Combine
-import PolyLog
+import Polykit
 import SwiftUI
 
 @MainActor

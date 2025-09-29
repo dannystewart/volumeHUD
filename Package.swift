@@ -4,27 +4,27 @@ import PackageDescription
 let package = Package(
     name: "volumeHUD",
     platforms: [
-        .macOS(.v26)
+        .macOS(.v26),
     ],
     products: [
         .executable(
             name: "volumeHUD",
             targets: ["volumeHUD"]
-        )
+        ),
     ],
     dependencies: [
-        .package(url: "https://github.com/dannystewart/polykit-swift.git", branch: "main")
+        .package(url: "https://github.com/dannystewart/polykit-swift.git", branch: "main"),
     ],
     targets: [
         .executableTarget(
             name: "volumeHUD",
             dependencies: [
-                .product(name: "PolyLog", package: "polykit-swift")
+                .product(name: "Polykit", package: "polykit-swift"),
             ],
             path: "volumeHUD",
             resources: [
-                .process("Assets.xcassets")
+                .process("Assets.xcassets"),
             ]
-        )
+        ),
     ]
 )

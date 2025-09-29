@@ -1,5 +1,5 @@
 import AppKit
-import PolyLog
+import Polykit
 import SwiftUI
 @preconcurrency import UserNotifications
 

@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		308AA33C2E861AE200F2FFB2 /* PolyLog in Frameworks */ = {isa = PBXBuildFile; productRef = 308AA33B2E861AE200F2FFB2 /* PolyLog */; };
+		30A48DC82E8B13B9005E1B15 /* Polykit in Frameworks */ = {isa = PBXBuildFile; productRef = 30A48DC72E8B13B9005E1B15 /* Polykit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -27,17 +27,25 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				308AA33C2E861AE200F2FFB2 /* PolyLog in Frameworks */,
+				30A48DC82E8B13B9005E1B15 /* Polykit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		30A48DC62E8B13B9005E1B15 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		30C9375F2E806B79004B5AF5 = {
 			isa = PBXGroup;
 			children = (
 				30C9376A2E806B79004B5AF5 /* volumeHUD */,
+				30A48DC62E8B13B9005E1B15 /* Frameworks */,
 				30C937692E806B79004B5AF5 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -70,7 +78,7 @@
 			);
 			name = volumeHUD;
 			packageProductDependencies = (
-				308AA33B2E861AE200F2FFB2 /* PolyLog */,
+				30A48DC72E8B13B9005E1B15 /* Polykit */,
 			);
 			productName = volumeHUD;
 			productReference = 30C937682E806B79004B5AF5 /* volumeHUD.app */;
@@ -367,10 +375,10 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		308AA33B2E861AE200F2FFB2 /* PolyLog */ = {
+		30A48DC72E8B13B9005E1B15 /* Polykit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 308AA33A2E861AE200F2FFB2 /* XCRemoteSwiftPackageReference "polylog-swift" */;
-			productName = PolyLog;
+			productName = Polykit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
