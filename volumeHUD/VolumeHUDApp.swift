@@ -89,7 +89,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         window.isReleasedWhenClosed = false
-        window.level = .floating
 
         aboutWindow = window
 

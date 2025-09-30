@@ -24,6 +24,7 @@ let package = Package(
             path: "volumeHUD",
             resources: [
                 .process("Assets.xcassets"),
+                .process("volumeHUD.entitlements"),
             ]
         ),
     ]
