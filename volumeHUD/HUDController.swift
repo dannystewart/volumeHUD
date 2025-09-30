@@ -138,22 +138,25 @@ class HUDController: ObservableObject {
                 return
             }
 
-            if hostingView == nil {
-                hostingView = NSHostingView(
-                    rootView: UnifiedHUDView(hudType: hudType, value: value, isMuted: isMuted, isVisible: true)
-                )
-                hostingView?.frame =
-                    window.contentView?.bounds ?? NSRect(x: 0, y: 0, width: 210, height: 210)
-                window.contentView = hostingView
-            } else if shouldUpdateContent {
-                hostingView?.rootView = UnifiedHUDView(
-                    hudType: hudType,
-                    value: value,
-                    isMuted: isMuted,
-                    isVisible: true
-                )
+            // Always recreate hosting view to avoid SwiftUI state issues
+            let newHostingView = NSHostingView(
+                rootView: UnifiedHUDView(hudType: hudType, value: value, isMuted: isMuted, isVisible: true)
+            )
+            newHostingView.frame = window.contentView?.bounds ?? NSRect(x: 0, y: 0, width: 210, height: 210)
+
+            // Ensure hosting view background is clear for proper material rendering
+            newHostingView.wantsLayer = true
+            newHostingView.layer?.backgroundColor = NSColor.clear.cgColor
+
+            // Remove old content view if it exists
+            if let oldView = window.contentView {
+                oldView.removeFromSuperview()
             }
 
+            window.contentView = newHostingView
+            hostingView = newHostingView
+
+            // Show the window
             window.orderFront(nil)
             isShowing = true
         }

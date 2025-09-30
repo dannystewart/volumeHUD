@@ -50,7 +50,6 @@ struct UnifiedHUDView: View {
                 .fill(.regularMaterial)
                 .environment(\.colorScheme, .dark)
         )
-        .opacity(isVisible ? 1.0 : 0.0)
     }
 
     private var iconName: String {
