@@ -150,3 +150,9 @@ struct AboutView: View {
         }
     }
 }
+
+#Preview {
+    AboutView(onQuit: {
+        print("Quit button pressed")
+    })
+}
