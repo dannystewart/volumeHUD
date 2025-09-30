@@ -22,7 +22,8 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
     let logger = PolyLog()
 
     init() {
-        // Initialize brightness monitoring
+        // Initialize with a timestamp far in the past so initial startup doesn't show HUD
+        lastBrightnessKeyTime = 0
     }
 
     func startMonitoring() {
@@ -56,10 +57,12 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
 
     private func updateBrightnessOnStartup() {
         if let brightness = getCurrentBrightness() {
-            currentBrightness = brightness
-            previousBrightness = brightness
+            // Quantize brightness to 16 steps to match the brightness bars
+            let quantizedBrightness = round(brightness * 16.0) / 16.0
+            currentBrightness = quantizedBrightness
+            previousBrightness = quantizedBrightness
             brightnessAvailable = true
-            logger.info("Initial brightness set: \(Int(brightness * 100))%")
+            logger.info("Initial brightness set: \(Int(quantizedBrightness * 100))%")
         } else {
             brightnessAvailable = false
             if !hasLoggedBrightnessError {
@@ -162,7 +165,7 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
         // Skip polling if brightness isn't available
         guard brightnessAvailable else { return }
 
-        guard let newBrightness = getCurrentBrightness() else {
+        guard let brightness = getCurrentBrightness() else {
             // Brightness became unavailable
             if brightnessAvailable {
                 brightnessAvailable = false
@@ -177,15 +180,28 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
             logger.info("Regained access to brightness control.")
         }
 
-        let brightnessChanged = abs(newBrightness - previousBrightness) > 0.001
+        // Quantize brightness to 16 steps to match the brightness bars
+        let quantizedBrightness = round(brightness * 16.0) / 16.0
+        let brightnessChanged = abs(quantizedBrightness - previousBrightness) > 0.001
 
         if brightnessChanged {
-            logger.info("Brightness updated: \(Int(newBrightness * 100))%")
+            // Check if this change happened within a short window after a key press
+            let currentTime = Date().timeIntervalSince1970
+            let timeSinceKeyPress = currentTime - lastBrightnessKeyTime
 
-            currentBrightness = newBrightness
-            hudController?.showBrightnessHUD(brightness: newBrightness)
+            // Only show HUD if a brightness key was pressed recently (within 1 second)
+            // This prevents showing HUD for system-induced changes like power adapter changes
+            if timeSinceKeyPress < 1.0 {
+                logger.info("Brightness updated: \(Int(quantizedBrightness * 100))%")
 
-            previousBrightness = newBrightness
+                currentBrightness = quantizedBrightness
+                hudController?.showBrightnessHUD(brightness: quantizedBrightness)
+            } else {
+                logger.debug("Brightness changed to \(Int(quantizedBrightness * 100))% (system-induced, HUD not shown)")
+                currentBrightness = quantizedBrightness
+            }
+
+            previousBrightness = quantizedBrightness
         }
     }
 
@@ -198,6 +214,8 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
             // NX key codes: 2 = brightness down, 3 = brightness up
             switch keyCode {
             case 2, 3:
+                // Track when a brightness key was pressed
+                lastBrightnessKeyTime = Date().timeIntervalSince1970
                 showHUDForBrightnessKeyPress()
             default:
                 break
