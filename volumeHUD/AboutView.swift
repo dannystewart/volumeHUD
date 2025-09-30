@@ -38,7 +38,7 @@ struct AboutView: View {
                 .font(.system(size: 11))
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
-                .frame(maxWidth: 300)
+                .frame(maxWidth: 160)
 
             Spacer()
                 .frame(height: 8)
@@ -52,6 +52,6 @@ struct AboutView: View {
             .controlSize(.large)
         }
         .padding(30)
-        .frame(width: 280, height: 360)
+        .frame(width: 270, height: 400)
     }
 }
