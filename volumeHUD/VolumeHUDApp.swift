@@ -9,6 +9,7 @@ private let kToggleNotificationName = Notification.Name("com.dannystewart.volume
 class AppDelegate: NSObject, NSApplicationDelegate {
     var volumeMonitor: VolumeMonitor!
     var hudController: HUDController!
+    var aboutWindow: NSWindow?
 
     let logger = PolyLog()
 
@@ -18,7 +19,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private let quitDelay: TimeInterval = 0.3
 
     func applicationShouldTerminateAfterLastWindowClosed(_: NSApplication) -> Bool {
-        return false // Keep app running even when main window is closed
+        // If about window closes, switch back to accessory mode
+        if aboutWindow?.isVisible == false {
+            NSApp.setActivationPolicy(.accessory)
+        }
+        return false // Keep app running even when windows are closed
     }
 
     func applicationDidFinishLaunching(_: Notification) {
@@ -39,7 +44,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 if !UserDefaults.standard.bool(forKey: "hasShownStartupNotification") {
                     Task { @MainActor in
                         self.postUserNotification(
-                            title: "volumeHUD started! (launch again to quit)", body: nil
+                            title: "volumeHUD started! (launch again for options)", body: nil
                         )
                         UserDefaults.standard.set(true, forKey: "hasShownStartupNotification")
                     }
@@ -58,28 +63,64 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldHandleReopen(
         _: NSApplication, hasVisibleWindows _: Bool
     ) -> Bool {
-        // Treat reopening as a toggle request without activating the app
-        scheduleQuit()
+        // Show the about window instead of quitting
+        showAboutWindow()
         return false
     }
 
-    // If we get a new "open" event, also treat that as a toggle without activation
+    // If we get a new "open" event, also show the about window
     func application(_: NSApplication, open _: [URL]) {
-        scheduleQuit()
+        showAboutWindow()
     }
 
-    private func scheduleQuit() {
-        // Ensure we remain accessory and do not activate
-        NSApplication.shared.setActivationPolicy(.accessory)
-
-        guard !isQuitting else { return }
-        isQuitting = true
-
-        // Give the run loop a moment to process any pending reopen/open/notification work
-        DispatchQueue.main.asyncAfter(deadline: .now() + quitDelay) { [weak self] in
-            guard let self else { return }
-            self.gracefulTerminate()
+    private func showAboutWindow() {
+        // If window already exists and is visible, just bring it to front
+        if let window = aboutWindow, window.isVisible {
+            window.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
         }
+
+        // Create the about window
+        let aboutView = AboutView { [weak self] in
+            self?.aboutWindow?.close()
+            self?.aboutWindow = nil
+            self?.gracefulTerminate()
+        }
+
+        let hostingController = NSHostingController(rootView: aboutView)
+
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 280, height: 360),
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+
+        window.contentViewController = hostingController
+        window.title = "About volumeHUD"
+
+        // Position at visual center of the screen
+        if let screen = NSScreen.main {
+            let screenFrame = screen.visibleFrame
+            let windowWidth: CGFloat = 280
+            let windowHeight: CGFloat = 360
+
+            let x = screenFrame.origin.x + (screenFrame.width - windowWidth) / 2
+            let y = screenFrame.origin.y + screenFrame.height * 0.66 - windowHeight / 2
+
+            window.setFrame(NSRect(x: x, y: y, width: windowWidth, height: windowHeight), display: false)
+        }
+
+        window.isReleasedWhenClosed = false
+        window.level = .floating
+
+        aboutWindow = window
+
+        // Temporarily switch to regular app to show window properly
+        NSApp.setActivationPolicy(.regular)
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
     }
 
     private func gracefulTerminate() {
