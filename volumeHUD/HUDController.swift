@@ -8,7 +8,7 @@ class HUDController: ObservableObject {
     @Published var isShowing = false
 
     private var hudWindow: NSWindow?
-    private var hostingView: NSHostingView<UnifiedHUDView>?
+    private var hostingView: NSHostingView<HUDView>?
     private var hideTimer: Timer?
     weak var volumeMonitor: VolumeMonitor?
     weak var brightnessMonitor: BrightnessMonitor?
@@ -140,7 +140,7 @@ class HUDController: ObservableObject {
 
             // Always recreate hosting view to avoid SwiftUI state issues
             let newHostingView = NSHostingView(
-                rootView: UnifiedHUDView(hudType: hudType, value: value, isMuted: isMuted, isVisible: true)
+                rootView: HUDView(hudType: hudType, value: value, isMuted: isMuted, isVisible: true)
             )
             newHostingView.frame = window.contentView?.bounds ?? NSRect(x: 0, y: 0, width: 210, height: 210)
 

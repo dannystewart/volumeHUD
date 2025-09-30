@@ -5,7 +5,7 @@ enum HUDType {
     case brightness
 }
 
-struct UnifiedHUDView: View {
+struct HUDView: View {
     let hudType: HUDType
     let value: Float
     let isMuted: Bool
@@ -88,13 +88,13 @@ struct UnifiedHUDView: View {
 #Preview("Volume") {
     ZStack {
         Color.black.ignoresSafeArea()
-        UnifiedHUDView(hudType: .volume, value: 0.7, isMuted: false, isVisible: true)
+        HUDView(hudType: .volume, value: 0.7, isMuted: false, isVisible: true)
     }
 }
 
 #Preview("Brightness") {
     ZStack {
         Color.black.ignoresSafeArea()
-        UnifiedHUDView(hudType: .brightness, value: 0.5, isMuted: false, isVisible: true)
+        HUDView(hudType: .brightness, value: 0.5, isMuted: false, isVisible: true)
     }
 }
