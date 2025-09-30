@@ -8,11 +8,14 @@ class HUDController: ObservableObject {
     @Published var isShowing = false
 
     private var hudWindow: NSWindow?
-    private var hostingView: NSHostingView<VolumeHUDView>?
+    private var hostingView: NSHostingView<UnifiedHUDView>?
     private var hideTimer: Timer?
     weak var volumeMonitor: VolumeMonitor?
+    weak var brightnessMonitor: BrightnessMonitor?
     private var lastShownVolume: Float?
     private var lastShownMuted: Bool?
+    private var lastShownBrightness: Float?
+    private var lastShownHUDType: HUDType?
     private var isObservingDisplayChanges = false
     private var displayChangeObserver: NSObjectProtocol?
     private var workspaceObserver: NSObjectProtocol?
@@ -22,7 +25,12 @@ class HUDController: ObservableObject {
 
     @MainActor
     func showVolumeHUD(volume: Float, isMuted: Bool) {
-        displayHUD(volume: volume, isMuted: isMuted)
+        displayHUD(hudType: .volume, value: volume, isMuted: isMuted)
+    }
+
+    @MainActor
+    func showBrightnessHUD(brightness: Float) {
+        displayHUD(hudType: .brightness, value: brightness, isMuted: false)
     }
 
     @MainActor
@@ -95,7 +103,7 @@ class HUDController: ObservableObject {
     }
 
     @MainActor
-    private func displayHUD(volume: Float, isMuted: Bool) {
+    private func displayHUD(hudType: HUDType, value: Float, isMuted: Bool) {
         // Cancel any existing hide timer
         hideTimer?.invalidate()
 
@@ -106,11 +114,23 @@ class HUDController: ObservableObject {
 
         // Update the content view
         if let window = hudWindow {
-            let shouldUpdateContent =
-                hostingView == nil
-                    || lastShownVolume == nil
-                    || abs((lastShownVolume ?? -1) - volume) > 0.0005
-                    || (lastShownMuted ?? !isMuted) != isMuted
+            let shouldUpdateContent: Bool
+
+            switch hudType {
+            case .volume:
+                shouldUpdateContent =
+                    hostingView == nil
+                        || lastShownHUDType != hudType
+                        || lastShownVolume == nil
+                        || abs((lastShownVolume ?? -1) - value) > 0.0005
+                        || (lastShownMuted ?? !isMuted) != isMuted
+            case .brightness:
+                shouldUpdateContent =
+                    hostingView == nil
+                        || lastShownHUDType != hudType
+                        || lastShownBrightness == nil
+                        || abs((lastShownBrightness ?? -1) - value) > 0.0005
+            }
 
             // If nothing changed and the window is already visible, just extend the timer
             if window.isVisible, !shouldUpdateContent {
@@ -120,14 +140,15 @@ class HUDController: ObservableObject {
 
             if hostingView == nil {
                 hostingView = NSHostingView(
-                    rootView: VolumeHUDView(volume: volume, isMuted: isMuted, isVisible: true)
+                    rootView: UnifiedHUDView(hudType: hudType, value: value, isMuted: isMuted, isVisible: true)
                 )
                 hostingView?.frame =
                     window.contentView?.bounds ?? NSRect(x: 0, y: 0, width: 210, height: 210)
                 window.contentView = hostingView
             } else if shouldUpdateContent {
-                hostingView?.rootView = VolumeHUDView(
-                    volume: volume,
+                hostingView?.rootView = UnifiedHUDView(
+                    hudType: hudType,
+                    value: value,
                     isMuted: isMuted,
                     isVisible: true
                 )
@@ -140,8 +161,14 @@ class HUDController: ObservableObject {
         scheduleHideTimer()
 
         // Remember last shown state to avoid redundant view rebuilds
-        lastShownVolume = volume
-        lastShownMuted = isMuted
+        lastShownHUDType = hudType
+        switch hudType {
+        case .volume:
+            lastShownVolume = value
+            lastShownMuted = isMuted
+        case .brightness:
+            lastShownBrightness = value
+        }
     }
 
     @MainActor

@@ -5,6 +5,7 @@ import SwiftUI
 @MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
     var volumeMonitor: VolumeMonitor!
+    var brightnessMonitor: BrightnessMonitor!
     var hudController: HUDController!
     var aboutWindow: NSWindow?
 
@@ -22,14 +23,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Keep the app headless and out of the Dock
         NSApplication.shared.setActivationPolicy(.accessory)
 
-        // Initialize the volume monitor and HUD controller
+        // Initialize the monitors and HUD controller
         volumeMonitor = VolumeMonitor()
+        brightnessMonitor = BrightnessMonitor()
         hudController = HUDController()
+
+        // Set up bidirectional references
         hudController.volumeMonitor = volumeMonitor
+        hudController.brightnessMonitor = brightnessMonitor
         volumeMonitor.hudController = hudController
+        brightnessMonitor.hudController = hudController
 
         // Start monitoring volume changes
         volumeMonitor.startMonitoring()
+        brightnessMonitor.startMonitoring()
 
         // Start monitoring display configuration changes
         hudController.startDisplayChangeMonitoring()
@@ -101,6 +108,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func gracefulTerminate() {
         logger.info("Stopping monitoring and quitting.")
         volumeMonitor?.stopMonitoring()
+        brightnessMonitor?.stopMonitoring()
         hudController?.stopDisplayChangeMonitoring()
 
         // Terminate without activating the app
