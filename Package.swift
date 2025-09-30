@@ -13,7 +13,7 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/dannystewart/polykit-swift.git", branch: "main"),
+        .package(path: "../polykit-swift"),
     ],
     targets: [
         .executableTarget(
