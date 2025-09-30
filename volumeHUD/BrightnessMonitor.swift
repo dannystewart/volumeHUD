@@ -17,6 +17,11 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
     private var hasLoggedBrightnessError = false
     private var brightnessAvailable = false
 
+    // Cache DisplayServices function pointers
+    private var displayServicesHandle: UnsafeMutableRawPointer?
+    private var canChangeBrightnessFunc: (@convention(c) (CGDirectDisplayID) -> Bool)?
+    private var getBrightnessFunc: (@convention(c) (CGDirectDisplayID, UnsafeMutablePointer<Float>) -> kern_return_t)?
+
     weak var hudController: HUDController?
 
     let logger = PolyLog()
@@ -24,10 +29,56 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
     init() {
         // Initialize with a timestamp far in the past so initial startup doesn't show HUD
         lastBrightnessKeyTime = 0
+
+        // Load DisplayServices framework once at initialization
+        loadDisplayServices()
+    }
+
+    deinit {
+        // Note: We can't safely access displayServicesHandle here due to Sendable restrictions
+        // The handle will be cleaned up when the process exits anyway
+    }
+
+    private func loadDisplayServices() {
+        logger.debug("Attempting to load DisplayServices framework...")
+
+        guard let handle = dlopen("/System/Library/PrivateFrameworks/DisplayServices.framework/DisplayServices", RTLD_LAZY) else {
+            if let error = dlerror() {
+                logger.error("Could not load DisplayServices framework: \(String(cString: error))")
+            } else {
+                logger.error("Could not load DisplayServices framework (unknown error).")
+            }
+            return
+        }
+
+        logger.debug("DisplayServices framework handle obtained, looking for functions...")
+
+        guard let canChangeBrightnessPtr = dlsym(handle, "DisplayServicesCanChangeBrightness"),
+              let getBrightnessPtr = dlsym(handle, "DisplayServicesGetBrightness")
+        else {
+            dlclose(handle)
+            if let error = dlerror() {
+                logger.error("Could not find DisplayServices brightness functions: \(String(cString: error))")
+            } else {
+                logger.error("Could not find DisplayServices brightness functions (unknown error).")
+            }
+            return
+        }
+
+        displayServicesHandle = handle
+        canChangeBrightnessFunc = unsafeBitCast(canChangeBrightnessPtr, to: (@convention(c) (CGDirectDisplayID) -> Bool).self)
+        getBrightnessFunc = unsafeBitCast(getBrightnessPtr, to: (@convention(c) (CGDirectDisplayID, UnsafeMutablePointer<Float>) -> kern_return_t).self)
+
+        logger.info("DisplayServices framework loaded successfully!")
     }
 
     func startMonitoring() {
         guard !isMonitoring else { return }
+
+        logger.debug("BrightnessMonitor.startMonitoring() called")
+        logger.debug("DisplayServices handle: \(displayServicesHandle != nil)")
+        logger.debug("canChangeBrightnessFunc: \(canChangeBrightnessFunc != nil)")
+        logger.debug("getBrightnessFunc: \(getBrightnessFunc != nil)")
 
         // Get initial brightness without showing HUD
         updateBrightnessOnStartup()
@@ -73,38 +124,34 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
     }
 
     private func getCurrentBrightness() -> Float? {
-        // Use DisplayServices private framework via dynamic loading
-        typealias GetBrightnessFunc = @convention(c) (CGDirectDisplayID, UnsafeMutablePointer<Float>) -> kern_return_t
-        typealias CanChangeBrightnessFunc = @convention(c) (CGDirectDisplayID) -> Bool
-
-        guard let handle = dlopen("/System/Library/PrivateFrameworks/DisplayServices.framework/DisplayServices", RTLD_LAZY) else {
-            return nil
-        }
-
-        defer { dlclose(handle) }
-
-        guard let canChangeBrightnessPtr = dlsym(handle, "DisplayServicesCanChangeBrightness"),
-              let getBrightnessPtr = dlsym(handle, "DisplayServicesGetBrightness")
+        // Use cached DisplayServices function pointers
+        guard let canChangeBrightness = canChangeBrightnessFunc,
+              let getBrightness = getBrightnessFunc
         else {
+            logger.error("getCurrentBrightness: function pointers not available.")
             return nil
         }
-
-        let canChangeBrightness = unsafeBitCast(canChangeBrightnessPtr, to: CanChangeBrightnessFunc.self)
-        let getBrightness = unsafeBitCast(getBrightnessPtr, to: GetBrightnessFunc.self)
 
         let mainDisplay = CGMainDisplayID()
+        logger.debug("getCurrentBrightness: mainDisplay ID = \(mainDisplay)")
 
-        guard canChangeBrightness(mainDisplay) else {
+        let canChange = canChangeBrightness(mainDisplay)
+        logger.debug("getCurrentBrightness: canChangeBrightness returned \(canChange)")
+
+        guard canChange else {
+            logger.error("getCurrentBrightness: canChangeBrightness returned false for display \(mainDisplay)")
             return nil
         }
 
         var brightness: Float = 0.0
         let result = getBrightness(mainDisplay, &brightness)
+        logger.debug("getCurrentBrightness: getBrightness returned \(result), brightness = \(brightness)")
 
         if result == KERN_SUCCESS {
             return brightness
         }
 
+        logger.error("getCurrentBrightness: getBrightness failed with result \(result)")
         return nil
     }
 
@@ -197,7 +244,7 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
                 currentBrightness = quantizedBrightness
                 hudController?.showBrightnessHUD(brightness: quantizedBrightness)
             } else {
-                logger.debug("Brightness changed to \(Int(quantizedBrightness * 100))% (system-induced, HUD not shown)")
+                logger.debug("Brightness changed to \(Int(quantizedBrightness * 100))% (system-induced, HUD not shown).")
                 currentBrightness = quantizedBrightness
             }
 
@@ -208,12 +255,14 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
     @MainActor
     private func handleSystemDefinedEventData(subtype: Int, keyCode: Int, isKeyDown: Bool) {
         // Brightness keys generate NSSystemDefined events with subtype 8
+        logger.debug("System event: subtype=\(subtype), keyCode=\(keyCode), isKeyDown=\(isKeyDown)")
         if subtype == 8 {
             guard isKeyDown else { return }
 
             // NX key codes: 2 = brightness down, 3 = brightness up
             switch keyCode {
             case 2, 3:
+                logger.debug("Brightness key detected: \(keyCode == 2 ? "down" : "up")")
                 // Track when a brightness key was pressed
                 lastBrightnessKeyTime = Date().timeIntervalSince1970
                 showHUDForBrightnessKeyPress()
@@ -225,18 +274,22 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
 
     @MainActor
     private func showHUDForBrightnessKeyPress() {
-        let currentBright = currentBrightness
+        // Get fresh brightness value for accurate boundary detection
+        guard let brightness = getCurrentBrightness() else { return }
+        let quantizedBrightness = round(brightness * 16.0) / 16.0
 
         // Only show HUD on key presses if we're at brightness boundaries (0% or 100%)
-        let atMinBrightness = currentBright <= 0.001
-        let atMaxBrightness = currentBright >= 0.999
+        let atMinBrightness = quantizedBrightness <= 0.001
+        let atMaxBrightness = quantizedBrightness >= 0.999
 
         if !atMinBrightness, !atMaxBrightness {
             logger.debug("Brightness key press ignored because brightness is not at boundary.")
             return
         }
 
-        hudController?.showBrightnessHUD(brightness: currentBright)
-        logger.debug("Showing HUD for brightness key press at boundary: \(Int(currentBright * 100))%")
+        // Update current brightness and show HUD
+        currentBrightness = quantizedBrightness
+        hudController?.showBrightnessHUD(brightness: quantizedBrightness)
+        logger.debug("Showing HUD for brightness key press at boundary: \(Int(quantizedBrightness * 100))%")
     }
 }
