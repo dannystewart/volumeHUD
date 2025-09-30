@@ -1,9 +1,6 @@
 import AppKit
 import Polykit
 import SwiftUI
-@preconcurrency import UserNotifications
-
-private let kToggleNotificationName = Notification.Name("com.dannystewart.volumehud.toggle")
 
 @MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -12,11 +9,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var aboutWindow: NSWindow?
 
     let logger = PolyLog()
-
-    // Prevent multiple rapid quit attempts
-    private var isQuitting = false
-    // Delay to allow reopen/open/notification routing to settle
-    private let quitDelay: TimeInterval = 0.3
 
     func applicationShouldTerminateAfterLastWindowClosed(_: NSApplication) -> Bool {
         // If about window closes, switch back to accessory mode
@@ -35,22 +27,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         hudController = HUDController()
         hudController.volumeMonitor = volumeMonitor
         volumeMonitor.hudController = hudController
-
-        // Request notification permission and post "started" notification (only on first run)
-        requestNotificationAuthorizationIfNeeded { [weak self] granted in
-            guard let self else { return }
-            if granted {
-                // Only show startup notification on first run
-                if !UserDefaults.standard.bool(forKey: "hasShownStartupNotification") {
-                    Task { @MainActor in
-                        self.postUserNotification(
-                            title: "volumeHUD started! (launch again for options)", body: nil
-                        )
-                        UserDefaults.standard.set(true, forKey: "hasShownStartupNotification")
-                    }
-                }
-            }
-        }
 
         // Start monitoring volume changes
         volumeMonitor.startMonitoring()
@@ -127,42 +103,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         logger.info("Stopping monitoring and quitting.")
         volumeMonitor?.stopMonitoring()
         hudController?.stopDisplayChangeMonitoring()
-        postUserNotification(title: "volumeHUD quit successfully!", body: nil)
 
         // Terminate without activating the app
         NSApp.terminate(nil)
-    }
-
-    private func requestNotificationAuthorizationIfNeeded(
-        completion: @escaping @Sendable (Bool) -> Void
-    ) {
-        let center = UNUserNotificationCenter.current()
-        center.getNotificationSettings { settings in
-            switch settings.authorizationStatus {
-            case .authorized, .provisional, .ephemeral:
-                completion(true)
-            case .denied:
-                completion(false)
-            case .notDetermined:
-                center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
-                    completion(granted)
-                }
-            @unknown default:
-                completion(false)
-            }
-        }
-    }
-
-    private func postUserNotification(title: String, body: String?) {
-        let content = UNMutableNotificationContent()
-        content.title = title
-        if let body = body { content.body = body }
-        let request = UNNotificationRequest(
-            identifier: UUID().uuidString,
-            content: content,
-            trigger: nil
-        )
-        UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
     }
 
     deinit {
