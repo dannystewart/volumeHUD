@@ -9,6 +9,8 @@ import Polykit
 class BrightnessMonitor: ObservableObject, @unchecked Sendable {
     @Published var currentBrightness: Float = 0.0
 
+    let accessibilityEnabled = AXIsProcessTrusted()
+
     private var isMonitoring = false
     private var previousBrightness: Float = 0.0
     private var brightnessPollingTimer: Timer?
@@ -34,10 +36,7 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
         loadDisplayServices()
     }
 
-    deinit {
-        // Note: We can't safely access displayServicesHandle here due to Sendable restrictions
-        // The handle will be cleaned up when the process exits anyway
-    }
+    deinit {}
 
     private func loadDisplayServices() {
         logger.debug("Attempting to load DisplayServices framework...")
@@ -133,10 +132,7 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
         }
 
         let mainDisplay = CGMainDisplayID()
-        logger.debug("getCurrentBrightness: mainDisplay ID = \(mainDisplay)")
-
         let canChange = canChangeBrightness(mainDisplay)
-        logger.debug("getCurrentBrightness: canChangeBrightness returned \(canChange)")
 
         guard canChange else {
             logger.error("getCurrentBrightness: canChangeBrightness returned false for display \(mainDisplay)")
@@ -145,18 +141,12 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
 
         var brightness: Float = 0.0
         let result = getBrightness(mainDisplay, &brightness)
-        logger.debug("getCurrentBrightness: getBrightness returned \(result), brightness = \(brightness)")
 
         if result == KERN_SUCCESS {
             return brightness
         }
 
         logger.error("getCurrentBrightness: getBrightness failed with result \(result)")
-        return nil
-    }
-
-    private func getDisplayServices() -> io_service_t? {
-        // This method is no longer needed
         return nil
     }
 
@@ -238,7 +228,7 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
 
             // Only show HUD if a brightness key was pressed recently (within 1 second)
             // This prevents showing HUD for system-induced changes like power adapter changes
-            if timeSinceKeyPress < 1.0 {
+            if timeSinceKeyPress < 1.0 || !accessibilityEnabled {
                 logger.info("Brightness updated: \(Int(quantizedBrightness * 100))%")
 
                 currentBrightness = quantizedBrightness
