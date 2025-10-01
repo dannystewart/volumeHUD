@@ -26,6 +26,7 @@ struct HUDView: View {
                 Image(systemName: iconName)
                     .font(.system(size: iconSize, weight: .medium))
                     .foregroundColor(.white.opacity(0.8))
+                    // SF Symbols has slight misalignment between speaker.slash.fill and speaker.fill
                     .offset(y: hudType == .volume && isMuted ? 2 : 0)
                 Spacer()
             }
