@@ -1,9 +1,36 @@
 import AppKit
+import Darwin
 import Polykit
 import SwiftUI
 @preconcurrency import UserNotifications
 
-private let kToggleNotificationName = Notification.Name("com.dannystewart.volumehud.toggle")
+// MARK: - Launch Detection
+
+private nonisolated func isManualLaunch(logger: PolyLog) -> Bool {
+    // Check if launched by launchd (startup item) vs manually
+    let parentPID = getppid()
+
+    var name = [CChar](repeating: 0, count: 1024)
+    let result = proc_name(parentPID, &name, UInt32(name.count))
+
+    if result > 0 {
+        // Build a String from the null-terminated C string buffer
+        let parentName: String = name.withUnsafeBufferPointer { buffer in
+            String(cString: buffer.baseAddress!)
+        }
+
+        logger.info("Parent process: \(parentName) (PID: \(parentPID))")
+
+        // If parent is launchd, likely an auto-launch during startup
+        let isLaunchdLaunch = parentName.contains("launchd")
+        logger.info("Launch type: \(isLaunchdLaunch ? "automatic (launchd)" : "manual")")
+
+        return !isLaunchdLaunch
+    } else {
+        logger.info("Failed to get parent process name (PID: \(parentPID)), assuming manual launch")
+        return true // Default to manual if we can't determine
+    }
+}
 
 // MARK: - AppDelegate
 
@@ -15,11 +42,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var aboutWindow: NSWindow?
 
     let logger = PolyLog()
-
-    // Prevent multiple rapid quit attempts
-    private var isQuitting = false
-    // Delay to allow reopen/open/notification routing to settle
-    private let quitDelay: TimeInterval = 0.3
 
     func applicationShouldTerminateAfterLastWindowClosed(_: NSApplication) -> Bool {
         // If about window closes, switch back to accessory mode
@@ -44,17 +66,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         volumeMonitor.hudController = hudController
         brightnessMonitor.hudController = hudController
 
-        // Request notification permission and post "started" notification (only on first run)
+        // Request notification permission and post "started" notification (only if manually launched)
         requestNotificationAuthorizationIfNeeded { [weak self] granted in
             guard let self else { return }
             if granted {
-                // Only show startup notification on first run
-                if !UserDefaults.standard.bool(forKey: "hasShownStartupNotification") {
+                // Only show startup notification if launched manually (not during system startup)
+                if isManualLaunch(logger: logger) {
                     Task { @MainActor in
-                        self.postUserNotification(
-                            title: "volumeHUD started! (launch again for options)", body: nil
-                        )
-                        UserDefaults.standard.set(true, forKey: "hasShownStartupNotification")
+                        self.postUserNotification(title: "volumeHUD started!", body: nil)
                     }
                 }
             }
@@ -134,14 +153,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         volumeMonitor?.stopMonitoring()
         brightnessMonitor?.stopMonitoring()
         hudController?.stopDisplayChangeMonitoring()
-        postUserNotification(title: "volumeHUD quit successfully!", body: nil)
 
         // Terminate without activating the app
         NSApp.terminate(nil)
     }
 
     private func requestNotificationAuthorizationIfNeeded(
-        completion: @escaping @Sendable (Bool) -> Void
+        completion: @escaping @Sendable (Bool) -> Void,
     ) {
         let center = UNUserNotificationCenter.current()
         center.getNotificationSettings { settings in
@@ -163,11 +181,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func postUserNotification(title: String, body: String?) {
         let content = UNMutableNotificationContent()
         content.title = title
-        if let body = body { content.body = body }
+        if let body { content.body = body }
         let request = UNNotificationRequest(
             identifier: UUID().uuidString,
             content: content,
-            trigger: nil
+            trigger: nil,
         )
         UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
     }
