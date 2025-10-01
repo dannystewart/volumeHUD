@@ -125,11 +125,11 @@ struct AboutView: View {
             }
 
             // Description
-            Text("Bringing the classic volume HUD back to your Mac")
+            Text("Bringing the classic volume and brightness HUD back to your Mac")
                 .font(.system(size: 11))
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
-                .frame(maxWidth: 160)
+                .frame(maxWidth: 180)
 
             Spacer()
                 .frame(height: 20)

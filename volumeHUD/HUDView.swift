@@ -67,7 +67,7 @@ struct HUDView: View {
                 return "speaker.wave.3.fill"
             }
         case .brightness:
-            return "sun.max.fill"
+            return "sun.max"
         }
     }
 
