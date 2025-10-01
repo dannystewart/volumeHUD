@@ -7,7 +7,7 @@ import SwiftUI
 // MARK: - Launch Detection
 
 private nonisolated func isManualLaunch(logger: PolyLog) -> Bool {
-    // Check if launched by launchd (startup item) vs manually
+    // Check if launched by launchd (startup item) or manually
     let parentPID = getppid()
 
     var name = [CChar](repeating: 0, count: 1024)
@@ -19,7 +19,7 @@ private nonisolated func isManualLaunch(logger: PolyLog) -> Bool {
             String(cString: buffer.baseAddress!)
         }
 
-        logger.info("Parent process: \(parentName) (PID: \(parentPID))")
+        logger.debug("Parent process: \(parentName) (PID: \(parentPID))")
 
         // If parent is launchd, likely an auto-launch during startup
         let isLaunchdLaunch = parentName.contains("launchd")
@@ -27,7 +27,7 @@ private nonisolated func isManualLaunch(logger: PolyLog) -> Bool {
 
         return !isLaunchdLaunch
     } else {
-        logger.info("Failed to get parent process name (PID: \(parentPID)), assuming manual launch")
+        logger.info("Failed to get parent process name (PID: \(parentPID)), assuming manual launch.")
         return true // Default to manual if we can't determine
     }
 }
@@ -35,7 +35,7 @@ private nonisolated func isManualLaunch(logger: PolyLog) -> Bool {
 // MARK: - AppDelegate
 
 @MainActor
-class AppDelegate: NSObject, NSApplicationDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotificationCenterDelegate {
     var volumeMonitor: VolumeMonitor!
     var brightnessMonitor: BrightnessMonitor!
     var hudController: HUDController!
@@ -55,6 +55,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Keep the app headless and out of the Dock
         NSApplication.shared.setActivationPolicy(.accessory)
 
+        // Set up the notifications delegate BEFORE scheduling any notifications
+        UNUserNotificationCenter.current().delegate = self
+
         // Initialize the monitors and HUD controller
         volumeMonitor = VolumeMonitor()
         brightnessMonitor = BrightnessMonitor()
@@ -69,13 +72,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Request notification permission and post "started" notification (only if manually launched)
         requestNotificationAuthorizationIfNeeded { [weak self] granted in
             guard let self else { return }
+            logger.debug("Notification permission granted: \(granted)")
             if granted {
                 // Only show startup notification if launched manually (not during system startup)
                 if isManualLaunch(logger: logger) {
                     Task { @MainActor in
                         self.postUserNotification(title: "volumeHUD started!", body: nil)
                     }
+                } else {
+                    logger.info("Skipping startup notification due to automatic launch.")
                 }
+            } else {
+                logger.info("No notification permission; skipping startup notification.")
             }
         }
 
@@ -169,7 +177,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             case .denied:
                 completion(false)
             case .notDetermined:
-                center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
+                center.requestAuthorization(options: [.alert]) { granted, _ in
                     completion(granted)
                 }
             @unknown default:
@@ -182,12 +190,27 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let content = UNMutableNotificationContent()
         content.title = title
         if let body { content.body = body }
+
         let request = UNNotificationRequest(
             identifier: UUID().uuidString,
             content: content,
             trigger: nil,
         )
-        UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
+
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error { self.logger.warning("Failed to post notification: \(error)") }
+        }
+    }
+
+    // MARK: - UNUserNotificationCenterDelegate
+
+    // Ensure banners appear even if the app is active
+    func userNotificationCenter(
+        _: UNUserNotificationCenter,
+        willPresent _: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void,
+    ) {
+        completionHandler([.banner])
     }
 
     deinit {
