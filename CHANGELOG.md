@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog], and this project adheres to [Semantic Versioning].
 
+## 2.0.0 (Unreleased)
+
+### Added
+
+- Adds brightness monitoring and unified HUD display for both volume and brightness changes. The brightness HUD should appear only for user-initiated changes and not automatic adjustments like ambient light change or dimming while on battery power.
+- Adds a new About window with a proper "Quit volumeHUD" button.
+- Adds a simple automatic update check using the GitHub API, showing a small link on the About screen when an update is available.
+
+### Changed
+
+- Sets the app to run as a background agent without appearing in the Dock. This should also avoid having it briefly brought to the foreground and stealing window focus on launch.
+- Changes notification behavior. A notification now appears on every launch, but only when started manually and not as a login item. In practice, I found the lack of notification on startup to be confusing. The app likely isn't being restarted often enough for this to become annoying, and my main concern was avoiding a notification when launching automatically on startup.
+
+### Removed
+
+- Removes app sandbox restrictions to enable brightness functionality. I tried to avoid this, but reliable brightness detection was harder than volume without using private frameworks.
+- Removes the quit-on-relaunch behavior, now showing the About box on relaunch instead. Also removes the notification when quitting, since it's now clear and explicit.
+
+### Known Issues
+
+- The brightness HUD currently only supports built-in displays. Considering the app was only intended for volume originally, brightness is kind of a bonus feature. Supporting external displays seems like a nightmare with DDC/CI variability, private APIs, event handling, supporting random USB/Thunderbolt docks, etc. If you'd like to help, PRs are welcome!
+
 ## [1.2.6] (2025-09-28)
 
 ### Changed
