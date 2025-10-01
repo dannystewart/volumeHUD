@@ -1,0 +1,2 @@
+--swift-version 6.2
+--enable blankLinesBetweenImports,blockComments,emptyExtensions,environmentEntry,markTypes,redundantMemberwiseInit,redundantProperty,redundantThrows,unusedPrivateDeclarations,wrapEnumCases,wrapMultilineConditionalAssignment

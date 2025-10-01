@@ -1,4 +1,5 @@
 disabled_rules:
+  - file_length # We try, but we can't be perfect
   - line_length # Line length should not be a warning, come on
   - trailing_comma # This fights with other formatters
   - type_body_length # We might re-enable this as we get better
