@@ -243,14 +243,14 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
             // 1. A brightness key was pressed recently, OR
             // 2. Accessibility is disabled (fallback), AND
             // 3. This doesn't appear to be an ambient light adjustment
-            if timeSinceKeyPress < 1.0 || !accessibilityEnabled, !isLikelyAmbientLight {
-                logger.info("Brightness updated: \(Int(quantizedBrightness * 100))%")
+            let shouldShowHUD = (timeSinceKeyPress < 0.5 || !accessibilityEnabled) && !isLikelyAmbientLight
 
+            if shouldShowHUD {
+                logger.info("Brightness updated: \(Int(quantizedBrightness * 100))%")
                 currentBrightness = quantizedBrightness
                 hudController?.showBrightnessHUD(brightness: quantizedBrightness)
             } else {
-                let reason = isLikelyAmbientLight ? "ambient light" : "automatic"
-                logger.debug("Brightness changed to \(Int(quantizedBrightness * 100))% (\(reason), HUD not shown).")
+                logger.info("Brightness auto-adjusted to \(Int(quantizedBrightness * 100))% (system change, HUD not shown).")
                 currentBrightness = quantizedBrightness
             }
 
@@ -271,31 +271,10 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
                 logger.debug("Brightness key detected: \(keyCode == 2 ? "down" : "up")")
                 // Track when a brightness key was pressed
                 lastBrightnessKeyTime = Date().timeIntervalSince1970
-                showHUDForBrightnessKeyPress()
+                logger.debug("Brightness key pressed, waiting for brightness to change before showing HUD.")
             default:
                 break
             }
         }
-    }
-
-    @MainActor
-    private func showHUDForBrightnessKeyPress() {
-        // Get fresh brightness value for accurate boundary detection
-        guard let brightness = getCurrentBrightness() else { return }
-        let quantizedBrightness = round(brightness * 16.0) / 16.0
-
-        // Only show HUD on key presses if we're at brightness boundaries (0% or 100%)
-        let atMinBrightness = quantizedBrightness <= 0.001
-        let atMaxBrightness = quantizedBrightness >= 0.999
-
-        if !atMinBrightness, !atMaxBrightness {
-            logger.debug("Brightness key press ignored because brightness is not at boundary.")
-            return
-        }
-
-        // Update current brightness and show HUD
-        currentBrightness = quantizedBrightness
-        hudController?.showBrightnessHUD(brightness: quantizedBrightness)
-        logger.debug("Showing HUD for brightness key press at boundary: \(Int(quantizedBrightness * 100))%")
     }
 }
