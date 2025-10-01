@@ -9,7 +9,7 @@ let package = Package(
     products: [
         .executable(
             name: "volumeHUD",
-            targets: ["volumeHUD"]
+            targets: ["volumeHUD"],
         ),
     ],
     dependencies: [
@@ -24,8 +24,7 @@ let package = Package(
             path: "volumeHUD",
             resources: [
                 .process("Assets.xcassets"),
-                .process("volumeHUD.entitlements"),
-            ]
+            ],
         ),
-    ]
+    ],
 )
