@@ -129,10 +129,11 @@ struct VolumeHUDApp: App {
 
     @available(macOS 26.0, *)
     var body: some Scene {
-        // Create a hidden settings window that never shows
-        Settings {
+        WindowGroup {
             EmptyView()
         }
+        .windowStyle(.hiddenTitleBar)
+        .defaultSize(width: 0, height: 0)
         .windowResizability(.contentSize)
     }
 }
