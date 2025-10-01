@@ -39,17 +39,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
     var volumeMonitor: VolumeMonitor!
     var brightnessMonitor: BrightnessMonitor!
     var hudController: HUDController!
-    var aboutWindow: NSWindow?
+    var aboutWindow: NSPanel?
 
     let logger = PolyLog()
-
-    func applicationShouldTerminateAfterLastWindowClosed(_: NSApplication) -> Bool {
-        // If about window closes, switch back to accessory mode
-        if aboutWindow?.isVisible == false {
-            NSApp.setActivationPolicy(.accessory)
-        }
-        return false // Keep app running even when windows are closed
-    }
 
     func applicationDidFinishLaunching(_: Notification) {
         // Keep the app headless and out of the Dock
@@ -111,7 +103,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         // If window already exists and is visible, just bring it to front
         if let window = aboutWindow, window.isVisible {
             window.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
             return
         }
 
@@ -124,15 +115,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
 
         let hostingController = NSHostingController(rootView: aboutView)
 
-        let window = NSWindow(
+        // Use NSPanel to remain in accessory mode
+        let panel = NSPanel(
             contentRect: NSRect(x: 0, y: 0, width: 280, height: 360),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false,
         )
 
-        window.contentViewController = hostingController
-        window.title = "About volumeHUD"
+        panel.contentViewController = hostingController
+        panel.title = "About volumeHUD"
 
         // Position at visual center of the screen
         if let screen = NSScreen.main {
@@ -143,17 +135,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
             let x = screenFrame.origin.x + (screenFrame.width - windowWidth) / 2
             let y = screenFrame.origin.y + screenFrame.height * 0.66 - windowHeight / 2
 
-            window.setFrame(NSRect(x: x, y: y, width: windowWidth, height: windowHeight), display: false)
+            panel.setFrame(NSRect(x: x, y: y, width: windowWidth, height: windowHeight), display: false)
         }
 
-        window.isReleasedWhenClosed = false
+        panel.isReleasedWhenClosed = false
 
-        aboutWindow = window
+        aboutWindow = panel
 
-        // Temporarily switch to regular app to show window properly
-        NSApp.setActivationPolicy(.regular)
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        // Show the panel without changing activation policy
+        panel.makeKeyAndOrderFront(nil)
     }
 
     private func gracefulTerminate() {
