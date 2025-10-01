@@ -17,5 +17,5 @@ Packages/
 .DS_Store
 .specstory/
 *.tmp
-release/
+releases/
 scripts/
