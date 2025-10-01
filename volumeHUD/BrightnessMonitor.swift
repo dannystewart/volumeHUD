@@ -18,6 +18,8 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
     private var lastBrightnessKeyTime: TimeInterval = 0
     private var hasLoggedBrightnessError = false
     private var brightnessAvailable = false
+    private var lastBrightnessChangeTime: TimeInterval = 0
+    private var brightnessChangeCount = 0
 
     // Cache DisplayServices function pointers
     private var displayServicesHandle: UnsafeMutableRawPointer?
@@ -224,15 +226,31 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
             let currentTime = Date().timeIntervalSince1970
             let timeSinceKeyPress = currentTime - lastBrightnessKeyTime
 
-            // Only show HUD if a brightness key was pressed recently (within 1 second)
-            // This prevents showing HUD for system-induced changes like power adapter changes
-            if timeSinceKeyPress < 1.0 || !accessibilityEnabled {
+            // Track brightness change frequency for ambient light detection
+            let timeSinceLastChange = currentTime - lastBrightnessChangeTime
+            if timeSinceLastChange < 2.0 { // Changes within 2 seconds
+                brightnessChangeCount += 1
+            } else {
+                brightnessChangeCount = 1 // Reset counter for new change sequence
+            }
+            lastBrightnessChangeTime = currentTime
+
+            // Determine if this is likely an ambient light adjustment
+            // Ambient light changes tend to happen in rapid sequences (>2 changes in quick succession)
+            let isLikelyAmbientLight = brightnessChangeCount > 2 && timeSinceKeyPress > 1.0
+
+            // Show HUD if:
+            // 1. A brightness key was pressed recently, OR
+            // 2. Accessibility is disabled (fallback), AND
+            // 3. This doesn't appear to be an ambient light adjustment
+            if timeSinceKeyPress < 1.0 || !accessibilityEnabled, !isLikelyAmbientLight {
                 logger.info("Brightness updated: \(Int(quantizedBrightness * 100))%")
 
                 currentBrightness = quantizedBrightness
                 hudController?.showBrightnessHUD(brightness: quantizedBrightness)
             } else {
-                logger.debug("Brightness changed to \(Int(quantizedBrightness * 100))% (system-induced, HUD not shown).")
+                let reason = isLikelyAmbientLight ? "ambient light" : "automatic"
+                logger.debug("Brightness changed to \(Int(quantizedBrightness * 100))% (\(reason), HUD not shown).")
                 currentBrightness = quantizedBrightness
             }
 
