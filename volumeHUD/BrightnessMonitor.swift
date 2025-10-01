@@ -241,16 +241,27 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
             let isLikelyAmbientLight = (brightnessChangeCount > 1 && timeSinceKeyPress > 0.5) ||
                 (timeSinceLastChange < 0.5 && timeSinceKeyPress > 0.5)
 
-            // Show HUD if:
-            // 1. A brightness key was pressed recently, OR
-            // 2. Accessibility is disabled (fallback), AND
-            // 3. This doesn't appear to be an ambient light adjustment
-            if timeSinceKeyPress < 1.0 || !accessibilityEnabled, !isLikelyAmbientLight {
+            // Show HUD based on accessibility permissions:
+            // - WITH accessibility: Only show HUD if a brightness key was pressed recently
+            // - WITHOUT accessibility: Use heuristic detection to filter out ambient light changes
+            let shouldShowHUD = if accessibilityEnabled {
+                // Trust key press detection completely when we have accessibility permissions
+                timeSinceKeyPress < 1.0
+            } else {
+                // Fall back to heuristic-based detection when we don't have permissions
+                !isLikelyAmbientLight
+            }
+
+            if shouldShowHUD {
                 logger.info("Brightness updated: \(Int(quantizedBrightness * 100))%")
                 currentBrightness = quantizedBrightness
                 hudController?.showBrightnessHUD(brightness: quantizedBrightness)
             } else {
-                let reason = isLikelyAmbientLight ? "ambient light change" : "triggered by system"
+                let reason = if accessibilityEnabled {
+                    "no recent key press (accessibility enabled)"
+                } else {
+                    isLikelyAmbientLight ? "ambient light change" : "triggered by system"
+                }
                 logger.debug("Brightness auto-adjusted to \(Int(quantizedBrightness * 100))% (\(reason), HUD not shown).")
                 currentBrightness = quantizedBrightness
             }
