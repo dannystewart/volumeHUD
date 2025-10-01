@@ -1,9 +1,13 @@
 import SwiftUI
 
+// MARK: - HUDType
+
 enum HUDType {
     case volume
     case brightness
 }
+
+// MARK: - HUDView
 
 struct HUDView: View {
     let hudType: HUDType
@@ -48,7 +52,7 @@ struct HUDView: View {
         .background(
             RoundedRectangle(cornerRadius: 16)
                 .fill(.regularMaterial)
-                .environment(\.colorScheme, .dark)
+                .environment(\.colorScheme, .dark),
         )
     }
 
@@ -56,23 +60,24 @@ struct HUDView: View {
         switch hudType {
         case .volume:
             if isMuted {
-                return "speaker.slash.fill"
+                "speaker.slash.fill"
             } else if value < 0.08 {
-                return "speaker.fill"
+                "speaker.fill"
             } else if value < 0.33 {
-                return "speaker.wave.1.fill"
+                "speaker.wave.1.fill"
             } else if value < 0.66 {
-                return "speaker.wave.2.fill"
+                "speaker.wave.2.fill"
             } else {
-                return "speaker.wave.3.fill"
+                "speaker.wave.3.fill"
             }
+
         case .brightness:
-            return "sun.max"
+            "sun.max"
         }
     }
 
     private func barColor(for index: Int) -> Color {
-        if hudType == .volume && isMuted {
+        if hudType == .volume, isMuted {
             return .white.opacity(0.2)
         }
 

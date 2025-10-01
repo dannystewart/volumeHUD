@@ -2,6 +2,8 @@ import AppKit
 import Polykit
 import SwiftUI
 
+// MARK: - AppDelegate
+
 @MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
     var volumeMonitor: VolumeMonitor!
@@ -43,9 +45,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     // Handle attempts to launch the app a second time
-    func applicationShouldHandleReopen(
-        _: NSApplication, hasVisibleWindows _: Bool
-    ) -> Bool {
+    func applicationShouldHandleReopen(_: NSApplication, hasVisibleWindows _: Bool) -> Bool {
         // Show the about window instead of quitting
         showAboutWindow()
         return false
@@ -77,7 +77,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             contentRect: NSRect(x: 0, y: 0, width: 280, height: 360),
             styleMask: [.titled, .closable],
             backing: .buffered,
-            defer: false
+            defer: false,
         )
 
         window.contentViewController = hostingController
@@ -119,6 +119,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         DistributedNotificationCenter.default().removeObserver(self)
     }
 }
+
+// MARK: - VolumeHUDApp
 
 @main
 @available(macOS 26.0, *)

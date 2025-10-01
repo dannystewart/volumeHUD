@@ -20,7 +20,6 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
     private var keyEventMonitor: Any?
     private var lastCapsLockTime: TimeInterval = 0
     private var lastVolumeKeyLogTime: TimeInterval = 0
-    private var defaultDeviceListenerAdded = false
     private var volumeListenerBlock: ((UInt32, UnsafePointer<AudioObjectPropertyAddress>) -> Void)?
     private var muteListenerBlock: ((UInt32, UnsafePointer<AudioObjectPropertyAddress>) -> Void)?
     private var devicePollingTimer: Timer?
@@ -34,7 +33,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         audioObjectPropertyAddress = AudioObjectPropertyAddress(
             mSelector: kAudioHardwareServiceDeviceProperty_VirtualMainVolume,
             mScope: kAudioDevicePropertyScopeOutput,
-            mElement: kAudioObjectPropertyElementMain
+            mElement: kAudioObjectPropertyElementMain,
         )
     }
 
@@ -47,7 +46,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         var address = AudioObjectPropertyAddress(
             mSelector: kAudioHardwarePropertyDefaultOutputDevice,
             mScope: kAudioObjectPropertyScopeGlobal,
-            mElement: kAudioObjectPropertyElementMain
+            mElement: kAudioObjectPropertyElementMain,
         )
 
         let status = AudioObjectGetPropertyData(
@@ -56,7 +55,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             0,
             nil,
             &size,
-            &deviceID
+            &deviceID,
         )
 
         guard status == noErr else {
@@ -109,7 +108,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             0,
             nil,
             &size,
-            &volume
+            &volume,
         )
 
         var newVolume: Float = currentVolume
@@ -125,7 +124,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         var muteAddress = AudioObjectPropertyAddress(
             mSelector: kAudioDevicePropertyMute,
             mScope: kAudioDevicePropertyScopeOutput,
-            mElement: kAudioObjectPropertyElementMain
+            mElement: kAudioObjectPropertyElementMain,
         )
 
         let muteStatus = AudioObjectGetPropertyData(
@@ -134,7 +133,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             0,
             nil,
             &size,
-            &muted
+            &muted,
         )
 
         var newMuted: Bool = isMuted
@@ -189,15 +188,9 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         let accessibilityEnabled = AXIsProcessTrusted()
 
         if !accessibilityEnabled {
-            logger.info(
-                "Accessibility permissions not granted, so volume keys cannot be detected."
-            )
-            logger.info(
-                "This means the HUD will not be displayed when pressing volume keys to go past min or max volume limits."
-            )
-            logger.info(
-                "If you want this to work, please grant accessibility permissions in System Settings > Privacy & Security > Input Monitoring."
-            )
+            logger.info("Accessibility permissions not granted, so volume keys cannot be detected.")
+            logger.info("This means the HUD will not be displayed when pressing volume keys to go past min or max volume limits.")
+            logger.info("If you want this to work, please grant accessibility permissions in System Settings > Privacy & Security > Input Monitoring.")
             return
         }
 
@@ -216,9 +209,9 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
 
             Task { @MainActor [weak self] in
                 guard let self else { return }
-                self.handleSystemDefinedEventData(
+                handleSystemDefinedEventData(
                     subtype: subtype, keyCode: keyCode, keyPressed: (keyFlags & 0xFF00) >> 8,
-                    isKeyDown: isKeyDown
+                    isKeyDown: isKeyDown,
                 )
             }
         }
@@ -243,9 +236,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
     }
 
     @MainActor
-    private func handleSystemDefinedEventData(
-        subtype: Int, keyCode: Int, keyPressed _: Int, isKeyDown: Bool
-    ) {
+    private func handleSystemDefinedEventData(subtype: Int, keyCode: Int, keyPressed _: Int, isKeyDown: Bool) {
         let currentTime = Date().timeIntervalSince1970
 
         // Track Caps Lock events
@@ -292,9 +283,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             let currentTime = Date().timeIntervalSince1970
             // Debounce log messages as macOS seems to fire key events twice
             if currentTime - lastVolumeKeyLogTime > 0.1 {
-                logger.debug(
-                    "Key press ignored because volume is not 0% or 100%."
-                )
+                logger.debug("Key press ignored because volume is not 0% or 100%.")
                 lastVolumeKeyLogTime = currentTime
             }
             return
@@ -303,9 +292,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         // Show HUD with current state
         hudController?.showVolumeHUD(volume: currentVol, isMuted: currentMuted)
 
-        logger.debug(
-            "Showing HUD for volume \(isVolumeUp ? "up" : "down") key press at boundary, current volume: \(Int(currentVol * 100))%, muted: \(currentMuted)"
-        )
+        logger.debug("Showing HUD for volume \(isVolumeUp ? "up" : "down") key press at boundary, current volume: \(Int(currentVol * 100))%, muted: \(currentMuted)")
     }
 
     // MARK: Device Change Monitoring
@@ -332,7 +319,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         var address = AudioObjectPropertyAddress(
             mSelector: kAudioHardwarePropertyDefaultOutputDevice,
             mScope: kAudioObjectPropertyScopeGlobal,
-            mElement: kAudioObjectPropertyElementMain
+            mElement: kAudioObjectPropertyElementMain,
         )
 
         let status = AudioObjectGetPropertyData(
@@ -341,7 +328,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             0,
             nil,
             &size,
-            &currentDeviceID
+            &currentDeviceID,
         )
 
         guard status == noErr else { return }
@@ -365,7 +352,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         var address = AudioObjectPropertyAddress(
             mSelector: kAudioHardwarePropertyDefaultOutputDevice,
             mScope: kAudioObjectPropertyScopeGlobal,
-            mElement: kAudioObjectPropertyElementMain
+            mElement: kAudioObjectPropertyElementMain,
         )
 
         let status = AudioObjectGetPropertyData(
@@ -374,7 +361,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             0,
             nil,
             &size,
-            &newDeviceID
+            &newDeviceID,
         )
 
         guard status == noErr else {
@@ -402,7 +389,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
                 deviceID,
                 &audioObjectPropertyAddress,
                 DispatchQueue.main,
-                block
+                block,
             )
             volumeListenerBlock = nil
         }
@@ -410,14 +397,14 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         var muteAddress = AudioObjectPropertyAddress(
             mSelector: kAudioDevicePropertyMute,
             mScope: kAudioDevicePropertyScopeOutput,
-            mElement: kAudioObjectPropertyElementMain
+            mElement: kAudioObjectPropertyElementMain,
         )
         if let block = muteListenerBlock {
             AudioObjectRemovePropertyListenerBlock(
                 deviceID,
                 &muteAddress,
                 DispatchQueue.main,
-                block
+                block,
             )
             muteListenerBlock = nil
         }
@@ -436,7 +423,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
                 deviceID,
                 &audioObjectPropertyAddress,
                 DispatchQueue.main,
-                block
+                block,
             )
         }
 
@@ -444,7 +431,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         var muteAddress = AudioObjectPropertyAddress(
             mSelector: kAudioDevicePropertyMute,
             mScope: kAudioDevicePropertyScopeOutput,
-            mElement: kAudioObjectPropertyElementMain
+            mElement: kAudioObjectPropertyElementMain,
         )
         muteListenerBlock = { [weak self] _, _ in
             guard let self else { return }
@@ -457,7 +444,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
                 deviceID,
                 &muteAddress,
                 DispatchQueue.main,
-                block
+                block,
             )
         }
     }

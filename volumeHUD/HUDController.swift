@@ -17,10 +17,6 @@ class HUDController: ObservableObject {
     private var lastShownBrightness: Float?
     private var lastShownHUDType: HUDType?
     private var isObservingDisplayChanges = false
-    private var displayChangeObserver: NSObjectProtocol?
-    private var workspaceObserver: NSObjectProtocol?
-    private var positionCheckTimer: Timer?
-
     let logger = PolyLog()
 
     @MainActor
@@ -40,7 +36,7 @@ class HUDController: ObservableObject {
             self,
             selector: #selector(displayConfigurationDidChange(_:)),
             name: NSApplication.didChangeScreenParametersNotification,
-            object: nil
+            object: nil,
         )
         isObservingDisplayChanges = true
 
@@ -53,7 +49,7 @@ class HUDController: ObservableObject {
         NotificationCenter.default.removeObserver(
             self,
             name: NSApplication.didChangeScreenParametersNotification,
-            object: nil
+            object: nil,
         )
         isObservingDisplayChanges = false
 
@@ -93,7 +89,7 @@ class HUDController: ObservableObject {
             x: (screenFrame.width - windowSize.width) / 2,
             y: screenFrame.height * 0.17, // Distance from bottom of screen
             width: windowSize.width,
-            height: windowSize.height
+            height: windowSize.height,
         )
 
         // Update the window frame
@@ -114,23 +110,20 @@ class HUDController: ObservableObject {
 
         // Update the content view
         if let window = hudWindow {
-            let shouldUpdateContent: Bool
-
-            switch hudType {
-            case .volume:
-                shouldUpdateContent =
+            let shouldUpdateContent: Bool =
+                switch hudType {
+                case .volume:
                     hostingView == nil
                         || lastShownHUDType != hudType
                         || lastShownVolume == nil
                         || abs((lastShownVolume ?? -1) - value) > 0.0005
                         || (lastShownMuted ?? !isMuted) != isMuted
-            case .brightness:
-                shouldUpdateContent =
+                case .brightness:
                     hostingView == nil
                         || lastShownHUDType != hudType
                         || lastShownBrightness == nil
                         || abs((lastShownBrightness ?? -1) - value) > 0.0005
-            }
+                }
 
             // If nothing changed and the window is already visible, just extend the timer
             if window.isVisible, !shouldUpdateContent {
@@ -139,9 +132,7 @@ class HUDController: ObservableObject {
             }
 
             // Always recreate hosting view to avoid SwiftUI state issues
-            let newHostingView = NSHostingView(
-                rootView: HUDView(hudType: hudType, value: value, isMuted: isMuted, isVisible: true)
-            )
+            let newHostingView = NSHostingView(rootView: HUDView(hudType: hudType, value: value, isMuted: isMuted, isVisible: true))
             newHostingView.frame = window.contentView?.bounds ?? NSRect(x: 0, y: 0, width: 210, height: 210)
 
             // Ensure hosting view background is clear for proper material rendering
@@ -149,9 +140,7 @@ class HUDController: ObservableObject {
             newHostingView.layer?.backgroundColor = NSColor.clear.cgColor
 
             // Remove old content view if it exists
-            if let oldView = window.contentView {
-                oldView.removeFromSuperview()
-            }
+            if let oldView = window.contentView { oldView.removeFromSuperview() }
 
             window.contentView = newHostingView
             hostingView = newHostingView
@@ -191,7 +180,7 @@ class HUDController: ObservableObject {
             contentRect: NSRect(x: 0, y: 0, width: 210, height: 210),
             styleMask: [.borderless],
             backing: .buffered,
-            defer: false
+            defer: false,
         )
 
         guard let window = hudWindow else {

@@ -180,9 +180,7 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
 
             Task { @MainActor [weak self] in
                 guard let self else { return }
-                self.handleSystemDefinedEventData(
-                    subtype: subtype, keyCode: keyCode, isKeyDown: isKeyDown
-                )
+                handleSystemDefinedEventData(subtype: subtype, keyCode: keyCode, isKeyDown: isKeyDown)
             }
         }
 
