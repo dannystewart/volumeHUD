@@ -228,7 +228,7 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
 
             // Track brightness change frequency for ambient light detection
             let timeSinceLastChange = currentTime - lastBrightnessChangeTime
-            if timeSinceLastChange < 2.0 { // Changes within 2 seconds
+            if timeSinceLastChange < 3.0 { // Changes within 3 seconds (increased window)
                 brightnessChangeCount += 1
             } else {
                 brightnessChangeCount = 1 // Reset counter for new change sequence
@@ -236,8 +236,10 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
             lastBrightnessChangeTime = currentTime
 
             // Determine if this is likely an ambient light adjustment
-            // Ambient light changes tend to happen in rapid sequences (>2 changes in quick succession)
-            let isLikelyAmbientLight = brightnessChangeCount > 2 && timeSinceKeyPress > 1.0
+            // Ambient light changes tend to happen in rapid sequences (>1 change in quick succession)
+            // Also consider single changes that happen shortly after other changes
+            let isLikelyAmbientLight = (brightnessChangeCount > 1 && timeSinceKeyPress > 0.5) ||
+                (timeSinceLastChange < 0.5 && timeSinceKeyPress > 0.5)
 
             // Show HUD if:
             // 1. A brightness key was pressed recently, OR
