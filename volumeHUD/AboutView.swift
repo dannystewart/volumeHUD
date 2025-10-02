@@ -8,8 +8,6 @@ struct AboutView: View {
 
     // Settings for app preferences
     @AppStorage("brightnessEnabled") private var brightnessEnabled: Bool = false
-    @AppStorage("shareLogsEnabled") private var shareLogsEnabled: Bool = false
-
     // State to track if an update is available
     @State private var isUpdateAvailable: Bool = false
 
@@ -138,12 +136,9 @@ struct AboutView: View {
                 .frame(maxWidth: 140, minHeight: 30, alignment: .init(horizontal: .center, vertical: .bottom))
 
             // Settings section
-            VStack(spacing: 8) {
+            VStack(spacing: 20) {
                 Spacer()
                     .frame(height: 20)
-
-                Divider()
-                    .padding(.horizontal, 20)
 
                 VStack(spacing: 6) {
                     HStack {
@@ -165,6 +160,7 @@ struct AboutView: View {
                             }
                     }
                     .padding(.horizontal, 20)
+                    .frame(maxWidth: 240, maxHeight: 20)
 
                     Text("Experimental, built-in display only")
                         .font(.system(size: 10))
@@ -173,38 +169,6 @@ struct AboutView: View {
                         .opacity(0.8)
                         .frame(height: 16, alignment: .init(horizontal: .center, vertical: .top))
                 }
-
-                Divider()
-                    .padding(.horizontal, 20)
-
-                VStack(spacing: 6) {
-                    HStack {
-                        Image(systemName: "bubble.left.and.exclamationmark.bubble.right.fill")
-                            .foregroundStyle(.secondary)
-                            .font(.system(size: 14))
-
-                        Text("Share Logs")
-                            .font(.system(size: 12, weight: .medium))
-
-                        Spacer()
-
-                        Toggle("", isOn: $shareLogsEnabled)
-                            .toggleStyle(SwitchToggleStyle())
-                            .scaleEffect(0.8)
-                    }
-                    .padding(.horizontal, 20)
-
-                    Text("100% anonymous, helps me improve")
-                        .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 20)
-                        .frame(height: 16, alignment: .init(horizontal: .center, vertical: .top))
-                        .opacity(0.8)
-                }
-
-                Divider()
-                    .padding(.horizontal, 20)
             }
 
             Spacer()
@@ -220,7 +184,7 @@ struct AboutView: View {
             .keyboardShortcut(.defaultAction)
         }
         .padding(30)
-        .frame(width: 300, height: 500)
+        .frame(width: 300, height: 450)
         .onAppear {
             checkForUpdates()
         }
