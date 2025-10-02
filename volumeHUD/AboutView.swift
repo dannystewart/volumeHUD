@@ -8,6 +8,7 @@ struct AboutView: View {
 
     // Settings for app preferences
     @AppStorage("brightnessEnabled") private var brightnessEnabled: Bool = false
+    @AppStorage("shareLogsEnabled") private var shareLogsEnabled: Bool = false
 
     // State to track if an update is available
     @State private var isUpdateAvailable: Bool = false
@@ -95,7 +96,7 @@ struct AboutView: View {
     }
 
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 8) {
             // App icon
             if let appIcon = NSImage(named: "AppIcon") {
                 Image(nsImage: appIcon)
@@ -104,24 +105,25 @@ struct AboutView: View {
             }
 
             // App name and version
-            VStack(spacing: 5) {
+            VStack(spacing: 4) {
                 Text("volumeHUD")
                     .font(.system(size: 24, weight: .medium))
 
                 Text("by Danny Stewart")
                     .font(.system(size: 12))
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
 
                 Text("Version \(appVersion)")
                     .font(.system(size: 12))
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
 
                 // Update check
                 Button(action: openReleasesPage) {
                     Text("Update available!")
                         .font(.system(size: 11))
-                        .foregroundColor(.blue)
+                        .foregroundStyle(.blue)
                         .underline()
+                        .frame(minHeight: 30)
                 }
                 .buttonStyle(.plain)
                 .disabled(!isUpdateAvailable)
@@ -131,9 +133,9 @@ struct AboutView: View {
             // Description
             Text("Bringing the classic HUD back to your Mac")
                 .font(.system(size: 11))
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-                .frame(maxWidth: 140)
+                .frame(maxWidth: 140, minHeight: 30, alignment: .init(horizontal: .center, vertical: .bottom))
 
             // Settings section
             VStack(spacing: 8) {
@@ -146,7 +148,7 @@ struct AboutView: View {
                 VStack(spacing: 6) {
                     HStack {
                         Image(systemName: "sun.max.fill")
-                            .foregroundColor(.orange)
+                            .foregroundStyle(.orange)
                             .font(.system(size: 14))
 
                         Text("Enable Brightness")
@@ -166,9 +168,38 @@ struct AboutView: View {
 
                     Text("Experimental, built-in display only")
                         .font(.system(size: 10))
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .opacity(0.8)
+                        .frame(height: 16, alignment: .init(horizontal: .center, vertical: .top))
+                }
+
+                Divider()
+                    .padding(.horizontal, 20)
+
+                VStack(spacing: 6) {
+                    HStack {
+                        Image(systemName: "bubble.left.and.exclamationmark.bubble.right.fill")
+                            .foregroundStyle(.secondary)
+                            .font(.system(size: 14))
+
+                        Text("Share Logs")
+                            .font(.system(size: 12, weight: .medium))
+
+                        Spacer()
+
+                        Toggle("", isOn: $shareLogsEnabled)
+                            .toggleStyle(SwitchToggleStyle())
+                            .scaleEffect(0.8)
+                    }
+                    .padding(.horizontal, 20)
+
+                    Text("100% anonymous, helps me improve")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 20)
+                        .frame(height: 16, alignment: .init(horizontal: .center, vertical: .top))
                         .opacity(0.8)
                 }
 
@@ -189,7 +220,7 @@ struct AboutView: View {
             .keyboardShortcut(.defaultAction)
         }
         .padding(30)
-        .frame(width: 300, height: 450)
+        .frame(width: 300, height: 500)
         .onAppear {
             checkForUpdates()
         }
