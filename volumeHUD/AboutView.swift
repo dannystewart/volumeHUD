@@ -95,7 +95,7 @@ struct AboutView: View {
     }
 
     var body: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 10) {
             // App icon
             if let appIcon = NSImage(named: "AppIcon") {
                 Image(nsImage: appIcon)
@@ -129,15 +129,17 @@ struct AboutView: View {
             }
 
             // Description
-            Text("Bringing the classic volume and brightness HUD back to your Mac")
+            Text("Bringing the classic HUD back to your Mac")
                 .font(.system(size: 11))
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
-                .frame(maxWidth: 180, minHeight: 30)
+                .frame(maxWidth: 140)
 
             // Settings section
             VStack(spacing: 8) {
                 Spacer()
+                    .frame(height: 20)
+
                 Divider()
                     .padding(.horizontal, 20)
 
@@ -156,7 +158,7 @@ struct AboutView: View {
                             .toggleStyle(SwitchToggleStyle(tint: .accentColor))
                             .scaleEffect(0.8)
                             .onChange(of: brightnessEnabled) { oldValue, newValue in
-                                logger.info("Brightness setting changed from \(oldValue) to \(newValue)")
+                                logger.info("Brightness setting changed from \(oldValue) to \(newValue).")
                                 appDelegate?.updateBrightnessMonitoring()
                             }
                     }
