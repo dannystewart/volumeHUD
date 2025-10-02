@@ -9,12 +9,16 @@
 /* Begin PBXBuildFile section */
 		3045B1B12E8CB81A00C34F16 /* CHANGELOG.md in Resources */ = {isa = PBXBuildFile; fileRef = 3045B1AF2E8CB81A00C34F16 /* CHANGELOG.md */; };
 		3045B1B22E8CB81A00C34F16 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 3045B1B02E8CB81A00C34F16 /* README.md */; };
+		3072CFF02E8E299200133C4D /* volumehud-beta.rb in Resources */ = {isa = PBXBuildFile; fileRef = 3072CFEF2E8E299200133C4D /* volumehud-beta.rb */; };
+		3072CFF12E8E299200133C4D /* volumehud.rb in Resources */ = {isa = PBXBuildFile; fileRef = 3072CFEE2E8E299200133C4D /* volumehud.rb */; };
 		30991F012E8C9E990008AD92 /* Polykit in Frameworks */ = {isa = PBXBuildFile; productRef = 30991F002E8C9E990008AD92 /* Polykit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		3045B1AF2E8CB81A00C34F16 /* CHANGELOG.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CHANGELOG.md; sourceTree = "<group>"; };
 		3045B1B02E8CB81A00C34F16 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		3072CFEE2E8E299200133C4D /* volumehud.rb */ = {isa = PBXFileReference; lastKnownFileType = text.script.ruby; name = volumehud.rb; path = "../homebrew-apps/Casks/volumehud.rb"; sourceTree = SOURCE_ROOT; };
+		3072CFEF2E8E299200133C4D /* volumehud-beta.rb */ = {isa = PBXFileReference; lastKnownFileType = text.script.ruby; name = "volumehud-beta.rb"; path = "../homebrew-apps/Casks/volumehud-beta.rb"; sourceTree = SOURCE_ROOT; };
 		30C937682E806B79004B5AF5 /* volumeHUD.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = volumeHUD.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -48,6 +52,8 @@
 		30C9375F2E806B79004B5AF5 = {
 			isa = PBXGroup;
 			children = (
+				3072CFEE2E8E299200133C4D /* volumehud.rb */,
+				3072CFEF2E8E299200133C4D /* volumehud-beta.rb */,
 				3045B1AF2E8CB81A00C34F16 /* CHANGELOG.md */,
 				3045B1B02E8CB81A00C34F16 /* README.md */,
 				30C9376A2E806B79004B5AF5 /* volumeHUD */,
@@ -132,6 +138,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3072CFF02E8E299200133C4D /* volumehud-beta.rb in Resources */,
+				3072CFF12E8E299200133C4D /* volumehud.rb in Resources */,
 				3045B1B12E8CB81A00C34F16 /* CHANGELOG.md in Resources */,
 				3045B1B22E8CB81A00C34F16 /* README.md in Resources */,
 			);
@@ -283,7 +291,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2.0;
+				CURRENT_PROJECT_VERSION = 2.0-beta.1;
 				DEVELOPMENT_TEAM = PL2FTGT24W;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -300,7 +308,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 2.0;
+				MARKETING_VERSION = "2.0 beta 1";
 				PRODUCT_BUNDLE_IDENTIFIER = com.dannystewart.volumehud;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -322,7 +330,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2.0;
+				CURRENT_PROJECT_VERSION = 2.0-beta.1;
 				DEVELOPMENT_TEAM = PL2FTGT24W;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -339,7 +347,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 2.0;
+				MARKETING_VERSION = "2.0 beta 1";
 				PRODUCT_BUNDLE_IDENTIFIER = com.dannystewart.volumehud;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
