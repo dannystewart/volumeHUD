@@ -1,18 +1,18 @@
 # volumeHUD
 
-A simple macOS app that displays a volume overlay when you change your volume, just like it used to.
+A simple macOS app that brings back the classic volume and brightness HUDs.
 
 ## Why This Exists
 
-With macOS Tahoe, Apple has revamped Control Center, and as part of this they decided to replace the nice reliable volume indicator of 25 years with a tiny popover in the corner of the screen that's even smaller than a notification. It's barely visible, especially against light backgrounds, and it disappears faster than I remember where to look for it. Even after months on the Tahoe beta, I still haven't gotten used to it. It's bad UI.
+With macOS Tahoe, Apple revamped Control Center and replaced the classic volume and brightness indicators of 25 years with tiny popovers in the corner of the screen, even smaller than notifications. They're barely visible, especially against light backgrounds, and they disappear before I remember where to look. Even after months on the Tahoe beta, I still haven't gotten used to it. It's bad UI.
 
-So I did what any sane person would do: I picked up Xcode and wrote my first ever Mac app to bring back the classic macOS volume experience we all know and love (except Apple, apparently). It does what any good volume indicator should do: it tells you what your volume is when you change it and then it goes away. And get this—you can actually *see it*. A groundbreaking feature in 2025.
+So I did what any sane person would do: I picked up Xcode and wrote my first ever Mac app to bring back the classic macOS HUDs we all know and love (except Apple, apparently). They do what a good system indicator should do: they show you the value when you change them and then they go away. And get this—you can actually *see them*. A groundbreaking feature in 2025.
 
 ## What It Looks Like
 
 <img src="volumeHUD.gif" alt="volumeHUD Demo" height="300"></img>
 
-As of version 2.0, the app now offers a brightness HUD that works the same way.
+Version 2.0 now includes a brightness HUD that looks and works the same.
 
 ## How to Use It
 
@@ -24,11 +24,9 @@ You can get it from the repo, but I strongly recommend installing via Homebrew:
 brew install dannystewart/apps/volumehud
 ```
 
-The app does have a simple update check on the About screen, but Homebrew makes updating much easier so you don't have to think about it.
-
 ### Interface
 
-The app has an interface you can access by launching it a second time. It's a simple About box with a button to quit. It will also tell you if an update is available.
+Launching the app a second time after it's already running will show a simple About box with a button to quit. It will also let you know if there's an update available.
 
 To run on startup, you can add it to **System Settings** > **General** > **Login Items & Extensions** > **Open at Login**.
 
