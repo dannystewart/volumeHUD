@@ -136,7 +136,7 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
         } else {
             brightnessAvailable = false
             if !hasLoggedBrightnessError {
-                logger.error("Brightness control not available; this may be an external display or a system without brightness control.")
+                logger.warning("Brightness control not available; this may be an external display or a system without brightness control.")
                 hasLoggedBrightnessError = true
             }
         }
@@ -155,7 +155,7 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
         let canChange = canChangeBrightness(mainDisplay)
 
         guard canChange else {
-            logger.error("getCurrentBrightness: canChangeBrightness returned false for display \(mainDisplay)")
+            logger.warning("getCurrentBrightness: canChangeBrightness returned false for display \(mainDisplay)")
             return nil
         }
 
