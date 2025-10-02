@@ -320,9 +320,9 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
             // Ambient light changes tend to happen in rapid sequences (>1 change in quick succession)
             // Also consider single changes that happen shortly after other changes
             // Additionally, treat large instantaneous jumps as ambient when no key press is recent
-            let isLikelyAmbientLight = (brightnessChangeCount > 1 && timeSinceKeyPress > 0.5) ||
-                (timeSinceLastChange < 0.5 && timeSinceKeyPress > 0.5) ||
-                (deltaSteps >= 2.0 && timeSinceKeyPress > 0.5)
+            let isLikelyAmbientLight = (brightnessChangeCount > 2 && timeSinceKeyPress > 0.5) ||
+                (timeSinceLastChange < 0.3 && timeSinceKeyPress > 0.5 && brightnessChangeCount > 1) ||
+                (deltaSteps >= 4.0 && timeSinceKeyPress > 0.5 && brightnessChangeCount > 1)
 
             // If we can observe key events or have Accessibility, rely solely on key presses
             if receivedAnyBrightnessKeyEvent || accessibilityEnabled {
@@ -336,12 +336,14 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
                 }
             } else {
                 // Heuristic mode (no permissions and no key events): use delay and spike detection to avoid flashes
+                // In heuristic mode, be more conservative - assume user changes unless strong evidence of ambient light
                 if isLikelyAmbientLight {
                     heuristicShowTimer?.invalidate()
                     heuristicShowTimer = nil
                     logger.debug("Brightness auto-adjusted to \(Int(quantizedBrightness * 100))% (ambient light change, HUD not shown).")
                     currentBrightness = quantizedBrightness
                 } else {
+                    // This is likely a user-initiated change, show HUD with delay to confirm
                     heuristicShowTimer?.invalidate()
                     let scheduledChangeCount = brightnessChangeCount
                     let scheduledLastChangeTime = lastBrightnessChangeTime
@@ -350,14 +352,17 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
                     heuristicShowTimer = Timer.scheduledTimer(withTimeInterval: 0.6, repeats: false) { [weak self] _ in
                         Task { @MainActor [weak self] in
                             guard let self else { return }
-                            let hasConfirmingChange = (brightnessChangeCount >= scheduledChangeCount + 1)
-                            let withinSameWindow = abs(lastBrightnessChangeTime - scheduledLastChangeTime) < 0.001
-                            if hasConfirmingChange, withinSameWindow {
+                            // Check if additional changes occurred (suggesting ambient light)
+                            let hasAdditionalChanges = (brightnessChangeCount > scheduledChangeCount)
+                            let timeSinceScheduled = abs(lastBrightnessChangeTime - scheduledLastChangeTime)
+
+                            // If no additional changes within the window, likely user-initiated
+                            if !hasAdditionalChanges || timeSinceScheduled > 0.4 {
                                 logger.info("Brightness updated (heuristic): \(Int(scheduledBrightness * 100))%")
                                 currentBrightness = scheduledBrightness
                                 hudController?.showBrightnessHUD(brightness: scheduledBrightness)
                             } else {
-                                logger.debug("Skipped HUD show (no confirming change; likely ambient).")
+                                logger.debug("Skipped HUD show (additional changes detected; likely ambient).")
                             }
                         }
                     }
