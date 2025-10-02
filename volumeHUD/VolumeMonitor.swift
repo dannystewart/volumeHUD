@@ -66,7 +66,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         self.deviceID = deviceID
 
         // Get initial volume without showing HUD
-        updateVolumeValuesOnStartup()
+        updateVolumeOnStartup()
 
         // Register for volume change notifications
         addVolumeListeners()
@@ -144,7 +144,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         return (volume: newVolume, isMuted: newMuted)
     }
 
-    private func updateVolumeValuesOnStartup() {
+    private func updateVolumeOnStartup() {
         let (newVolume, newMuted) = getCurrentVolumeAndMuteState()
 
         // Update @Published properties directly
@@ -188,18 +188,17 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         let accessibilityEnabled = AXIsProcessTrusted()
 
         if !accessibilityEnabled {
-            logger.info("Accessibility permissions not granted, so volume keys cannot be detected.")
-            logger.info("This means the HUD will not be displayed when pressing volume keys to go past min or max volume limits.")
-            logger.info("If you want this to work, please grant accessibility permissions in System Settings > Privacy & Security > Input Monitoring.")
+            logger.info("Accessibility permissions not available; volume keys won't be detected.")
             return
+        } else {
+            logger.debug("Accessibility permissions granted; monitoring volume keys for boundary detection.")
         }
 
         // Monitor system-defined events for volume key presses
         systemEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: .systemDefined) {
             [weak self] event in
             guard let self else { return }
-            // Extract only primitive fields on the monitoring thread to avoid
-            // crossing threads with non-Sendable NSEvent
+            // Extract only primitive fields on the monitoring thread to avoid crossing threads with non-Sendable NSEvent
             let subtype = Int(event.subtype.rawValue)
             let data1 = Int(event.data1)
             let keyCode = (data1 & 0xFFFF_0000) >> 16
@@ -220,7 +219,6 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         keyEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.keyDown, .keyUp]) { _ in }
 
         logger.debug("Started monitoring system-defined events for volume keys.")
-        logger.debug("Accessibility permissions \(accessibilityEnabled ? "granted" : "denied").")
     }
 
     private func stopSystemEventMonitoring() {
@@ -283,7 +281,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             let currentTime = Date().timeIntervalSince1970
             // Debounce log messages as macOS seems to fire key events twice
             if currentTime - lastVolumeKeyLogTime > 0.1 {
-                logger.debug("HUD not forced for volume key because volume is not 0% or 100%.")
+                logger.debug("Volume key detected, but not forcing HUD while volume is within bounds.")
                 lastVolumeKeyLogTime = currentTime
             }
             return
@@ -377,7 +375,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
 
         // Update volume values for the new device
         DispatchQueue.main.async {
-            self.updateVolumeValuesOnStartup()
+            self.updateVolumeOnStartup()
         }
 
         logger.info("Successfully switched to new device: \(newDeviceID)")
