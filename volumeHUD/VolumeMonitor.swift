@@ -283,7 +283,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             let currentTime = Date().timeIntervalSince1970
             // Debounce log messages as macOS seems to fire key events twice
             if currentTime - lastVolumeKeyLogTime > 0.1 {
-                logger.debug("Key press ignored because volume is not 0% or 100%.")
+                logger.debug("HUD not forced for volume key because volume is not 0% or 100%.")
                 lastVolumeKeyLogTime = currentTime
             }
             return

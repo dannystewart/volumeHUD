@@ -9,7 +9,10 @@ import Polykit
 class BrightnessMonitor: ObservableObject, @unchecked Sendable {
     @Published var currentBrightness: Float = 0.0
 
-    let accessibilityEnabled = AXIsProcessTrusted()
+    /// Set to true to bypass accessibility checks for debugging
+    var accessibilityBypassed: Bool = false
+    let accessibilityGranted = AXIsProcessTrusted()
+    private var accessibilityEnabled: Bool
 
     private var isMonitoring = false
     private var previousBrightness: Float = 0.0
@@ -26,7 +29,7 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
     private var brightnessChangeCount = 0
     private var heuristicShowTimer: Timer?
 
-    // Cache DisplayServices function pointers
+    /// Cache DisplayServices function pointers
     private var displayServicesHandle: UnsafeMutableRawPointer?
     private var canChangeBrightnessFunc: (@convention(c) (CGDirectDisplayID) -> Bool)?
     private var getBrightnessFunc: (@convention(c) (CGDirectDisplayID, UnsafeMutablePointer<Float>) -> kern_return_t)?
@@ -38,6 +41,12 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
     init() {
         // Initialize with a timestamp far in the past so initial startup doesn't show HUD
         lastBrightnessKeyTime = 0
+
+        // Enable accessibility if it's granted and not bypassed for debugging
+        accessibilityEnabled = accessibilityGranted && !accessibilityBypassed
+
+        // Log the accessibility status for debugging
+        if accessibilityBypassed { logger.warning("Accessibility bypass enabled. Relying on heuristics only for brightness debugging.") }
 
         // Load DisplayServices framework once at initialization
         loadDisplayServices()
@@ -362,15 +371,15 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
 
     @MainActor
     private func handleSystemDefinedEventData(subtype: Int, keyCode: Int, isKeyDown: Bool) {
-        // Brightness keys generate NSSystemDefined events with subtype 8
-        logger.debug("System event: subtype=\(subtype), keyCode=\(keyCode), isKeyDown=\(isKeyDown)")
+        // Brightness keys generate NSSystemDefined events with subtype 8 (logging is noisy)
+        // logger.debug("System event: subtype=\(subtype), keyCode=\(keyCode), isKeyDown=\(isKeyDown)")
         if subtype == 8 {
             guard isKeyDown else { return }
 
             // NX key codes: 2 = brightness down, 3 = brightness up
             switch keyCode {
             case 2, 3:
-                logger.debug("Brightness key detected: \(keyCode == 2 ? "down" : "up")")
+                logger.debug("Brightness key detected: \(keyCode == 2 ? "brightness down" : "brightness up")")
                 // Track when a brightness key was pressed and that we can observe key events
                 lastBrightnessKeyTime = Date().timeIntervalSince1970
                 lastBrightnessKeyEventSeenTime = lastBrightnessKeyTime
@@ -395,7 +404,7 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
         let atMaxBrightness = quantizedBrightness >= 0.999
 
         if !atMinBrightness, !atMaxBrightness {
-            logger.debug("Brightness key press ignored because brightness is not at boundary.")
+            logger.debug("HUD not forced for brightness key because brightness is not 0% or 100%.")
             return
         }
 

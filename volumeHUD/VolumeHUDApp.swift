@@ -43,6 +43,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
 
     let logger = PolyLog()
 
+    /// Set to true to bypass accessibility checks for debugging
+    let shouldBypassAccessibility = false
+
     func applicationDidFinishLaunching(_: Notification) {
         // Keep the app headless and out of the Dock
         NSApplication.shared.setActivationPolicy(.accessory)
@@ -60,6 +63,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         hudController.brightnessMonitor = brightnessMonitor
         volumeMonitor.hudController = hudController
         brightnessMonitor.hudController = hudController
+        brightnessMonitor.accessibilityBypassed = shouldBypassAccessibility
+
+        // Include warning in startup message if we're bypassing accessibility
+        let notificationText =
+            if brightnessMonitor.accessibilityBypassed == true {
+                "volumeHUD started (accessibility bypassed)"
+            } else {
+                "volumeHUD started!"
+            }
 
         // Request notification permission and post "started" notification (only if manually launched)
         requestNotificationAuthorizationIfNeeded { [weak self] granted in
@@ -69,7 +81,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
                 // Only show startup notification if launched manually (not during system startup)
                 if isManualLaunch(logger: logger) {
                     Task { @MainActor in
-                        self.postUserNotification(title: "volumeHUD started!", body: nil)
+                        self.postUserNotification(title: notificationText, body: nil)
                     }
                 } else {
                     logger.info("Skipping startup notification due to automatic launch.")
