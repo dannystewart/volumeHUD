@@ -8,6 +8,19 @@ import SwiftUI
 // MARK: - Launch Detection
 
 private nonisolated func isManualLaunch(logger: PolyLog) -> Bool {
+    // Check if we're running in test environment or SwiftUI preview mode
+    if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" || NSClassFromString("XCTest") != nil {
+        logger.debug("Running in test environment or SwiftUI preview.")
+        return false
+    }
+
+    // Check if we're running from Xcode preview process
+    let processName = ProcessInfo.processInfo.processName
+    if processName.contains("XCPreviewAgent") || processName.contains("PreviewHost") {
+        logger.debug("Running in Xcode preview process: \(processName)")
+        return false
+    }
+
     // Check if launched by launchd (startup item) or manually
     let parentPID = getppid()
 
@@ -48,6 +61,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
     let shouldBypassAccessibility = false
 
     func applicationDidFinishLaunching(_: Notification) {
+        // Skip full initialization if running in SwiftUI preview or test mode
+        if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" ||
+            NSClassFromString("XCTest") != nil ||
+            ProcessInfo.processInfo.processName.contains("XCPreviewAgent") ||
+            ProcessInfo.processInfo.processName.contains("PreviewHost")
+        {
+            logger.debug("Skipping app initialization for test environment or SwiftUI preview.")
+            return
+        }
+
         // Keep the app headless and out of the Dock
         NSApplication.shared.setActivationPolicy(.accessory)
 
