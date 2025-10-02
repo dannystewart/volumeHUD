@@ -15,11 +15,16 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
     private var previousBrightness: Float = 0.0
     private var brightnessPollingTimer: Timer?
     private var systemEventMonitor: Any?
+    private var eventTap: CFMachPort?
+    private var eventTapRunLoopSource: CFRunLoopSource?
     private var lastBrightnessKeyTime: TimeInterval = 0
+    private var lastBrightnessKeyEventSeenTime: TimeInterval = 0
+    private var receivedAnyBrightnessKeyEvent = false
     private var hasLoggedBrightnessError = false
     private var brightnessAvailable = false
     private var lastBrightnessChangeTime: TimeInterval = 0
     private var brightnessChangeCount = 0
+    private var heuristicShowTimer: Timer?
 
     // Cache DisplayServices function pointers
     private var displayServicesHandle: UnsafeMutableRawPointer?
@@ -89,6 +94,7 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
 
         // Start monitoring system-defined events for brightness key presses
         startSystemEventMonitoring()
+        startEventTap()
 
         isMonitoring = true
         logger.debug("Started monitoring for brightness changes.")
@@ -102,6 +108,9 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
 
         // Stop system event monitoring
         stopSystemEventMonitoring()
+        stopEventTap()
+        heuristicShowTimer?.invalidate()
+        heuristicShowTimer = nil
 
         isMonitoring = false
         logger.debug("Stopped monitoring for brightness changes.")
@@ -186,15 +195,75 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
             }
         }
 
-        logger.debug("Started monitoring system-defined events for brightness keys.")
+        logger.debug("Started monitoring system-defined events for brightness keys (NSEvent).")
     }
 
     private func stopSystemEventMonitoring() {
         if let monitor = systemEventMonitor {
             NSEvent.removeMonitor(monitor)
             systemEventMonitor = nil
-            logger.debug("Stopped monitoring system-defined events.")
+            logger.debug("Stopped monitoring system-defined events (NSEvent).")
         }
+    }
+
+    private func startEventTap() {
+        // Install a CGEvent tap to reliably observe NX_SYSDEFINED events without capturing context
+        let systemDefinedMask: CGEventMask = 1 << 14 // kCGEventSystemDefined = 14
+        let userInfo = Unmanaged.passUnretained(self).toOpaque()
+        guard let tap = CGEvent.tapCreate(
+            tap: .cgSessionEventTap,
+            place: .headInsertEventTap,
+            options: .listenOnly,
+            eventsOfInterest: systemDefinedMask,
+            callback: { _, type, cgEvent, opaqueInfo -> Unmanaged<CGEvent>? in
+                guard type.rawValue == 14, let nsEvent = NSEvent(cgEvent: cgEvent) else {
+                    return Unmanaged.passUnretained(cgEvent)
+                }
+                guard let opaqueInfo else {
+                    return Unmanaged.passUnretained(cgEvent)
+                }
+                let monitor = Unmanaged<BrightnessMonitor>.fromOpaque(opaqueInfo).takeUnretainedValue()
+
+                let subtype = Int(nsEvent.subtype.rawValue)
+                let data1 = Int(nsEvent.data1)
+                let keyCode = (data1 & 0xFFFF_0000) >> 16
+                let keyFlags = data1 & 0x0000_FFFF
+                let keyState = (keyFlags & 0xFF00) >> 8
+                let isKeyDown = keyState == 0x0A
+
+                Task { @MainActor in
+                    monitor.handleSystemDefinedEventData(subtype: subtype, keyCode: keyCode, isKeyDown: isKeyDown)
+                }
+
+                return Unmanaged.passUnretained(cgEvent)
+            },
+            userInfo: userInfo,
+        ) else {
+            logger.warning("Failed to create CGEvent tap for systemDefined events; falling back to NSEvent only.")
+            return
+        }
+
+        eventTap = tap
+        eventTapRunLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
+        if let source = eventTapRunLoopSource {
+            CFRunLoopAddSource(CFRunLoopGetCurrent(), source, .commonModes)
+            CGEvent.tapEnable(tap: tap, enable: true)
+            logger.debug("Started CGEvent tap for systemDefined events.")
+        } else {
+            logger.warning("Failed to create run loop source for event tap.")
+        }
+    }
+
+    private func stopEventTap() {
+        if let source = eventTapRunLoopSource {
+            CFRunLoopRemoveSource(CFRunLoopGetCurrent(), source, .commonModes)
+        }
+        if let tap = eventTap {
+            CGEvent.tapEnable(tap: tap, enable: false)
+        }
+        eventTapRunLoopSource = nil
+        eventTap = nil
+        logger.debug("Stopped CGEvent tap for systemDefined events.")
     }
 
     @MainActor
@@ -235,35 +304,56 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
             }
             lastBrightnessChangeTime = currentTime
 
+            // Step magnitude in 1/16th bars
+            let deltaSteps = abs(quantizedBrightness - previousBrightness) * 16.0
+
             // Determine if this is likely an ambient light adjustment
             // Ambient light changes tend to happen in rapid sequences (>1 change in quick succession)
             // Also consider single changes that happen shortly after other changes
+            // Additionally, treat large instantaneous jumps as ambient when no key press is recent
             let isLikelyAmbientLight = (brightnessChangeCount > 1 && timeSinceKeyPress > 0.5) ||
-                (timeSinceLastChange < 0.5 && timeSinceKeyPress > 0.5)
+                (timeSinceLastChange < 0.5 && timeSinceKeyPress > 0.5) ||
+                (deltaSteps >= 2.0 && timeSinceKeyPress > 0.5)
 
-            // Show HUD based on accessibility permissions:
-            // - WITH accessibility: Only show HUD if a brightness key was pressed recently
-            // - WITHOUT accessibility: Use heuristic detection to filter out ambient light changes
-            let shouldShowHUD = if accessibilityEnabled {
-                // Trust key press detection completely when we have accessibility permissions
-                timeSinceKeyPress < 1.0
-            } else {
-                // Fall back to heuristic-based detection when we don't have permissions
-                !isLikelyAmbientLight
-            }
-
-            if shouldShowHUD {
-                logger.info("Brightness updated: \(Int(quantizedBrightness * 100))%")
-                currentBrightness = quantizedBrightness
-                hudController?.showBrightnessHUD(brightness: quantizedBrightness)
-            } else {
-                let reason = if accessibilityEnabled {
-                    "no recent key press (accessibility enabled)"
+            // If we can observe key events or have Accessibility, rely solely on key presses
+            if receivedAnyBrightnessKeyEvent || accessibilityEnabled {
+                if timeSinceKeyPress < 1.0 {
+                    logger.info("Brightness updated (key press): \(Int(quantizedBrightness * 100))%")
+                    currentBrightness = quantizedBrightness
+                    hudController?.showBrightnessHUD(brightness: quantizedBrightness)
                 } else {
-                    isLikelyAmbientLight ? "ambient light change" : "triggered by system"
+                    logger.debug("Brightness auto-adjusted to \(Int(quantizedBrightness * 100))% (key-gated, no recent key press, HUD not shown).")
+                    currentBrightness = quantizedBrightness
                 }
-                logger.debug("Brightness auto-adjusted to \(Int(quantizedBrightness * 100))% (\(reason), HUD not shown).")
-                currentBrightness = quantizedBrightness
+            } else {
+                // Heuristic mode (no permissions and no key events): use delay and spike detection to avoid flashes
+                if isLikelyAmbientLight {
+                    heuristicShowTimer?.invalidate()
+                    heuristicShowTimer = nil
+                    logger.debug("Brightness auto-adjusted to \(Int(quantizedBrightness * 100))% (ambient light change, HUD not shown).")
+                    currentBrightness = quantizedBrightness
+                } else {
+                    heuristicShowTimer?.invalidate()
+                    let scheduledChangeCount = brightnessChangeCount
+                    let scheduledLastChangeTime = lastBrightnessChangeTime
+                    let scheduledBrightness = quantizedBrightness
+
+                    heuristicShowTimer = Timer.scheduledTimer(withTimeInterval: 0.6, repeats: false) { [weak self] _ in
+                        Task { @MainActor [weak self] in
+                            guard let self else { return }
+                            let hasConfirmingChange = (brightnessChangeCount >= scheduledChangeCount + 1)
+                            let withinSameWindow = abs(lastBrightnessChangeTime - scheduledLastChangeTime) < 0.001
+                            if hasConfirmingChange, withinSameWindow {
+                                logger.info("Brightness updated (heuristic): \(Int(scheduledBrightness * 100))%")
+                                currentBrightness = scheduledBrightness
+                                hudController?.showBrightnessHUD(brightness: scheduledBrightness)
+                            } else {
+                                logger.debug("Skipped HUD show (no confirming change; likely ambient).")
+                            }
+                        }
+                    }
+                    currentBrightness = quantizedBrightness
+                }
             }
 
             previousBrightness = quantizedBrightness
@@ -281,9 +371,13 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
             switch keyCode {
             case 2, 3:
                 logger.debug("Brightness key detected: \(keyCode == 2 ? "down" : "up")")
-                // Track when a brightness key was pressed
+                // Track when a brightness key was pressed and that we can observe key events
                 lastBrightnessKeyTime = Date().timeIntervalSince1970
+                lastBrightnessKeyEventSeenTime = lastBrightnessKeyTime
+                receivedAnyBrightnessKeyEvent = true
                 showHUDForBrightnessKeyPress()
+                // Trigger an immediate state check to avoid waiting for the 0.1s polling tick
+                checkForBrightnessChange()
             default:
                 break
             }
