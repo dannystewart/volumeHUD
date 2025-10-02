@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import Foundation
 import Polykit
 import SwiftUI
 
@@ -26,6 +27,11 @@ class HUDController: ObservableObject {
 
     @MainActor
     func showBrightnessHUD(brightness: Float) {
+        // Only show brightness HUD if the feature is enabled
+        guard UserDefaults.standard.bool(forKey: "brightnessEnabled") else {
+            logger.debug("Brightness HUD disabled - skipping display")
+            return
+        }
         displayHUD(hudType: .brightness, value: brightness, isMuted: false)
     }
 

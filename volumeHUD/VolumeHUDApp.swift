@@ -1,5 +1,6 @@
 import AppKit
 import Darwin
+import Foundation
 import Polykit
 import SwiftUI
 @preconcurrency import UserNotifications
@@ -91,9 +92,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
             }
         }
 
-        // Start monitoring volume changes
+        // Start monitoring volume changes (always enabled)
         volumeMonitor.startMonitoring()
-        brightnessMonitor.startMonitoring()
+
+        // Start brightness monitoring only if enabled in settings
+        if UserDefaults.standard.bool(forKey: "brightnessEnabled") {
+            logger.info("Brightness HUD enabled; starting brightness monitoring.")
+            brightnessMonitor.startMonitoring()
+        } else {
+            logger.info("Brightness HUD disabled; skipping brightness monitoring.")
+        }
 
         // Start monitoring display configuration changes
         hudController.startDisplayChangeMonitoring()
@@ -119,17 +127,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         }
 
         // Create the about window
-        let aboutView = AboutView { [weak self] in
+        let aboutView = AboutView(onQuit: { [weak self] in
             self?.aboutWindow?.close()
             self?.aboutWindow = nil
             self?.gracefulTerminate()
-        }
+        }, appDelegate: self)
 
         let hostingController = NSHostingController(rootView: aboutView)
 
         // Use NSPanel to remain in accessory mode
         let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 280, height: 360),
+            contentRect: NSRect(x: 0, y: 0, width: 280, height: 450),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false,
@@ -142,7 +150,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         if let screen = NSScreen.main {
             let screenFrame = screen.visibleFrame
             let windowWidth: CGFloat = 280
-            let windowHeight: CGFloat = 360
+            let windowHeight: CGFloat = 450
 
             let x = screenFrame.origin.x + (screenFrame.width - windowWidth) / 2
             let y = screenFrame.origin.y + screenFrame.height * 0.66 - windowHeight / 2
@@ -158,10 +166,24 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         panel.makeKeyAndOrderFront(nil)
     }
 
+    @MainActor
+    func updateBrightnessMonitoring() {
+        if UserDefaults.standard.bool(forKey: "brightnessEnabled") {
+            logger.info("Enabling brightness HUD; starting brightness monitoring.")
+            brightnessMonitor.startMonitoring()
+        } else {
+            logger.info("Disabling brightness HUD; stopping brightness monitoring.")
+            brightnessMonitor.stopMonitoring()
+        }
+    }
+
     private func gracefulTerminate() {
         logger.info("Stopping monitoring and quitting.")
         volumeMonitor?.stopMonitoring()
-        brightnessMonitor?.stopMonitoring()
+        // Only stop brightness monitoring if it was started
+        if UserDefaults.standard.bool(forKey: "brightnessEnabled") {
+            brightnessMonitor?.stopMonitoring()
+        }
         hudController?.stopDisplayChangeMonitoring()
 
         // Terminate without activating the app

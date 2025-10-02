@@ -3,7 +3,11 @@ import SwiftUI
 
 struct AboutView: View {
     let onQuit: () -> Void
+    weak var appDelegate: AppDelegate?
     let logger = PolyLog()
+
+    // Settings for app preferences
+    @AppStorage("brightnessEnabled") private var brightnessEnabled: Bool = false
 
     // State to track if an update is available
     @State private var isUpdateAvailable: Bool = false
@@ -12,7 +16,7 @@ struct AboutView: View {
         if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
             return version
         }
-        return "1.3.0" // The update check was introduced in 1.3.0
+        return "2.0.0"
     }
 
     // GitHub repository info
@@ -91,7 +95,7 @@ struct AboutView: View {
     }
 
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 14) {
             // App icon
             if let appIcon = NSImage(named: "AppIcon") {
                 Image(nsImage: appIcon)
@@ -100,7 +104,7 @@ struct AboutView: View {
             }
 
             // App name and version
-            VStack(spacing: 4) {
+            VStack(spacing: 5) {
                 Text("volumeHUD")
                     .font(.system(size: 24, weight: .medium))
 
@@ -129,7 +133,46 @@ struct AboutView: View {
                 .font(.system(size: 11))
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
-                .frame(maxWidth: 180)
+                .frame(maxWidth: 180, minHeight: 30)
+
+            // Settings section
+            VStack(spacing: 8) {
+                Spacer()
+                Divider()
+                    .padding(.horizontal, 20)
+
+                VStack(spacing: 6) {
+                    HStack {
+                        Image(systemName: "sun.max.fill")
+                            .foregroundColor(.orange)
+                            .font(.system(size: 14))
+
+                        Text("Enable Brightness")
+                            .font(.system(size: 12, weight: .medium))
+
+                        Spacer()
+
+                        Toggle("", isOn: $brightnessEnabled)
+                            .toggleStyle(SwitchToggleStyle(tint: .accentColor))
+                            .scaleEffect(0.8)
+                            .onChange(of: brightnessEnabled) { oldValue, newValue in
+                                logger.info("Brightness setting changed from \(oldValue) to \(newValue)")
+                                appDelegate?.updateBrightnessMonitoring()
+                            }
+                    }
+                    .padding(.horizontal, 20)
+
+                    Text("Experimental, built-in display only")
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 20)
+                        .opacity(0.8)
+                }
+
+                Divider()
+                    .padding(.horizontal, 20)
+            }
 
             Spacer()
                 .frame(height: 20)
@@ -144,7 +187,7 @@ struct AboutView: View {
             .keyboardShortcut(.defaultAction)
         }
         .padding(30)
-        .frame(width: 270, height: 380)
+        .frame(width: 300, height: 450)
         .onAppear {
             checkForUpdates()
         }
@@ -154,5 +197,5 @@ struct AboutView: View {
 #Preview {
     AboutView(onQuit: {
         print("Quit button pressed")
-    })
+    }, appDelegate: nil)
 }
