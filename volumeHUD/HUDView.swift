@@ -93,14 +93,21 @@ struct HUDView: View {
 
 #Preview("Volume") {
     ZStack {
-        Color.black.ignoresSafeArea()
+        Color.black.frame(width: 360, height: 380).ignoresSafeArea()
         HUDView(hudType: .volume, value: 0.7, isMuted: false, isVisible: true)
+    }
+}
+
+#Preview("Mute") {
+    ZStack {
+        Color.black.frame(width: 360, height: 380).ignoresSafeArea()
+        HUDView(hudType: .volume, value: 0.0, isMuted: true, isVisible: true)
     }
 }
 
 #Preview("Brightness") {
     ZStack {
-        Color.black.ignoresSafeArea()
+        Color.black.frame(width: 360, height: 380).ignoresSafeArea()
         HUDView(hudType: .brightness, value: 0.5, isMuted: false, isVisible: true)
     }
 }
