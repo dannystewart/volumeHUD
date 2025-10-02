@@ -260,6 +260,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         completionHandler([.banner])
     }
 
+    // Handle notification taps
+    func userNotificationCenter(
+        _: UNUserNotificationCenter,
+        didReceive _: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void,
+    ) {
+        // Show the about window when the startup notification is tapped
+        Task { @MainActor in
+            self.showAboutWindow()
+        }
+        completionHandler()
+    }
+
     deinit {
         DistributedNotificationCenter.default().removeObserver(self)
     }
