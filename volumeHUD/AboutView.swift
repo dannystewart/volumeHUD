@@ -38,7 +38,7 @@ struct AboutView: View {
                 Image(nsImage: appIcon)
                     .resizable()
                     .frame(width: 80, height: 80)
-                    .offset(y: -30)
+                    .offset(y: -20)
             }
 
             VStack(spacing: 4) {
@@ -71,8 +71,9 @@ struct AboutView: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .frame(width: 230, height: 10)
+                    .offset(y: -8)
 
-            }.offset(y: -30)
+            }.offset(y: -20)
 
             // Settings section
             VStack(spacing: 6) {
@@ -165,7 +166,7 @@ struct AboutView: View {
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
-            .offset(y: 26)
+            .offset(y: 12)
             .keyboardShortcut(.defaultAction)
         }
         .padding(32)
