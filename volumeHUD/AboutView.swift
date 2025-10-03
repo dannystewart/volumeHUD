@@ -76,9 +76,6 @@ struct AboutView: View {
 
             // Settings section
             VStack(spacing: 6) {
-                Divider().frame(maxWidth: 204)
-                    .offset(y: -4)
-
                 // Login item setting
                 HStack {
                     Image(systemName: "power.circle.fill")
@@ -160,10 +157,6 @@ struct AboutView: View {
 
                 Spacer().frame(height: 2)
             }.offset(y: -4)
-
-            Divider().frame(maxWidth: 204)
-                .offset(y: brightnessEnabled ? -5 : -36)
-                .animation(.easeInOut(duration: 0.3), value: brightnessEnabled)
 
             // Quit button
             Button(action: onQuit) {
