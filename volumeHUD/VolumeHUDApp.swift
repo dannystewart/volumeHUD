@@ -23,10 +23,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
 
     func applicationDidFinishLaunching(_: Notification) {
         // Skip full initialization if running in SwiftUI preview or test mode
-        if isRunningInDevEnvironment() {
-            logger.debug("Skipping app initialization for test environment or SwiftUI preview.")
-            return
-        }
+        if isRunningInDevEnvironment() { return }
 
         // Keep the app headless and out of the Dock
         NSApplication.shared.setActivationPolicy(.accessory)

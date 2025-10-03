@@ -224,20 +224,12 @@ struct AboutView: View {
             isEnabled = true
         }
 
-        override func setEnabled(_ enabled: Bool) {
-            isEnabled = enabled
-            let logger = PolyLog()
-            logger.debug("Preview: Would set login item to \(enabled).")
-        }
-
-        override func updateStatus() {
-            let logger = PolyLog()
-            logger.debug("Preview: Skipping login item status update.")
-        }
+        override func setEnabled(_ enabled: Bool) { isEnabled = enabled }
+        override func updateStatus() {}
     }
 
     return AboutView(
-        onQuit: { print("Quit button pressed") },
+        onQuit: {},
         appDelegate: nil,
         loginItemManager: MockLoginItemManager(),
     )
