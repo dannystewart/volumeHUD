@@ -29,6 +29,11 @@ struct AboutView: View {
         return "2.0.0"
     }
 
+    // Check if we're using Heuristics mode but don't have Accessibility permissions
+    private var usingHeuristicsWithoutAccessibility: Bool {
+        brightnessEnabled && brightnessDetectionMode == "heuristic" && !AXIsProcessTrusted()
+    }
+
     // MARK: - About View
 
     var body: some View {
@@ -155,6 +160,16 @@ struct AboutView: View {
                     .offset(y: brightnessEnabled ? 0 : -8)
                 }
                 .animation(.easeInOut(duration: 0.3), value: brightnessEnabled)
+
+                Text("⚠️  Accessibility permissions needed")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(.red)
+                    .multilineTextAlignment(.center)
+                    .opacity(0.8)
+                    .frame(width: 250, height: 16, alignment: .init(horizontal: .center, vertical: .top))
+                    .offset(y: usingHeuristicsWithoutAccessibility ? 0 : -3)
+                    .opacity(usingHeuristicsWithoutAccessibility ? 1.0 : 0.0)
+                    .animation(.easeInOut(duration: 0.1), value: usingHeuristicsWithoutAccessibility)
 
                 Spacer().frame(height: 2)
             }.offset(y: -4)
