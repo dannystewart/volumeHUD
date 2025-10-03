@@ -47,14 +47,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         hudController.brightnessMonitor = brightnessMonitor
         volumeMonitor.hudController = hudController
         brightnessMonitor.hudController = hudController
+
+        // Set accessibility bypass for debugging if enabled
+        volumeMonitor.accessibilityBypassed = shouldBypassAccessibility
         brightnessMonitor.accessibilityBypassed = shouldBypassAccessibility
-        
+
+        // Request accessibility permissions if this is the first run or they're not granted
+        requestAccessibilityPermissionsIfNeeded()
+
         // Load brightness detection mode from user defaults
         loadBrightnessDetectionMode()
 
         // Include warning in startup message if we're bypassing accessibility
         let notificationText =
-            if brightnessMonitor.accessibilityBypassed {
+            if shouldBypassAccessibility {
                 "volumeHUD started (accessibility bypassed)"
             } else {
                 "volumeHUD started!"
@@ -149,11 +155,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         }
 
         // Create the About window
-        let aboutView = AboutView(onQuit: { [weak self] in
-            self?.aboutWindow?.close()
-            self?.aboutWindow = nil
-            self?.gracefulTerminate()
-        }, appDelegate: self)
+        let aboutView = AboutView(
+            onQuit: { [weak self] in
+                self?.aboutWindow?.close()
+                self?.aboutWindow = nil
+                self?.gracefulTerminate()
+            }, appDelegate: self,
+        )
 
         let hostingController = NSHostingController(rootView: aboutView)
 
@@ -167,7 +175,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
 
         panel.contentViewController = hostingController
         panel.title = "About volumeHUD"
-        
+
         // Prevent the panel from closing when clicking away
         panel.hidesOnDeactivate = false
 
@@ -200,11 +208,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
             logger.info("Brightness HUD disabled; skipping brightness monitoring.")
         }
     }
-    
+
     @MainActor
     private func loadBrightnessDetectionMode() {
         let detectionModeString = UserDefaults.standard.string(forKey: "brightnessDetectionMode") ?? "heuristic"
-        
+
         switch detectionModeString {
         case "heuristic":
             brightnessMonitor.detectionMode = .heuristic
@@ -213,11 +221,64 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         default:
             brightnessMonitor.detectionMode = .heuristic
         }
-        
+
         logger.debug("Loaded brightness detection mode: \(detectionModeString)")
     }
 
-    // MARK: - Notification Authorization
+    // MARK: - Accessibility Permissions
+
+    private nonisolated func requestAccessibilityPermissionsIfNeeded() {
+        // Skip if we're bypassing accessibility for debugging
+        if shouldBypassAccessibility {
+            logger.warning("Bypassing accessibility permission request for debugging.")
+            return
+        }
+
+        // Check if we've already asked before (to avoid asking every time)
+        let hasAskedBefore = UserDefaults.standard.bool(forKey: "hasAskedForAccessibilityPermissions")
+
+        // Check current permission status
+        let isCurrentlyTrusted = AXIsProcessTrusted()
+
+        if !isCurrentlyTrusted, !hasAskedBefore {
+            logger.info("First launch detected - requesting accessibility permissions.")
+
+            // Mark that we've asked before
+            UserDefaults.standard.set(true, forKey: "hasAskedForAccessibilityPermissions")
+
+            // Request permissions with prompt (using string key to avoid concurrency issues)
+            let promptKey = "AXTrustedCheckOptionPrompt"
+            let options = [promptKey: true] as [String: Bool] as CFDictionary
+            _ = AXIsProcessTrustedWithOptions(options)
+
+            // Update accessibility status after the request
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 second delay
+                let newStatus = AXIsProcessTrusted()
+                updateAccessibilityStatus()
+
+                if newStatus {
+                    logger.info("Accessibility permissions granted! Key press monitoring will be more reliable.")
+                } else {
+                    logger.info("Accessibility permissions not granted. Brightness and volume key detection will be limited.")
+                }
+            }
+        } else if isCurrentlyTrusted {
+            logger.info("Accessibility permissions already granted.")
+        } else {
+            logger.info("Accessibility permissions previously requested but not granted. Key press monitoring will be limited.")
+        }
+    }
+
+    @MainActor
+    private func updateAccessibilityStatus() {
+        // Update both monitors' accessibility status centrally
+        brightnessMonitor.updateAccessibilityStatus()
+        volumeMonitor.updateAccessibilityStatus()
+    }
+
+    // MARK: - Notification Permissions
 
     private func requestNotificationAuthorizationIfNeeded(
         completion: @escaping @Sendable (Bool) -> Void,
@@ -263,7 +324,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
     func userNotificationCenter(
         _: UNUserNotificationCenter,
         willPresent _: UNNotification,
-        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void,
+        withCompletionHandler completionHandler:
+        @escaping (UNNotificationPresentationOptions) -> Void,
     ) {
         completionHandler([.banner])
     }

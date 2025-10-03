@@ -11,7 +11,6 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
 
     /// Set to true to bypass accessibility checks for debugging
     var accessibilityBypassed: Bool = false
-    let accessibilityGranted = AXIsProcessTrusted()
     private var accessibilityEnabled: Bool
 
     private var isMonitoring = false
@@ -49,17 +48,24 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
         // Initialize with a timestamp far in the past so initial startup doesn't show HUD
         lastBrightnessKeyTime = 0
 
-        // Enable accessibility if it's granted and not bypassed for debugging
-        accessibilityEnabled = accessibilityGranted && !accessibilityBypassed
-
-        // Log the accessibility status for debugging
-        if accessibilityBypassed { logger.warning("Accessibility bypass enabled. Relying on heuristics only for brightness debugging.") }
+        // Initialize accessibility status
+        accessibilityEnabled = AXIsProcessTrusted() && !accessibilityBypassed
 
         // Load DisplayServices framework once at initialization
         loadDisplayServices()
     }
 
     deinit {}
+
+    /// Update the accessibility status after permissions may have changed
+    func updateAccessibilityStatus() {
+        let newAccessibilityEnabled = AXIsProcessTrusted() && !accessibilityBypassed
+
+        if newAccessibilityEnabled != accessibilityEnabled {
+            logger.info("Brightness monitor accessibility status changed: \(accessibilityEnabled) -> \(newAccessibilityEnabled)")
+            accessibilityEnabled = newAccessibilityEnabled
+        }
+    }
 
     /// Check if a brightness delta matches user-initiated key press patterns
     /// User key presses always change brightness by multiples of 1/16th (0.0625)
@@ -338,22 +344,22 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
 
                 let rawBrightness = brightness
                 let stepCount = abs(delta) / 0.0625
-                logger.info("\u{1F506} BRIGHTNESS CHANGE: \(String(format: "%.4f", delta)) (steps: \(String(format: "%.2f", stepCount))) - Raw: \(String(format: "%.6f", rawBrightness)) -> Quantized: \(String(format: "%.4f", quantizedBrightness)) - Time since key: \(String(format: "%.1f", timeSinceKeyPress))s")
+                logger.debug("Brightness change: \(String(format: "%.4f", delta)) (steps: \(String(format: "%.2f", stepCount))) - Raw: \(String(format: "%.6f", rawBrightness)) -> Quantized: \(String(format: "%.4f", quantizedBrightness)) - Time since key: \(String(format: "%.1f", timeSinceKeyPress))s")
 
                 let isUserChange = isUserInitiatedBrightnessChange(delta, rawBrightness: rawBrightness)
 
                 if isUserChange {
-                    logger.info("✅ SHOWING HUD (step-based detection): \(Int(quantizedBrightness * 100))% (delta: \(delta))")
+                    logger.debug("Showing HUD (step-based detection): \(Int(quantizedBrightness * 100))% (delta: \(delta))")
                     currentBrightness = quantizedBrightness
                     hudController?.showBrightnessHUD(brightness: quantizedBrightness)
                 } else {
-                    logger.debug("❌ IGNORING (ambient/system change): \(Int(quantizedBrightness * 100))% (delta: \(delta), HUD not shown).")
+                    logger.debug("Ignoring ambient/system change: \(Int(quantizedBrightness * 100))% (delta: \(delta), HUD not shown).")
                     currentBrightness = quantizedBrightness
                 }
 
                 if accessibilityEnabled, timeSinceKeyPress < 1.0 {
                     if !isUserChange {
-                        logger.info("✅ SHOWING HUD (accessibility override): \(Int(quantizedBrightness * 100))% (delta: \(delta))")
+                        logger.debug("Showing HUD (accessibility override): \(Int(quantizedBrightness * 100))% (delta: \(delta))")
                         hudController?.showBrightnessHUD(brightness: quantizedBrightness)
                     }
                 }

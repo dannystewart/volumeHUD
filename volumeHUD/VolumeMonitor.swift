@@ -11,8 +11,11 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
     @Published var currentVolume: Float = 0.0
     @Published var isMuted: Bool = false
 
+    /// Set to true to bypass accessibility checks for debugging
+    var accessibilityBypassed: Bool = false
     private var audioObjectPropertyAddress: AudioObjectPropertyAddress
     private var isMonitoring = false
+    private var accessibilityEnabled: Bool
     private var deviceID: AudioDeviceID = kAudioObjectUnknown
     private var previousVolume: Float = 0.0
     private var previousMuteState: Bool = false
@@ -35,6 +38,19 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             mScope: kAudioDevicePropertyScopeOutput,
             mElement: kAudioObjectPropertyElementMain,
         )
+
+        // Initialize accessibility status
+        accessibilityEnabled = AXIsProcessTrusted() && !accessibilityBypassed
+    }
+
+    /// Update accessibility status (to be called when permissions change)
+    func updateAccessibilityStatus() {
+        let newAccessibilityEnabled = AXIsProcessTrusted() && !accessibilityBypassed
+
+        if newAccessibilityEnabled != accessibilityEnabled {
+            logger.info("Volume monitor accessibility status changed: \(accessibilityEnabled) -> \(newAccessibilityEnabled)")
+            accessibilityEnabled = newAccessibilityEnabled
+        }
     }
 
     func startMonitoring() {
@@ -184,9 +200,6 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
     // MARK: Key Press Monitoring
 
     private func startSystemEventMonitoring() {
-        // Check if accessibility permissions are granted
-        let accessibilityEnabled = AXIsProcessTrusted()
-
         if !accessibilityEnabled {
             logger.info("Accessibility permissions not granted, so volume keys cannot be detected.")
             return
@@ -218,7 +231,6 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         keyEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.keyDown, .keyUp]) { _ in }
 
         logger.debug("Started monitoring system-defined events for volume keys.")
-        logger.debug("Accessibility permissions \(accessibilityEnabled ? "granted" : "denied").")
     }
 
     private func stopSystemEventMonitoring() {
