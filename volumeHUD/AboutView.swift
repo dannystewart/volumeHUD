@@ -87,7 +87,8 @@ struct AboutView: View {
                     // Space between "Settings" and divider
                     .frame(height: 16, alignment: .init(horizontal: .center, vertical: .top))
 
-                Divider().frame(maxWidth: 200)
+                Divider().frame(maxWidth: 206)
+                    .offset(y: 0)
 
                 // Login item setting
                 HStack {
@@ -107,7 +108,8 @@ struct AboutView: View {
                     .toggleStyle(SwitchToggleStyle(tint: .accentColor))
                     .scaleEffect(0.8)
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, 14)
+                .offset(y: 1)
 
                 VStack(spacing: 6) {
                     // Brightness HUD setting
@@ -129,7 +131,8 @@ struct AboutView: View {
                                 appDelegate?.startBrightnessMonitoringIfEnabled()
                             }
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, 14)
+                    .offset(y: 1)
 
                     Text("Experimental, built-in display only")
                         .font(.system(size: 10))
@@ -137,6 +140,7 @@ struct AboutView: View {
                         .multilineTextAlignment(.center)
                         .opacity(0.8)
                         .frame(height: 16, alignment: .init(horizontal: .center, vertical: .top))
+                        .offset(y: -2)
 
                     // Detection mode picker (only shown when brightness is enabled)
                     HStack {
@@ -159,17 +163,16 @@ struct AboutView: View {
                         }
                         .allowsHitTesting(brightnessEnabled)
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, 14)
                     .opacity(brightnessEnabled ? 1.0 : 0.0)
-                    .offset(y: brightnessEnabled ? 0 : -8)
                 }
                 .animation(.easeInOut(duration: 0.3), value: brightnessEnabled)
 
                 Spacer().frame(height: 2)
             }
 
-            Divider().frame(maxWidth: 200)
-                .offset(y: brightnessEnabled ? -6 : -36)
+            Divider().frame(maxWidth: 206)
+                .offset(y: brightnessEnabled ? -7 : -38)
                 .animation(.easeInOut(duration: 0.3), value: brightnessEnabled)
 
             Spacer()
@@ -182,7 +185,7 @@ struct AboutView: View {
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
-            .offset(y: 0)
+            .offset(y: -2)
             .keyboardShortcut(.defaultAction)
         }
         .padding(32)
