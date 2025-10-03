@@ -1,9 +1,15 @@
 {
     "folders": [
         {
+            "name": "volumeHUD",
             "path": "."
         },
         {
+            "name": "polykit-swift",
+            "path": "../polykit-swift"
+        },
+        {
+            "name": "homebrew-apps",
             "path": "../homebrew-apps"
         }
     ],
