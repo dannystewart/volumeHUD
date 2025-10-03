@@ -5,47 +5,6 @@ import Polykit
 import SwiftUI
 @preconcurrency import UserNotifications
 
-// MARK: - Launch Detection
-
-private nonisolated func isManualLaunch(logger: PolyLog) -> Bool {
-    // Check if we're running in test environment or SwiftUI preview mode
-    if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" || NSClassFromString("XCTest") != nil {
-        logger.debug("Running in test environment or SwiftUI preview.")
-        return false
-    }
-
-    // Check if we're running from Xcode preview process
-    let processName = ProcessInfo.processInfo.processName
-    if processName.contains("XCPreviewAgent") || processName.contains("PreviewHost") {
-        logger.debug("Running in Xcode preview process: \(processName)")
-        return false
-    }
-
-    // Check if launched by launchd (startup item) or manually
-    let parentPID = getppid()
-
-    var name = [CChar](repeating: 0, count: 1024)
-    let result = proc_name(parentPID, &name, UInt32(name.count))
-
-    if result > 0 {
-        // Build a String from the null-terminated C string buffer
-        let parentName: String = name.withUnsafeBufferPointer { buffer in
-            String(cString: buffer.baseAddress!)
-        }
-
-        logger.debug("Parent process: \(parentName) (PID: \(parentPID))")
-
-        // If parent is launchd, likely an auto-launch during startup
-        let isLaunchdLaunch = parentName.contains("launchd")
-        logger.info("Launch type: \(isLaunchdLaunch ? "automatic (launchd)" : "manual")")
-
-        return !isLaunchdLaunch
-    } else {
-        logger.info("Failed to get parent process name (PID: \(parentPID)), assuming manual launch.")
-        return true // Default to manual if we can't determine
-    }
-}
-
 // MARK: - AppDelegate
 
 @MainActor
@@ -57,16 +16,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
 
     let logger = PolyLog()
 
-    /// Set to true to bypass accessibility checks for debugging
+    // Set to true to bypass accessibility checks for debugging
     let shouldBypassAccessibility = false
+
+    // Check to see if brightness is enabled
+    private var isBrightnessEnabled: Bool {
+        UserDefaults.standard.bool(forKey: "brightnessEnabled")
+    }
 
     func applicationDidFinishLaunching(_: Notification) {
         // Skip full initialization if running in SwiftUI preview or test mode
-        if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" ||
-            NSClassFromString("XCTest") != nil ||
-            ProcessInfo.processInfo.processName.contains("XCPreviewAgent") ||
-            ProcessInfo.processInfo.processName.contains("PreviewHost")
-        {
+        if isRunningInDevEnvironment() {
             logger.debug("Skipping app initialization for test environment or SwiftUI preview.")
             return
         }
@@ -91,7 +51,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
 
         // Include warning in startup message if we're bypassing accessibility
         let notificationText =
-            if brightnessMonitor.accessibilityBypassed == true {
+            if brightnessMonitor.accessibilityBypassed {
                 "volumeHUD started (accessibility bypassed)"
             } else {
                 "volumeHUD started!"
@@ -103,7 +63,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
             logger.debug("Notification permission granted: \(granted)")
             if granted {
                 // Only show startup notification if launched manually (not during system startup)
-                if isManualLaunch(logger: logger) {
+                if isManualLaunch() {
                     Task { @MainActor in
                         self.postUserNotification(title: notificationText, body: nil)
                     }
@@ -115,26 +75,54 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
             }
         }
 
-        // Start monitoring volume changes (always enabled)
+        // Start monitoring volume changes
         volumeMonitor.startMonitoring()
 
         // Start brightness monitoring only if enabled in settings
-        if UserDefaults.standard.bool(forKey: "brightnessEnabled") {
-            logger.info("Brightness HUD enabled; starting brightness monitoring.")
-            brightnessMonitor.startMonitoring()
-        } else {
-            logger.info("Brightness HUD disabled; skipping brightness monitoring.")
-        }
+        startBrightnessMonitoringIfEnabled()
 
         // Start monitoring display configuration changes
         hudController.startDisplayChangeMonitoring()
     }
 
-    // Handle attempts to launch the app a second time
-    func applicationShouldHandleReopen(_: NSApplication, hasVisibleWindows _: Bool) -> Bool {
-        // Show the about window instead of quitting
-        showAboutWindow()
+    // Check to see if we're running in a development environment (SwiftUI preview, test mode, etc.)
+    private nonisolated func isRunningInDevEnvironment() -> Bool {
+        if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" ||
+            NSClassFromString("XCTest") != nil ||
+            ProcessInfo.processInfo.processName.contains("XCPreviewAgent") ||
+            ProcessInfo.processInfo.processName.contains("PreviewHost")
+        {
+            return true
+        }
+
         return false
+    }
+
+    // Check to see if we're running manually (not during system startup)
+    private nonisolated func isManualLaunch() -> Bool {
+        if isRunningInDevEnvironment() { return false }
+
+        // Check if launched by launchd (startup item) or manually
+        let parentPID = getppid()
+        var name = [CChar](repeating: 0, count: 1024)
+        let result = proc_name(parentPID, &name, UInt32(name.count))
+
+        if result > 0 {
+            // Build a String from the null-terminated C string buffer
+            let parentName: String = name.withUnsafeBufferPointer { buffer in
+                String(cString: buffer.baseAddress!)
+            }
+            logger.debug("Parent process: \(parentName) (PID: \(parentPID))")
+
+            // If parent is launchd, likely an auto-launch during startup
+            let isLaunchdLaunch = parentName.contains("launchd")
+            logger.info("Launch type: \(isLaunchdLaunch ? "automatic (launchd)" : "manual")")
+
+            return !isLaunchdLaunch
+        } else {
+            logger.info("Failed to get parent process name (PID: \(parentPID)), assuming manual launch.")
+            return true // Default to manual if we can't determine
+        }
     }
 
     // If we get a new "open" event, also show the about window
@@ -142,14 +130,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         showAboutWindow()
     }
 
+    // Open the about window when the app is opened while already running
+    func applicationShouldHandleReopen(_: NSApplication, hasVisibleWindows _: Bool) -> Bool {
+        showAboutWindow()
+        return false
+    }
+
+    // MARK: - Show About Window
+
     private func showAboutWindow() {
-        // If window already exists and is visible, just bring it to front
+        // If window already exists and is visible, just bring it to the front
         if let window = aboutWindow, window.isVisible {
             window.makeKeyAndOrderFront(nil)
             return
         }
 
-        // Create the about window
+        // Create the About window
         let aboutView = AboutView(onQuit: { [weak self] in
             self?.aboutWindow?.close()
             self?.aboutWindow = nil
@@ -190,28 +186,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
     }
 
     @MainActor
-    func updateBrightnessMonitoring() {
-        if UserDefaults.standard.bool(forKey: "brightnessEnabled") {
-            logger.info("Enabling brightness HUD; starting brightness monitoring.")
+    func startBrightnessMonitoringIfEnabled() {
+        if isBrightnessEnabled {
+            logger.info("Brightness HUD enabled; starting brightness monitoring.")
             brightnessMonitor.startMonitoring()
         } else {
-            logger.info("Disabling brightness HUD; stopping brightness monitoring.")
-            brightnessMonitor.stopMonitoring()
+            logger.info("Brightness HUD disabled; skipping brightness monitoring.")
         }
     }
 
-    private func gracefulTerminate() {
-        logger.info("Stopping monitoring and quitting.")
-        volumeMonitor?.stopMonitoring()
-        // Only stop brightness monitoring if it was started
-        if UserDefaults.standard.bool(forKey: "brightnessEnabled") {
-            brightnessMonitor?.stopMonitoring()
-        }
-        hudController?.stopDisplayChangeMonitoring()
-
-        // Terminate without activating the app
-        NSApp.terminate(nil)
-    }
+    // MARK: - Notification Authorization
 
     private func requestNotificationAuthorizationIfNeeded(
         completion: @escaping @Sendable (Bool) -> Void,
@@ -233,6 +217,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         }
     }
 
+    // MARK: - Post Notification
+
     private func postUserNotification(title: String, body: String?) {
         let content = UNMutableNotificationContent()
         content.title = title
@@ -249,7 +235,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         }
     }
 
-    // MARK: - UNUserNotificationCenterDelegate
+    // MARK: - Notification Center Delegate
 
     // Ensure banners appear even if the app is active
     func userNotificationCenter(
@@ -260,17 +246,28 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         completionHandler([.banner])
     }
 
-    // Handle notification taps
+    // Show the About window when the startup notification is tapped
     func userNotificationCenter(
         _: UNUserNotificationCenter,
         didReceive _: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void,
     ) {
-        // Show the about window when the startup notification is tapped
-        Task { @MainActor in
-            self.showAboutWindow()
-        }
+        Task { @MainActor in self.showAboutWindow() }
         completionHandler()
+    }
+
+    // MARK: - Graceful Termination
+
+    // Stop volume and brightness monitoring and quit the app
+    private func gracefulTerminate() {
+        logger.debug("Stopping monitoring and quitting.")
+        volumeMonitor?.stopMonitoring()
+
+        if isBrightnessEnabled { brightnessMonitor?.stopMonitoring() }
+        hudController?.stopDisplayChangeMonitoring()
+
+        // Terminate without activating the app
+        NSApp.terminate(nil)
     }
 
     deinit {
