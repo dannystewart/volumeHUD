@@ -38,7 +38,7 @@ struct AboutView: View {
                 Image(nsImage: appIcon)
                     .resizable()
                     .frame(width: 80, height: 80)
-                    .offset(y: 4)
+                    .offset(y: -30)
             }
 
             // App name and version
@@ -71,30 +71,18 @@ struct AboutView: View {
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
-                    .frame(width: 230, height: 14, alignment: .init(horizontal: .center, vertical: .center))
+                    .frame(width: 230, height: 10)
 
-            }.offset(y: 2)
+            }.offset(y: -28)
 
             // Settings section
-            VStack(spacing: 8) {
-                Spacer()
-                    // Space between description and "Settings"
-                    .frame(height: 24)
-
-                Text("Settings")
-                    .font(.system(size: 11, weight: .medium))
-                    .multilineTextAlignment(.center)
-                    // Space between "Settings" and divider
-                    .frame(height: 16, alignment: .init(horizontal: .center, vertical: .top))
-
-                Divider().frame(maxWidth: 206)
-                    .offset(y: 0)
-
+            VStack(spacing: 6) {
                 // Login item setting
                 HStack {
                     Image(systemName: "power.circle.fill")
                         .foregroundStyle(loginItemManager.isEnabled ? .green : .gray)
                         .font(.system(size: 14))
+                        .animation(.easeInOut(duration: 0.3), value: loginItemManager.isEnabled)
 
                     Text("Open at Login")
                         .font(.system(size: 12, weight: .medium))
@@ -109,7 +97,6 @@ struct AboutView: View {
                     .scaleEffect(0.8)
                 }
                 .padding(.horizontal, 14)
-                .offset(y: 1)
 
                 VStack(spacing: 6) {
                     // Brightness HUD setting
@@ -117,6 +104,7 @@ struct AboutView: View {
                         Image(systemName: "sun.max.fill")
                             .foregroundStyle(brightnessEnabled ? .orange : .gray)
                             .font(.system(size: 14))
+                            .animation(.easeInOut(duration: 0.3), value: brightnessEnabled)
 
                         Text("Brightness HUD")
                             .font(.system(size: 12, weight: .medium))
@@ -132,7 +120,6 @@ struct AboutView: View {
                             }
                     }
                     .padding(.horizontal, 14)
-                    .offset(y: 1)
 
                     Text("Experimental, built-in display only")
                         .font(.system(size: 10))
@@ -148,10 +135,10 @@ struct AboutView: View {
                             .font(.system(size: 11))
                             .foregroundStyle(.secondary)
                             .frame(minWidth: 34)
-                            .offset(x: 10, y: 0)
+                            .offset(x: 11, y: 0)
                         Spacer()
                         Picker("", selection: $brightnessDetectionMode) {
-                            Text("Step-based").tag("stepBased")
+                            Text(" Step-based ").tag("stepBased")
                             Text("Heuristic").tag("heuristic")
                         }
                         .pickerStyle(.segmented)
@@ -165,18 +152,12 @@ struct AboutView: View {
                     }
                     .padding(.horizontal, 14)
                     .opacity(brightnessEnabled ? 1.0 : 0.0)
+                    .offset(y: brightnessEnabled ? 0 : -8)
                 }
                 .animation(.easeInOut(duration: 0.3), value: brightnessEnabled)
 
                 Spacer().frame(height: 2)
-            }
-
-            Divider().frame(maxWidth: 206)
-                .offset(y: brightnessEnabled ? -7 : -38)
-                .animation(.easeInOut(duration: 0.3), value: brightnessEnabled)
-
-            Spacer()
-                .frame(height: 0)
+            }.offset(y: -6)
 
             // Quit button
             Button(action: onQuit) {
@@ -185,11 +166,11 @@ struct AboutView: View {
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
-            .offset(y: -2)
+            .offset(y: 22)
             .keyboardShortcut(.defaultAction)
         }
         .padding(32)
-        .frame(width: 300, height: 500)
+        .frame(width: 300, height: 460)
         .onAppear {
             Task {
                 try? await Task.sleep(nanoseconds: 200_000_000) // 0.2 second delay
