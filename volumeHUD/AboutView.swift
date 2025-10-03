@@ -9,7 +9,7 @@ struct AboutView: View {
 
     // Settings for app preferences
     @AppStorage("brightnessEnabled") private var brightnessEnabled: Bool = false
-    @AppStorage("shareLogsEnabled") private var shareLogsEnabled: Bool = false
+    @AppStorage("brightnessDetectionMode") private var brightnessDetectionMode: String = "heuristic"
 
     // State to track if an update is available
     @State private var isUpdateAvailable: Bool = false
@@ -68,12 +68,12 @@ struct AboutView: View {
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-                .frame(maxWidth: 140, minHeight: 40, alignment: .init(horizontal: .center, vertical: .center))
+                .frame(maxWidth: 140, minHeight: 40, alignment: .init(horizontal: .center, vertical: .top))
 
             // Settings section
             VStack(spacing: 8) {
                 Spacer()
-                    .frame(height: 20)
+                    .frame(height: 18)
 
                 VStack(spacing: 6) {
                     HStack {
@@ -102,13 +102,39 @@ struct AboutView: View {
                         .multilineTextAlignment(.center)
                         .opacity(0.8)
                         .frame(height: 16, alignment: .init(horizontal: .center, vertical: .top))
+
+                    // Detection mode picker (only shown when brightness is enabled)
+                    HStack {
+                        Text("Mode")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                            .frame(minWidth: 34)
+                            .offset(x: 10, y: 0)
+                        Spacer()
+                        Picker("", selection: $brightnessDetectionMode) {
+                            Text("Step-based").tag("stepBased")
+                            Text("Heuristic").tag("heuristic")
+                        }
+                        .pickerStyle(.segmented)
+                        .controlSize(.small)
+                        .scaleEffect(0.9)
+                        .onChange(of: brightnessDetectionMode) { oldValue, newValue in
+                            logger.debug("Brightness detection mode changed from \(oldValue) to \(newValue).")
+                            updateBrightnessDetectionMode()
+                        }
+                        .allowsHitTesting(brightnessEnabled)
+                    }
+                    .padding(.horizontal, 20)
+                    .opacity(brightnessEnabled ? 1.0 : 0.0)
+                    .offset(y: brightnessEnabled ? 0 : -8)
                 }
+                .animation(.easeInOut(duration: 0.3), value: brightnessEnabled)
 
                 Spacer().frame(height: 2)
             }
 
             Spacer()
-                .frame(height: 20)
+                .frame(height: 10)
 
             // Quit button
             Button(action: onQuit) {
@@ -120,12 +146,14 @@ struct AboutView: View {
             .keyboardShortcut(.defaultAction)
         }
         .padding(30)
-        .frame(width: 300, height: 450)
+        .frame(width: 300, height: 470)
         .onAppear {
             Task {
-                try? await Task.sleep(nanoseconds: 200_000_000)
+                try? await Task.sleep(nanoseconds: 200_000_000) // 0.2 second delay
                 checkForUpdates()
             }
+            // Update the brightness detection mode when the view appears
+            updateBrightnessDetectionMode()
         }
     }
 
@@ -202,6 +230,21 @@ struct AboutView: View {
         if let url = URL(string: urlString) {
             NSWorkspace.shared.open(url)
         }
+    }
+
+    private func updateBrightnessDetectionMode() {
+        guard let brightnessMonitor = appDelegate?.brightnessMonitor else { return }
+
+        switch brightnessDetectionMode {
+        case "stepBased":
+            brightnessMonitor.detectionMode = .stepBased
+        case "heuristic":
+            brightnessMonitor.detectionMode = .heuristic
+        default:
+            brightnessMonitor.detectionMode = .stepBased
+        }
+
+        logger.debug("Updated brightness detection mode to: \(brightnessDetectionMode)")
     }
 }
 

@@ -48,6 +48,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         volumeMonitor.hudController = hudController
         brightnessMonitor.hudController = hudController
         brightnessMonitor.accessibilityBypassed = shouldBypassAccessibility
+        
+        // Load brightness detection mode from user defaults
+        loadBrightnessDetectionMode()
 
         // Include warning in startup message if we're bypassing accessibility
         let notificationText =
@@ -193,6 +196,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         } else {
             logger.info("Brightness HUD disabled; skipping brightness monitoring.")
         }
+    }
+    
+    @MainActor
+    private func loadBrightnessDetectionMode() {
+        let detectionModeString = UserDefaults.standard.string(forKey: "brightnessDetectionMode") ?? "heuristic"
+        
+        switch detectionModeString {
+        case "heuristic":
+            brightnessMonitor.detectionMode = .heuristic
+        case "stepBased":
+            brightnessMonitor.detectionMode = .stepBased
+        default:
+            brightnessMonitor.detectionMode = .heuristic
+        }
+        
+        logger.debug("Loaded brightness detection mode: \(detectionModeString)")
     }
 
     // MARK: - Notification Authorization
