@@ -155,7 +155,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         previousVolume = newVolume
         previousMuteState = newMuted
 
-        logger.info("Initial volume set: \(Int(newVolume * 100))%, Muted: \(newMuted)")
+        logger.debug("Initial volume set: \(Int(newVolume * 100))%, Muted: \(newMuted)")
     }
 
     private func updateVolumeValues() {
@@ -166,7 +166,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         let muteChanged = newMuted != previousMuteState
 
         if volumeChanged || muteChanged {
-            logger.info("Volume updated: \(Int(newVolume * 100))%, Muted: \(newMuted)")
+            logger.debug("Volume updated: \(Int(newVolume * 100))%, Muted: \(newMuted)")
 
             // Update @Published properties and show HUD
             currentVolume = newVolume
@@ -189,8 +189,6 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
 
         if !accessibilityEnabled {
             logger.info("Accessibility permissions not granted, so volume keys cannot be detected.")
-            logger.info("This means the HUD will not be displayed when pressing volume keys to go past min or max volume limits.")
-            logger.info("If you want this to work, please grant accessibility permissions in System Settings > Privacy & Security > Input Monitoring.")
             return
         }
 
@@ -283,7 +281,6 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             let currentTime = Date().timeIntervalSince1970
             // Debounce log messages as macOS seems to fire key events twice
             if currentTime - lastVolumeKeyLogTime > 0.1 {
-                logger.debug("HUD not forced for volume key because volume is not 0% or 100%.")
                 lastVolumeKeyLogTime = currentTime
             }
             return
@@ -309,7 +306,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
     private func stopDefaultDeviceMonitoring() {
         devicePollingTimer?.invalidate()
         devicePollingTimer = nil
-        logger.info("Stopped device monitoring.")
+        logger.debug("Stopped device monitoring.")
     }
 
     private func checkForDeviceChange() {
@@ -335,7 +332,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
 
         // Check if device changed
         if currentDeviceID != deviceID {
-            logger.info("Default output device changed: \(deviceID) -> \(currentDeviceID)")
+            logger.debug("Default output device changed: \(deviceID) -> \(currentDeviceID)")
             handleDefaultDeviceChanged()
         }
     }
@@ -380,7 +377,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             self.updateVolumeValuesOnStartup()
         }
 
-        logger.info("Successfully switched to new device: \(newDeviceID)")
+        logger.debug("Successfully switched to new device: \(newDeviceID)")
     }
 
     private func removeVolumeListeners() {

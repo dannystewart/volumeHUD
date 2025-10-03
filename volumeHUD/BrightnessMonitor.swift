@@ -132,7 +132,7 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
             currentBrightness = quantizedBrightness
             previousBrightness = quantizedBrightness
             brightnessAvailable = true
-            logger.info("Initial brightness set: \(Int(quantizedBrightness * 100))%")
+            logger.debug("Initial brightness set: \(Int(quantizedBrightness * 100))%")
         } else {
             brightnessAvailable = false
             if !hasLoggedBrightnessError {
@@ -327,7 +327,7 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
             // If we can observe key events or have Accessibility, rely solely on key presses
             if receivedAnyBrightnessKeyEvent || accessibilityEnabled {
                 if timeSinceKeyPress < 1.0 {
-                    logger.info("Brightness updated (key press): \(Int(quantizedBrightness * 100))%")
+                    logger.debug("Brightness updated (key press): \(Int(quantizedBrightness * 100))%")
                     currentBrightness = quantizedBrightness
                     hudController?.showBrightnessHUD(brightness: quantizedBrightness)
                 } else {
@@ -358,7 +358,7 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
 
                             // If no additional changes within the window, likely user-initiated
                             if !hasAdditionalChanges || timeSinceScheduled > 0.4 {
-                                logger.info("Brightness updated (heuristic): \(Int(scheduledBrightness * 100))%")
+                                logger.debug("Brightness updated (heuristic): \(Int(scheduledBrightness * 100))%")
                                 currentBrightness = scheduledBrightness
                                 hudController?.showBrightnessHUD(brightness: scheduledBrightness)
                             } else {
@@ -408,10 +408,7 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
         let atMinBrightness = quantizedBrightness <= 0.001
         let atMaxBrightness = quantizedBrightness >= 0.999
 
-        if !atMinBrightness, !atMaxBrightness {
-            logger.debug("HUD not forced for brightness key because brightness is not 0% or 100%.")
-            return
-        }
+        if !atMinBrightness, !atMaxBrightness { return }
 
         // Update current brightness and show HUD
         currentBrightness = quantizedBrightness
