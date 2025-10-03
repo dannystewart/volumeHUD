@@ -172,7 +172,7 @@ struct AboutView: View {
                     .animation(.easeInOut(duration: 0.1), value: usingHeuristicsWithoutAccessibility)
 
                 Spacer().frame(height: 2)
-            }.offset(y: -4)
+            }.offset(y: -1)
 
             // Quit button
             Button(action: onQuit) {
@@ -181,7 +181,7 @@ struct AboutView: View {
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
-            .offset(y: 12)
+            .offset(y: 10)
             .keyboardShortcut(.defaultAction)
         }
         .padding(32)
