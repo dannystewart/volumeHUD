@@ -38,6 +38,13 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
 
     let logger = PolyLog()
 
+    enum BrightnessDetectionMode {
+        case heuristic
+        case stepBased
+    }
+
+    var detectionMode: BrightnessDetectionMode = .heuristic
+
     init() {
         // Initialize with a timestamp far in the past so initial startup doesn't show HUD
         lastBrightnessKeyTime = 0
@@ -53,6 +60,29 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
     }
 
     deinit {}
+
+    /// Check if a brightness delta matches user-initiated key press patterns
+    /// User key presses always change brightness by multiples of 1/16th (0.0625)
+    private func isUserInitiatedBrightnessChange(_ delta: Float, rawBrightness: Float) -> Bool {
+        let baseStepSize: Float = 0.0625
+        let tolerance: Float = 0.0001
+        let absDelta = abs(delta)
+
+        for multiplier in 1 ... 4 {
+            let expectedDelta = baseStepSize * Float(multiplier)
+            if abs(absDelta - expectedDelta) < tolerance {
+                let rawStepPosition = rawBrightness * 16.0
+                let nearestStep = round(rawStepPosition)
+                let rawStepError = abs(rawStepPosition - nearestStep)
+
+                if rawStepError < 0.01 {
+                    return true
+                }
+            }
+        }
+
+        return false
+    }
 
     private func loadDisplayServices() {
         logger.debug("Attempting to load DisplayServices framework...")
@@ -300,77 +330,96 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
         let brightnessChanged = abs(quantizedBrightness - previousBrightness) > 0.001
 
         if brightnessChanged {
-            // Check if this change happened within a short window after a key press
-            let currentTime = Date().timeIntervalSince1970
-            let timeSinceKeyPress = currentTime - lastBrightnessKeyTime
+            switch detectionMode {
+            case .stepBased:
+                let delta = quantizedBrightness - previousBrightness
+                let currentTime = Date().timeIntervalSince1970
+                let timeSinceKeyPress = currentTime - lastBrightnessKeyTime
 
-            // Track brightness change frequency for ambient light detection
-            let timeSinceLastChange = currentTime - lastBrightnessChangeTime
-            if timeSinceLastChange < 3.0 { // Changes within 3 seconds (increased window)
-                brightnessChangeCount += 1
-            } else {
-                brightnessChangeCount = 1 // Reset counter for new change sequence
-            }
-            lastBrightnessChangeTime = currentTime
+                let rawBrightness = brightness
+                let stepCount = abs(delta) / 0.0625
+                logger.info("\u{1F506} BRIGHTNESS CHANGE: \(String(format: "%.4f", delta)) (steps: \(String(format: "%.2f", stepCount))) - Raw: \(String(format: "%.6f", rawBrightness)) -> Quantized: \(String(format: "%.4f", quantizedBrightness)) - Time since key: \(String(format: "%.1f", timeSinceKeyPress))s")
 
-            // Step magnitude in 1/16th bars
-            let deltaSteps = abs(quantizedBrightness - previousBrightness) * 16.0
+                let isUserChange = isUserInitiatedBrightnessChange(delta, rawBrightness: rawBrightness)
 
-            // Determine if this is likely an ambient light adjustment
-            // Ambient light changes tend to happen in rapid sequences (>1 change in quick succession)
-            // Also consider single changes that happen shortly after other changes
-            // Additionally, treat large instantaneous jumps as ambient when no key press is recent
-            let isLikelyAmbientLight = (brightnessChangeCount > 2 && timeSinceKeyPress > 0.5) ||
-                (timeSinceLastChange < 0.3 && timeSinceKeyPress > 0.5 && brightnessChangeCount > 1) ||
-                (deltaSteps >= 4.0 && timeSinceKeyPress > 0.5 && brightnessChangeCount > 1)
-
-            // If we can observe key events or have Accessibility, rely solely on key presses
-            if receivedAnyBrightnessKeyEvent || accessibilityEnabled {
-                if timeSinceKeyPress < 1.0 {
-                    logger.debug("Brightness updated (key press): \(Int(quantizedBrightness * 100))%")
+                if isUserChange {
+                    logger.info("✅ SHOWING HUD (step-based detection): \(Int(quantizedBrightness * 100))% (delta: \(delta))")
                     currentBrightness = quantizedBrightness
                     hudController?.showBrightnessHUD(brightness: quantizedBrightness)
                 } else {
-                    logger.debug("Brightness auto-adjusted to \(Int(quantizedBrightness * 100))% (key-gated, no recent key press, HUD not shown).")
+                    logger.debug("❌ IGNORING (ambient/system change): \(Int(quantizedBrightness * 100))% (delta: \(delta), HUD not shown).")
                     currentBrightness = quantizedBrightness
                 }
-            } else {
-                // Heuristic mode (no permissions and no key events): use delay and spike detection to avoid flashes
-                // In heuristic mode, be more conservative - assume user changes unless strong evidence of ambient light
-                if isLikelyAmbientLight {
-                    heuristicShowTimer?.invalidate()
-                    heuristicShowTimer = nil
-                    logger.debug("Brightness auto-adjusted to \(Int(quantizedBrightness * 100))% (ambient light change, HUD not shown).")
-                    currentBrightness = quantizedBrightness
+
+                if accessibilityEnabled, timeSinceKeyPress < 1.0 {
+                    if !isUserChange {
+                        logger.info("✅ SHOWING HUD (accessibility override): \(Int(quantizedBrightness * 100))% (delta: \(delta))")
+                        hudController?.showBrightnessHUD(brightness: quantizedBrightness)
+                    }
+                }
+
+                previousBrightness = quantizedBrightness
+
+            case .heuristic:
+                let currentTime = Date().timeIntervalSince1970
+                let timeSinceKeyPress = currentTime - lastBrightnessKeyTime
+
+                let timeSinceLastChange = currentTime - lastBrightnessChangeTime
+                if timeSinceLastChange < 3.0 {
+                    brightnessChangeCount += 1
                 } else {
-                    // This is likely a user-initiated change, show HUD with delay to confirm
-                    heuristicShowTimer?.invalidate()
-                    let scheduledChangeCount = brightnessChangeCount
-                    let scheduledLastChangeTime = lastBrightnessChangeTime
-                    let scheduledBrightness = quantizedBrightness
+                    brightnessChangeCount = 1
+                }
+                lastBrightnessChangeTime = currentTime
 
-                    heuristicShowTimer = Timer.scheduledTimer(withTimeInterval: 0.6, repeats: false) { [weak self] _ in
-                        Task { @MainActor [weak self] in
-                            guard let self else { return }
-                            // Check if additional changes occurred (suggesting ambient light)
-                            let hasAdditionalChanges = (brightnessChangeCount > scheduledChangeCount)
-                            let timeSinceScheduled = abs(lastBrightnessChangeTime - scheduledLastChangeTime)
+                let deltaSteps = abs(quantizedBrightness - previousBrightness) * 16.0
 
-                            // If no additional changes within the window, likely user-initiated
-                            if !hasAdditionalChanges || timeSinceScheduled > 0.4 {
-                                logger.debug("Brightness updated (heuristic): \(Int(scheduledBrightness * 100))%")
-                                currentBrightness = scheduledBrightness
-                                hudController?.showBrightnessHUD(brightness: scheduledBrightness)
-                            } else {
-                                logger.debug("Skipped HUD show (additional changes detected; likely ambient).")
+                let isLikelyAmbientLight = (brightnessChangeCount > 2 && timeSinceKeyPress > 0.5) ||
+                    (timeSinceLastChange < 0.3 && timeSinceKeyPress > 0.5 && brightnessChangeCount > 1) ||
+                    (deltaSteps >= 4.0 && timeSinceKeyPress > 0.5 && brightnessChangeCount > 1)
+
+                if receivedAnyBrightnessKeyEvent || accessibilityEnabled {
+                    if timeSinceKeyPress < 1.0 {
+                        logger.debug("Brightness updated (key press): \(Int(quantizedBrightness * 100))%")
+                        currentBrightness = quantizedBrightness
+                        hudController?.showBrightnessHUD(brightness: quantizedBrightness)
+                    } else {
+                        logger.debug("Brightness auto-adjusted to \(Int(quantizedBrightness * 100))% (key-gated, no recent key press, HUD not shown).")
+                        currentBrightness = quantizedBrightness
+                    }
+                } else {
+                    if isLikelyAmbientLight {
+                        heuristicShowTimer?.invalidate()
+                        heuristicShowTimer = nil
+                        logger.debug("Brightness auto-adjusted to \(Int(quantizedBrightness * 100))% (ambient light change, HUD not shown).")
+                        currentBrightness = quantizedBrightness
+                    } else {
+                        heuristicShowTimer?.invalidate()
+                        let scheduledChangeCount = brightnessChangeCount
+                        let scheduledLastChangeTime = lastBrightnessChangeTime
+                        let scheduledBrightness = quantizedBrightness
+
+                        heuristicShowTimer = Timer.scheduledTimer(withTimeInterval: 0.6, repeats: false) { [weak self] _ in
+                            Task { @MainActor [weak self] in
+                                guard let self else { return }
+                                let hasAdditionalChanges = (brightnessChangeCount > scheduledChangeCount)
+                                let timeSinceScheduled = abs(lastBrightnessChangeTime - scheduledLastChangeTime)
+
+                                if !hasAdditionalChanges || timeSinceScheduled > 0.4 {
+                                    logger.debug("Brightness updated (heuristic): \(Int(scheduledBrightness * 100))%")
+                                    currentBrightness = scheduledBrightness
+                                    hudController?.showBrightnessHUD(brightness: scheduledBrightness)
+                                } else {
+                                    logger.debug("Skipped HUD show (additional changes detected; likely ambient).")
+                                }
                             }
                         }
+                        currentBrightness = quantizedBrightness
                     }
-                    currentBrightness = quantizedBrightness
                 }
-            }
 
-            previousBrightness = quantizedBrightness
+                previousBrightness = quantizedBrightness
+            }
         }
     }
 
