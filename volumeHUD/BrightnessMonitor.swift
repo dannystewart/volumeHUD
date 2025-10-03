@@ -9,10 +9,7 @@ import Polykit
 class BrightnessMonitor: ObservableObject, @unchecked Sendable {
     @Published var currentBrightness: Float = 0.0
 
-    /// Set to true to bypass accessibility checks for debugging
-    var accessibilityBypassed: Bool = false
     private var accessibilityEnabled: Bool
-
     private var isMonitoring = false
     private var previousBrightness: Float = 0.0
     private var brightnessPollingTimer: Timer?
@@ -49,7 +46,7 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
         lastBrightnessKeyTime = 0
 
         // Initialize accessibility status
-        accessibilityEnabled = AXIsProcessTrusted() && !accessibilityBypassed
+        accessibilityEnabled = AXIsProcessTrusted()
 
         // Load DisplayServices framework once at initialization
         loadDisplayServices()
@@ -59,7 +56,7 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
 
     /// Update the accessibility status after permissions may have changed
     func updateAccessibilityStatus() {
-        let newAccessibilityEnabled = AXIsProcessTrusted() && !accessibilityBypassed
+        let newAccessibilityEnabled = AXIsProcessTrusted()
 
         if newAccessibilityEnabled != accessibilityEnabled {
             logger.info("Brightness monitor accessibility status changed: \(accessibilityEnabled) -> \(newAccessibilityEnabled)")

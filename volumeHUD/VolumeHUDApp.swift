@@ -16,9 +16,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
 
     let logger = PolyLog()
 
-    // Set to true to bypass accessibility checks for debugging
-    let shouldBypassAccessibility = false
-
     // Check to see if brightness is enabled
     private var isBrightnessEnabled: Bool {
         UserDefaults.standard.bool(forKey: "brightnessEnabled")
@@ -48,23 +45,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         volumeMonitor.hudController = hudController
         brightnessMonitor.hudController = hudController
 
-        // Set accessibility bypass for debugging if enabled
-        volumeMonitor.accessibilityBypassed = shouldBypassAccessibility
-        brightnessMonitor.accessibilityBypassed = shouldBypassAccessibility
-
         // Request accessibility permissions if this is the first run or they're not granted
         requestAccessibilityPermissionsIfNeeded()
 
         // Load brightness detection mode from user defaults
         loadBrightnessDetectionMode()
-
-        // Include warning in startup message if we're bypassing accessibility
-        let notificationText =
-            if shouldBypassAccessibility {
-                "volumeHUD started (accessibility bypassed)"
-            } else {
-                "volumeHUD started!"
-            }
 
         // Request notification permission and post "started" notification (only if manually launched)
         requestNotificationAuthorizationIfNeeded { [weak self] granted in
@@ -74,7 +59,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
                 // Only show startup notification if launched manually (not during system startup)
                 if isManualLaunch() {
                     Task { @MainActor in
-                        self.postUserNotification(title: notificationText, body: nil)
+                        self.postUserNotification(title: "volumeHUD started!", body: nil)
                     }
                 } else {
                     logger.info("Skipping startup notification due to automatic launch.")
@@ -228,46 +213,38 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
     // MARK: - Accessibility Permissions
 
     private nonisolated func requestAccessibilityPermissionsIfNeeded() {
-        // Skip if we're bypassing accessibility for debugging
-        if shouldBypassAccessibility {
-            logger.warning("Bypassing accessibility permission request for debugging.")
-            return
-        }
-
-        // Check if we've already asked before (to avoid asking every time)
-        let hasAskedBefore = UserDefaults.standard.bool(forKey: "hasAskedForAccessibilityPermissions")
-
         // Check current permission status
         let isCurrentlyTrusted = AXIsProcessTrusted()
 
-        if !isCurrentlyTrusted, !hasAskedBefore {
-            logger.info("First launch detected - requesting accessibility permissions.")
-
-            // Mark that we've asked before
-            UserDefaults.standard.set(true, forKey: "hasAskedForAccessibilityPermissions")
-
-            // Request permissions with prompt (using string key to avoid concurrency issues)
-            let promptKey = "AXTrustedCheckOptionPrompt"
-            let options = [promptKey: true] as [String: Bool] as CFDictionary
-            _ = AXIsProcessTrustedWithOptions(options)
-
-            // Update accessibility status after the request
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 second delay
-                let newStatus = AXIsProcessTrusted()
-                updateAccessibilityStatus()
-
-                if newStatus {
-                    logger.info("Accessibility permissions granted! Key press monitoring will be more reliable.")
-                } else {
-                    logger.info("Accessibility permissions not granted. Brightness and volume key detection will be limited.")
-                }
-            }
-        } else if isCurrentlyTrusted {
+        // If already trusted, no need to prompt
+        if isCurrentlyTrusted {
             logger.info("Accessibility permissions already granted.")
-        } else {
-            logger.info("Accessibility permissions previously requested but not granted. Key press monitoring will be limited.")
+            return
+        }
+
+        // If not trusted, request with prompt. macOS handles showing the prompt only once:
+        // - If app is NOT in Accessibility list → Shows prompt (adds to list)
+        // - If app IS in list but disabled → No prompt shown, just returns false
+        // - If user removes app from list → Will prompt again on next launch
+        logger.info("Prompting/checking for accessibility permissions.")
+
+        let promptKey = "AXTrustedCheckOptionPrompt"
+        let options = [promptKey: true] as [String: Bool] as CFDictionary
+        _ = AXIsProcessTrustedWithOptions(options)
+
+        // Update accessibility status after the request
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 second delay
+            let newStatus = AXIsProcessTrusted()
+            updateAccessibilityStatus()
+
+            if newStatus {
+                logger.info("Accessibility permissions granted! Key press monitoring will be more reliable.")
+            } else {
+                logger.info("Accessibility permissions not yet enabled. Key press monitoring will be limited.")
+                logger.info("To enable: System Settings → Privacy & Security → Accessibility")
+            }
         }
     }
 

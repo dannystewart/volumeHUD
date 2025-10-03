@@ -11,8 +11,6 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
     @Published var currentVolume: Float = 0.0
     @Published var isMuted: Bool = false
 
-    /// Set to true to bypass accessibility checks for debugging
-    var accessibilityBypassed: Bool = false
     private var audioObjectPropertyAddress: AudioObjectPropertyAddress
     private var isMonitoring = false
     private var accessibilityEnabled: Bool
@@ -40,12 +38,12 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         )
 
         // Initialize accessibility status
-        accessibilityEnabled = AXIsProcessTrusted() && !accessibilityBypassed
+        accessibilityEnabled = AXIsProcessTrusted()
     }
 
     /// Update accessibility status (to be called when permissions change)
     func updateAccessibilityStatus() {
-        let newAccessibilityEnabled = AXIsProcessTrusted() && !accessibilityBypassed
+        let newAccessibilityEnabled = AXIsProcessTrusted()
 
         if newAccessibilityEnabled != accessibilityEnabled {
             logger.info("Volume monitor accessibility status changed: \(accessibilityEnabled) -> \(newAccessibilityEnabled)")
