@@ -18,7 +18,12 @@ class HUDController: ObservableObject {
     private var lastShownBrightness: Float?
     private var lastShownHUDType: HUDType?
     private var isObservingDisplayChanges = false
+    private let isPreviewMode: Bool
     let logger = PolyLog()
+
+    init(isPreviewMode: Bool = false) {
+        self.isPreviewMode = isPreviewMode
+    }
 
     @MainActor
     func showVolumeHUD(volume: Float, isMuted: Bool) {
@@ -38,6 +43,14 @@ class HUDController: ObservableObject {
     @MainActor
     func startDisplayChangeMonitoring() {
         guard !isObservingDisplayChanges else { return }
+
+        // Skip display monitoring in preview mode
+        if isPreviewMode {
+            logger.debug("Skipping display monitoring in preview mode.")
+            isObservingDisplayChanges = true
+            return
+        }
+
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(displayConfigurationDidChange(_:)),

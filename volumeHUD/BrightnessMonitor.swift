@@ -19,6 +19,7 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
     private var lastBrightnessKeyTime: TimeInterval = 0
     private var hasLoggedBrightnessError = false
     private var brightnessAvailable = false
+    private let isPreviewMode: Bool
 
     /// Cache DisplayServices function pointers
     private var displayServicesHandle: UnsafeMutableRawPointer?
@@ -29,15 +30,24 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
 
     let logger = PolyLog()
 
-    init() {
+    init(isPreviewMode: Bool = false) {
+        self.isPreviewMode = isPreviewMode
+
         // Initialize with a timestamp far in the past so initial startup doesn't show HUD
         lastBrightnessKeyTime = 0
 
-        // Initialize accessibility status
-        accessibilityEnabled = AXIsProcessTrusted()
+        // Skip expensive operations in preview mode
+        if isPreviewMode {
+            accessibilityEnabled = false
+            currentBrightness = 0.75
+            brightnessAvailable = true
+        } else {
+            // Initialize accessibility status
+            accessibilityEnabled = AXIsProcessTrusted()
 
-        // Load DisplayServices framework once at initialization
-        loadDisplayServices()
+            // Load DisplayServices framework once at initialization
+            loadDisplayServices()
+        }
     }
 
     deinit {}
@@ -110,6 +120,13 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
 
     func startMonitoring() {
         guard !isMonitoring else { return }
+
+        // Skip all monitoring in preview mode
+        if isPreviewMode {
+            logger.debug("Skipping brightness monitoring in preview mode.")
+            isMonitoring = true
+            return
+        }
 
         logger.debug("BrightnessMonitor.startMonitoring() called")
         logger.debug("DisplayServices handle: \(displayServicesHandle != nil)")

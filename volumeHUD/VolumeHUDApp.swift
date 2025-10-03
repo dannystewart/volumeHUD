@@ -23,7 +23,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
 
     func applicationDidFinishLaunching(_: Notification) {
         // Skip full initialization if running in SwiftUI preview or test mode
-        if isRunningInDevEnvironment() { return }
+        let isDevEnvironment = isRunningInDevEnvironment()
+        if isDevEnvironment { return }
 
         // Keep the app headless and out of the Dock
         NSApplication.shared.setActivationPolicy(.accessory)
@@ -31,10 +32,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         // Set up the notifications delegate BEFORE scheduling any notifications
         UNUserNotificationCenter.current().delegate = self
 
-        // Initialize the monitors and HUD controller
-        volumeMonitor = VolumeMonitor()
-        brightnessMonitor = BrightnessMonitor()
-        hudController = HUDController()
+        // Initialize the monitors and HUD controller (never in preview mode here since we early return)
+        volumeMonitor = VolumeMonitor(isPreviewMode: false)
+        brightnessMonitor = BrightnessMonitor(isPreviewMode: false)
+        hudController = HUDController(isPreviewMode: false)
 
         // Set up bidirectional references
         hudController.volumeMonitor = volumeMonitor

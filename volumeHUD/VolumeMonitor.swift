@@ -24,12 +24,15 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
     private var volumeListenerBlock: ((UInt32, UnsafePointer<AudioObjectPropertyAddress>) -> Void)?
     private var muteListenerBlock: ((UInt32, UnsafePointer<AudioObjectPropertyAddress>) -> Void)?
     private var devicePollingTimer: Timer?
+    private let isPreviewMode: Bool
 
     weak var hudController: HUDController?
 
     let logger = PolyLog()
 
-    init() {
+    init(isPreviewMode: Bool = false) {
+        self.isPreviewMode = isPreviewMode
+
         // Set up the property address for volume changes
         audioObjectPropertyAddress = AudioObjectPropertyAddress(
             mSelector: kAudioHardwareServiceDeviceProperty_VirtualMainVolume,
@@ -37,8 +40,15 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             mElement: kAudioObjectPropertyElementMain,
         )
 
-        // Initialize accessibility status
-        accessibilityEnabled = AXIsProcessTrusted()
+        // Skip expensive accessibility check in preview mode
+        if isPreviewMode {
+            accessibilityEnabled = false
+            currentVolume = 0.5
+            isMuted = false
+        } else {
+            // Initialize accessibility status
+            accessibilityEnabled = AXIsProcessTrusted()
+        }
     }
 
     /// Update accessibility status (to be called when permissions change)
@@ -53,6 +63,13 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
 
     func startMonitoring() {
         guard !isMonitoring else { return }
+
+        // Skip all monitoring in preview mode
+        if isPreviewMode {
+            logger.debug("Skipping volume monitoring in preview mode.")
+            isMonitoring = true
+            return
+        }
 
         // Get the default output device
         var deviceID: AudioDeviceID = kAudioObjectUnknown
