@@ -33,7 +33,7 @@ struct AboutView: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            // App icon
+            // App name and version
             if let appIcon = NSImage(named: "AppIcon") {
                 Image(nsImage: appIcon)
                     .resizable()
@@ -41,7 +41,6 @@ struct AboutView: View {
                     .offset(y: -30)
             }
 
-            // App name and version
             VStack(spacing: 4) {
                 Text("volumeHUD")
                     .font(.system(size: 24, weight: .medium))
@@ -73,10 +72,13 @@ struct AboutView: View {
                     .multilineTextAlignment(.center)
                     .frame(width: 230, height: 10)
 
-            }.offset(y: -28)
+            }.offset(y: -30)
 
             // Settings section
             VStack(spacing: 6) {
+                Divider().frame(maxWidth: 204)
+                    .offset(y: -4)
+
                 // Login item setting
                 HStack {
                     Image(systemName: "power.circle.fill")
@@ -157,7 +159,11 @@ struct AboutView: View {
                 .animation(.easeInOut(duration: 0.3), value: brightnessEnabled)
 
                 Spacer().frame(height: 2)
-            }.offset(y: -6)
+            }.offset(y: -4)
+
+            Divider().frame(maxWidth: 204)
+                .offset(y: brightnessEnabled ? -5 : -36)
+                .animation(.easeInOut(duration: 0.3), value: brightnessEnabled)
 
             // Quit button
             Button(action: onQuit) {
@@ -166,11 +172,11 @@ struct AboutView: View {
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
-            .offset(y: 22)
+            .offset(y: 24)
             .keyboardShortcut(.defaultAction)
         }
         .padding(32)
-        .frame(width: 300, height: 460)
+        .frame(width: 300, height: 470)
         .onAppear {
             Task {
                 try? await Task.sleep(nanoseconds: 200_000_000) // 0.2 second delay
