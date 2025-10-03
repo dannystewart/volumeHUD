@@ -14,6 +14,9 @@ struct AboutView: View {
     // State to track if an update is available
     @State private var isUpdateAvailable: Bool = false
 
+    // Login item manager
+    @StateObject private var loginItemManager = LoginItemManager()
+
     // GitHub repository info
     private let githubOwner = "dannystewart"
     private let githubRepo = "volumeHUD"
@@ -35,6 +38,7 @@ struct AboutView: View {
                 Image(nsImage: appIcon)
                     .resizable()
                     .frame(width: 80, height: 80)
+                    .offset(y: 4)
             }
 
             // App name and version
@@ -61,24 +65,55 @@ struct AboutView: View {
                 .buttonStyle(.plain)
                 .disabled(!isUpdateAvailable)
                 .opacity(isUpdateAvailable ? 1.0 : 0.0)
-            }
 
-            // Description
-            Text("Bringing the classic HUD back to your Mac")
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 140, minHeight: 40, alignment: .init(horizontal: .center, vertical: .top))
+                // Description
+                Text("Bringing the classic HUD back to your Mac")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(width: 230, height: 14, alignment: .init(horizontal: .center, vertical: .center))
+
+            }.offset(y: 2)
 
             // Settings section
             VStack(spacing: 8) {
                 Spacer()
-                    .frame(height: 18)
+                    // Space between description and "Settings"
+                    .frame(height: 24)
+
+                Text("Settings")
+                    .font(.system(size: 11, weight: .medium))
+                    .multilineTextAlignment(.center)
+                    // Space between "Settings" and divider
+                    .frame(height: 16, alignment: .init(horizontal: .center, vertical: .top))
+
+                Divider().frame(maxWidth: 200)
+
+                // Login item setting
+                HStack {
+                    Image(systemName: "power.circle.fill")
+                        .foregroundStyle(loginItemManager.isEnabled ? .green : .gray)
+                        .font(.system(size: 14))
+
+                    Text("Open at Login")
+                        .font(.system(size: 12, weight: .medium))
+
+                    Spacer()
+
+                    Toggle("", isOn: Binding(
+                        get: { loginItemManager.isEnabled },
+                        set: { loginItemManager.setEnabled($0) },
+                    ))
+                    .toggleStyle(SwitchToggleStyle(tint: .accentColor))
+                    .scaleEffect(0.8)
+                }
+                .padding(.horizontal, 20)
 
                 VStack(spacing: 6) {
+                    // Brightness HUD setting
                     HStack {
                         Image(systemName: "sun.max.fill")
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(brightnessEnabled ? .orange : .gray)
                             .font(.system(size: 14))
 
                         Text("Brightness HUD")
@@ -133,8 +168,12 @@ struct AboutView: View {
                 Spacer().frame(height: 2)
             }
 
+            Divider().frame(maxWidth: 200)
+                .offset(y: brightnessEnabled ? -6 : -36)
+                .animation(.easeInOut(duration: 0.3), value: brightnessEnabled)
+
             Spacer()
-                .frame(height: 10)
+                .frame(height: 0)
 
             // Quit button
             Button(action: onQuit) {
@@ -143,10 +182,11 @@ struct AboutView: View {
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
+            .offset(y: 0)
             .keyboardShortcut(.defaultAction)
         }
-        .padding(30)
-        .frame(width: 300, height: 470)
+        .padding(32)
+        .frame(width: 300, height: 500)
         .onAppear {
             Task {
                 try? await Task.sleep(nanoseconds: 200_000_000) // 0.2 second delay

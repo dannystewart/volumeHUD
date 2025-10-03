@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		302AB2F52E902DA600889BBF /* LoginHelper.app in Resources */ = {isa = PBXBuildFile; fileRef = 302AB2E42E902CF100889BBF /* LoginHelper.app */; };
+		302AB2F92E902DE000889BBF /* LoginHelper.app in Copy Files */ = {isa = PBXBuildFile; fileRef = 302AB2E42E902CF100889BBF /* LoginHelper.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		3045B1B12E8CB81A00C34F16 /* CHANGELOG.md in Resources */ = {isa = PBXBuildFile; fileRef = 3045B1AF2E8CB81A00C34F16 /* CHANGELOG.md */; };
 		3045B1B22E8CB81A00C34F16 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 3045B1B02E8CB81A00C34F16 /* README.md */; };
 		3072CFF02E8E299200133C4D /* volumehud-beta.rb in Resources */ = {isa = PBXBuildFile; fileRef = 3072CFEF2E8E299200133C4D /* volumehud-beta.rb */; };
@@ -14,7 +16,32 @@
 		30991F012E8C9E990008AD92 /* Polykit in Frameworks */ = {isa = PBXBuildFile; productRef = 30991F002E8C9E990008AD92 /* Polykit */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		302AB2F62E902DA600889BBF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 30C937602E806B79004B5AF5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 302AB2E32E902CF100889BBF;
+			remoteInfo = LoginHelper;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		302AB2F82E902DBC00889BBF /* Copy Files */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 12;
+			dstPath = Contents/Library/LoginItems;
+			dstSubfolderSpec = 1;
+			files = (
+				302AB2F92E902DE000889BBF /* LoginHelper.app in Copy Files */,
+			);
+			name = "Copy Files";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		302AB2E42E902CF100889BBF /* LoginHelper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LoginHelper.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3045B1AF2E8CB81A00C34F16 /* CHANGELOG.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CHANGELOG.md; sourceTree = "<group>"; };
 		3045B1B02E8CB81A00C34F16 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		3072CFEE2E8E299200133C4D /* volumehud.rb */ = {isa = PBXFileReference; lastKnownFileType = text.script.ruby; name = volumehud.rb; path = "../homebrew-apps/Casks/volumehud.rb"; sourceTree = SOURCE_ROOT; };
@@ -22,7 +49,25 @@
 		30C937682E806B79004B5AF5 /* volumeHUD.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = volumeHUD.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		302AB2FA2E902FC400889BBF /* Exceptions for "LoginHelper" folder in "LoginHelper" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 302AB2E32E902CF100889BBF /* LoginHelper */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		302AB2E52E902CF100889BBF /* LoginHelper */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				302AB2FA2E902FC400889BBF /* Exceptions for "LoginHelper" folder in "LoginHelper" target */,
+			);
+			path = LoginHelper;
+			sourceTree = "<group>";
+		};
 		30C9376A2E806B79004B5AF5 /* volumeHUD */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = volumeHUD;
@@ -31,6 +76,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		302AB2E12E902CF100889BBF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		30C937652E806B79004B5AF5 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -57,6 +109,7 @@
 				3045B1AF2E8CB81A00C34F16 /* CHANGELOG.md */,
 				3045B1B02E8CB81A00C34F16 /* README.md */,
 				30C9376A2E806B79004B5AF5 /* volumeHUD */,
+				302AB2E52E902CF100889BBF /* LoginHelper */,
 				30A48DC62E8B13B9005E1B15 /* Frameworks */,
 				30C937692E806B79004B5AF5 /* Products */,
 			);
@@ -66,6 +119,7 @@
 			isa = PBXGroup;
 			children = (
 				30C937682E806B79004B5AF5 /* volumeHUD.app */,
+				302AB2E42E902CF100889BBF /* LoginHelper.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -73,6 +127,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		302AB2E32E902CF100889BBF /* LoginHelper */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 302AB2EE2E902CF200889BBF /* Build configuration list for PBXNativeTarget "LoginHelper" */;
+			buildPhases = (
+				302AB2E02E902CF100889BBF /* Sources */,
+				302AB2E12E902CF100889BBF /* Frameworks */,
+				302AB2E22E902CF100889BBF /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				302AB2E52E902CF100889BBF /* LoginHelper */,
+			);
+			name = LoginHelper;
+			packageProductDependencies = (
+			);
+			productName = LoginHelper;
+			productReference = 302AB2E42E902CF100889BBF /* LoginHelper.app */;
+			productType = "com.apple.product-type.application";
+		};
 		30C937672E806B79004B5AF5 /* volumeHUD */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 30C937732E806B7A004B5AF5 /* Build configuration list for PBXNativeTarget "volumeHUD" */;
@@ -80,10 +156,12 @@
 				30C937642E806B79004B5AF5 /* Sources */,
 				30C937652E806B79004B5AF5 /* Frameworks */,
 				30C937662E806B79004B5AF5 /* Resources */,
+				302AB2F82E902DBC00889BBF /* Copy Files */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				302AB2F72E902DA600889BBF /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				30C9376A2E806B79004B5AF5 /* volumeHUD */,
@@ -106,6 +184,9 @@
 				LastSwiftUpdateCheck = 2600;
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
+					302AB2E32E902CF100889BBF = {
+						CreatedOnToolsVersion = 26.0;
+					};
 					30C937672E806B79004B5AF5 = {
 						CreatedOnToolsVersion = 26.0;
 					};
@@ -129,11 +210,19 @@
 			projectRoot = "";
 			targets = (
 				30C937672E806B79004B5AF5 /* volumeHUD */,
+				302AB2E32E902CF100889BBF /* LoginHelper */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		302AB2E22E902CF100889BBF /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		30C937662E806B79004B5AF5 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -141,6 +230,7 @@
 				3072CFF02E8E299200133C4D /* volumehud-beta.rb in Resources */,
 				3072CFF12E8E299200133C4D /* volumehud.rb in Resources */,
 				3045B1B12E8CB81A00C34F16 /* CHANGELOG.md in Resources */,
+				302AB2F52E902DA600889BBF /* LoginHelper.app in Resources */,
 				3045B1B22E8CB81A00C34F16 /* README.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -148,6 +238,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		302AB2E02E902CF100889BBF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		30C937642E806B79004B5AF5 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -157,7 +254,87 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		302AB2F72E902DA600889BBF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 302AB2E32E902CF100889BBF /* LoginHelper */;
+			targetProxy = 302AB2F62E902DA600889BBF /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		302AB2EC2E902CF200889BBF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = "2.0-beta.3";
+				DEVELOPMENT_TEAM = PL2FTGT24W;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = LoginHelper/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "volumeHUD Login Helper";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = "2.0 beta 3";
+				PRODUCT_BUNDLE_IDENTIFIER = com.dannystewart.volumehud.loginhelper;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		302AB2ED2E902CF200889BBF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = "2.0-beta.3";
+				DEVELOPMENT_TEAM = PL2FTGT24W;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = LoginHelper/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "volumeHUD Login Helper";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = "2.0 beta 3";
+				PRODUCT_BUNDLE_IDENTIFIER = com.dannystewart.volumehud.loginhelper;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 		30C937712E806B7A004B5AF5 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -363,6 +540,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		302AB2EE2E902CF200889BBF /* Build configuration list for PBXNativeTarget "LoginHelper" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				302AB2EC2E902CF200889BBF /* Debug */,
+				302AB2ED2E902CF200889BBF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		30C937632E806B79004B5AF5 /* Build configuration list for PBXProject "volumeHUD" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
