@@ -73,7 +73,7 @@ struct AboutView: View {
             // Settings section
             VStack(spacing: 8) {
                 Spacer()
-                    .frame(height: 10)
+                    .frame(height: 20)
 
                 VStack(spacing: 6) {
                     HStack {
@@ -105,35 +105,6 @@ struct AboutView: View {
                 }
 
                 Spacer().frame(height: 2)
-
-                VStack(spacing: 6) {
-                    HStack {
-                        Image(systemName: "bubble.left.and.exclamationmark.bubble.right.fill")
-                            .foregroundStyle(.secondary)
-                            .font(.system(size: 14))
-
-                        Text("Share Logs")
-                            .font(.system(size: 12, weight: .medium))
-
-                        Spacer()
-
-                        Toggle("", isOn: $shareLogsEnabled)
-                            .toggleStyle(SwitchToggleStyle())
-                            .scaleEffect(0.8)
-                            .onChange(of: shareLogsEnabled) { oldValue, newValue in
-                                logger.debug("Share Logs setting changed from \(oldValue) to \(newValue).")
-                            }
-                    }
-                    .padding(.horizontal, 20)
-
-                    Text("100% anonymous, helps me improve")
-                        .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 20)
-                        .frame(height: 16, alignment: .init(horizontal: .center, vertical: .top))
-                        .opacity(0.8)
-                }
             }
 
             Spacer()
@@ -149,7 +120,7 @@ struct AboutView: View {
             .keyboardShortcut(.defaultAction)
         }
         .padding(30)
-        .frame(width: 300, height: 490)
+        .frame(width: 300, height: 450)
         .onAppear {
             Task {
                 try? await Task.sleep(nanoseconds: 200_000_000)
