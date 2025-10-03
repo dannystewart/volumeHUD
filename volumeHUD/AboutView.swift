@@ -14,8 +14,8 @@ struct AboutView: View {
     // State to track if an update is available
     @State private var isUpdateAvailable: Bool = false
 
-    // Login item manager
-    @StateObject private var loginItemManager = LoginItemManager()
+    // Login item manager (can be overridden for preview)
+    @ObservedObject var loginItemManager: LoginItemManager = .init()
 
     // GitHub repository info
     private let githubOwner = "dannystewart"
@@ -288,8 +288,27 @@ struct AboutView: View {
 }
 
 #Preview {
-    AboutView(
+    class MockLoginItemManager: LoginItemManager {
+        override init() {
+            super.init()
+            isEnabled = true
+        }
+
+        override func setEnabled(_ enabled: Bool) {
+            isEnabled = enabled
+            let logger = PolyLog()
+            logger.debug("Preview: Would set login item to \(enabled).")
+        }
+
+        override func updateStatus() {
+            let logger = PolyLog()
+            logger.debug("Preview: Skipping login item status update.")
+        }
+    }
+
+    return AboutView(
         onQuit: { print("Quit button pressed") },
         appDelegate: nil,
+        loginItemManager: MockLoginItemManager(),
     )
 }
