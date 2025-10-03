@@ -48,9 +48,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         // Request accessibility permissions if this is the first run or they're not granted
         requestAccessibilityPermissionsIfNeeded()
 
-        // Load brightness detection mode from user defaults
-        loadBrightnessDetectionMode()
-
         // Request notification permission and post "started" notification (only if manually launched)
         requestNotificationAuthorizationIfNeeded { [weak self] granted in
             guard let self else { return }
@@ -192,22 +189,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         } else {
             logger.info("Brightness HUD disabled; skipping brightness monitoring.")
         }
-    }
-
-    @MainActor
-    private func loadBrightnessDetectionMode() {
-        let detectionModeString = UserDefaults.standard.string(forKey: "brightnessDetectionMode") ?? "heuristic"
-
-        switch detectionModeString {
-        case "heuristic":
-            brightnessMonitor.detectionMode = .stepBased // Heuristic mode is deprecated
-        case "stepBased":
-            brightnessMonitor.detectionMode = .stepBased
-        default:
-            brightnessMonitor.detectionMode = .stepBased
-        }
-
-        logger.debug("Loaded brightness detection mode: \(detectionModeString)")
     }
 
     // MARK: - Accessibility Permissions
