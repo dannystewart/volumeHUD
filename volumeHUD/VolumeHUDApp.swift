@@ -167,6 +167,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
 
         panel.contentViewController = hostingController
         panel.title = "About volumeHUD"
+        
+        // Prevent the panel from closing when clicking away
+        panel.hidesOnDeactivate = false
 
         // Position at visual center of the screen
         if let screen = NSScreen.main {
