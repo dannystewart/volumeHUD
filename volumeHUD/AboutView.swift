@@ -1,6 +1,8 @@
 import Polykit
 import SwiftUI
 
+// MARK: - AboutView
+
 struct AboutView: View {
     let onQuit: () -> Void
     weak var appDelegate: AppDelegate?
@@ -9,7 +11,6 @@ struct AboutView: View {
 
     // Settings for app preferences
     @AppStorage("brightnessEnabled") private var brightnessEnabled: Bool = false
-    @AppStorage("brightnessDetectionMode") private var brightnessDetectionMode: String = "heuristic"
 
     // State to track if an update is available
     @State private var isUpdateAvailable: Bool = false
@@ -29,60 +30,44 @@ struct AboutView: View {
         return "2.0.0"
     }
 
-    // Check if we're using Heuristics mode but don't have Accessibility permissions
-    private var usingHeuristicsWithoutAccessibility: Bool {
-        brightnessEnabled && brightnessDetectionMode == "heuristic" && !AXIsProcessTrusted()
-    }
-
     // MARK: - About View
 
     var body: some View {
         VStack(spacing: 8) {
-            // App name and version
-            if let appIcon = NSImage(named: "AppIcon") {
-                Image(nsImage: appIcon)
-                    .resizable()
-                    .frame(width: 80, height: 80)
-                    .offset(y: -20)
-            }
-
             VStack(spacing: 4) {
+                // MARK: - App Information
+
+                if let appIcon = NSImage(named: "AppIcon") {
+                    Image(nsImage: appIcon)
+                        .resizable()
+                        .frame(width: 80, height: 80)
+                }
                 Text("volumeHUD")
                     .font(.system(size: 24, weight: .medium))
-
                 Text("by Danny Stewart")
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
-
                 Text("Version \(appVersion)")
-                    .font(.system(size: 12))
+                    .font(.system(size: 11))
                     .foregroundStyle(.secondary)
 
-                // Update check
+                // Show update notice for new versions
                 Button(action: openReleasesPage) {
                     Text("Update available!")
                         .font(.system(size: 11))
                         .foregroundStyle(.blue)
                         .underline()
-                        .frame(minHeight: 20)
                 }
                 .buttonStyle(.plain)
                 .disabled(!isUpdateAvailable)
                 .opacity(isUpdateAvailable ? 1.0 : 0.0)
+            }
 
-                // Description
-                Text("Bringing the classic HUD back to your Mac")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .frame(width: 230, height: 10)
-                    .offset(y: -8)
+            Spacer()
 
-            }.offset(y: -20)
+            // MARK: - Open at Login Setting
 
-            // Settings section
-            VStack(spacing: 6) {
-                // Login item setting
+            VStack(spacing: 10) {
                 HStack {
                     Image(systemName: "power.circle.fill")
                         .foregroundStyle(loginItemManager.isEnabled ? .green : .gray)
@@ -103,8 +88,9 @@ struct AboutView: View {
                 }
                 .padding(.horizontal, 14)
 
+                // MARK: - Brightness HUD Toggle
+
                 VStack(spacing: 6) {
-                    // Brightness HUD setting
                     HStack {
                         Image(systemName: "sun.max.fill")
                             .foregroundStyle(brightnessEnabled ? .orange : .gray)
@@ -132,71 +118,32 @@ struct AboutView: View {
                         .multilineTextAlignment(.center)
                         .opacity(0.8)
                         .frame(height: 16, alignment: .init(horizontal: .center, vertical: .top))
-                        .offset(y: -2)
-
-                    // Detection mode picker (only shown when brightness is enabled)
-                    HStack {
-                        Text("Mode")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                            .frame(minWidth: 34)
-                            .offset(x: 11, y: 0)
-                        Spacer()
-                        Picker("", selection: $brightnessDetectionMode) {
-                            Text(" Step-based ").tag("stepBased")
-                            Text("Heuristic").tag("heuristic")
-                        }
-                        .pickerStyle(.segmented)
-                        .controlSize(.small)
-                        .scaleEffect(0.9)
-                        .onChange(of: brightnessDetectionMode) { oldValue, newValue in
-                            logger.debug("Brightness detection mode changed from \(oldValue) to \(newValue).")
-                            updateBrightnessDetectionMode()
-                        }
-                        .allowsHitTesting(brightnessEnabled)
-                    }
-                    .padding(.horizontal, 14)
-                    .opacity(brightnessEnabled ? 1.0 : 0.0)
-                    .offset(y: brightnessEnabled ? 0 : -8)
                 }
                 .animation(.easeInOut(duration: 0.3), value: brightnessEnabled)
+                Spacer()
+            }
 
-                Text("⚠️  Accessibility permissions needed")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(.red)
-                    .multilineTextAlignment(.center)
-                    .opacity(0.8)
-                    .frame(width: 250, height: 16, alignment: .init(horizontal: .center, vertical: .top))
-                    .offset(y: usingHeuristicsWithoutAccessibility ? 0 : -3)
-                    .opacity(usingHeuristicsWithoutAccessibility ? 1.0 : 0.0)
-                    .animation(.easeInOut(duration: 0.1), value: usingHeuristicsWithoutAccessibility)
+            // MARK: - View Footer
 
-                Spacer().frame(height: 2)
-            }.offset(y: -1)
-
-            // Quit button
             Button(action: onQuit) {
                 Text("Quit volumeHUD")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
-            .offset(y: 10)
             .keyboardShortcut(.defaultAction)
         }
         .padding(32)
-        .frame(width: 300, height: 450)
+        .frame(width: 280, height: 400)
         .onAppear {
             Task {
                 try? await Task.sleep(nanoseconds: 200_000_000) // 0.2 second delay
                 checkForUpdates()
             }
-            // Update the brightness detection mode when the view appears
-            updateBrightnessDetectionMode()
         }
     }
 
-    // MARK: - Check for Updates
+    // MARK: - Update Check
 
     private func checkForUpdates() {
         Task {
@@ -214,8 +161,6 @@ struct AboutView: View {
             }
         }
     }
-
-    // MARK: - Fetch Latest Release
 
     private func fetchLatestRelease() async throws -> String {
         let urlString = "https://api.github.com/repos/\(githubOwner)/\(githubRepo)/releases/latest"
@@ -269,21 +214,6 @@ struct AboutView: View {
         if let url = URL(string: urlString) {
             NSWorkspace.shared.open(url)
         }
-    }
-
-    private func updateBrightnessDetectionMode() {
-        guard let brightnessMonitor = appDelegate?.brightnessMonitor else { return }
-
-        switch brightnessDetectionMode {
-        case "stepBased":
-            brightnessMonitor.detectionMode = .stepBased
-        case "heuristic":
-            brightnessMonitor.detectionMode = .heuristic
-        default:
-            brightnessMonitor.detectionMode = .stepBased
-        }
-
-        logger.debug("Updated brightness detection mode to: \(brightnessDetectionMode)")
     }
 }
 

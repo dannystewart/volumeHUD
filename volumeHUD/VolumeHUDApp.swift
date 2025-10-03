@@ -215,11 +215,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
 
         switch detectionModeString {
         case "heuristic":
-            brightnessMonitor.detectionMode = .heuristic
+            brightnessMonitor.detectionMode = .stepBased // Heuristic mode is deprecated
         case "stepBased":
             brightnessMonitor.detectionMode = .stepBased
         default:
-            brightnessMonitor.detectionMode = .heuristic
+            brightnessMonitor.detectionMode = .stepBased
         }
 
         logger.debug("Loaded brightness detection mode: \(detectionModeString)")
