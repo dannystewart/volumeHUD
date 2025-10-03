@@ -165,11 +165,11 @@ struct AboutView: View {
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
-            .offset(y: 24)
+            .offset(y: 26)
             .keyboardShortcut(.defaultAction)
         }
         .padding(32)
-        .frame(width: 300, height: 470)
+        .frame(width: 300, height: 450)
         .onAppear {
             Task {
                 try? await Task.sleep(nanoseconds: 200_000_000) // 0.2 second delay
