@@ -10,9 +10,7 @@ So I did what any sane person would do: I picked up Xcode and wrote my first eve
 
 ## What It Looks Like
 
-<img src="volumeHUD.gif" alt="volumeHUD Demo" height="300"></img>
-
-Version 2.0 now includes a brightness HUD that looks and works the same.
+<img src="volumeHUD-demo.gif" alt="volumeHUD Demo" height="300"></img>
 
 ## How to Use It
 
@@ -26,9 +24,13 @@ brew install dannystewart/apps/volumehud
 
 ### Interface
 
-Launching the app a second time after it's already running will show a simple About box with a button to quit. It will also let you know if there's an update available.
+Launching the app a second time after it's running will show a window with some options:
 
-To run on startup, you can add it to **System Settings** > **General** > **Login Items & Extensions** > **Open at Login**.
+<img src="volumeHUD.png" alt="volumeHUD Interface" height="400"></img>
+
+Here, you can set the app to open at login and enable the brightness HUD, which is disabled by default. It may be less reliable than the volume HUD, and it only supports built-in displays. (Besides, the app is *volumeHUD*. Brightness is a bonus.)
+
+The window also provides a button to quit at the bottom, and will display a little "Update available!" under the version number when there's… an update available.
 
 ### Permissions
 
