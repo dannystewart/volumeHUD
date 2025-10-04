@@ -23,7 +23,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         UserDefaults.standard.bool(forKey: "brightnessEnabled")
     }
 
-    // MARK: - applicationDidFinishLaunching
+    // MARK: - On Finish Launching
 
     func applicationDidFinishLaunching(_: Notification) {
         // Skip full initialization if running in SwiftUI preview or test mode
@@ -145,8 +145,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         let executablePath = String(decoding: utf8Bytes, as: UTF8.self)
 
         // Extract bundle path from executable path
-        // Typical path: /path/to/volumeHUD.app/Contents/MacOS/volumeHUD
-        // We want: /path/to/volumeHUD.app
         if let appRange = executablePath.range(of: ".app/") {
             return String(executablePath[..<appRange.upperBound].dropLast(1))
         }
@@ -176,6 +174,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         alert.runModal()
     }
 
+    // MARK: - Environment Check
+
     // Check to see if we're running in a development environment (SwiftUI preview, test mode, etc.)
     private nonisolated func isRunningInDevEnvironment() -> Bool {
         if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" ||
@@ -189,69 +189,58 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         return false
     }
 
-    // Check to see if we're running manually (not during system startup)
+    // MARK: - Launch Detection
+
+    /// Returns true if this was a manual launch (user double-clicked), false for automatic (login item).
     private nonisolated func isManualLaunch() -> Bool {
         if isRunningInDevEnvironment() { return false }
 
-        // 1) Explicit marker from helper (most reliable)
-        let env = ProcessInfo.processInfo.environment
-        if env["VOLUMEHUD_LOGIN_HELPER"] == "1" || CommandLine.arguments.contains("--launchedByLoginItem") {
-            logger.info("Launch type: automatic (login item helper via marker)")
-            return false
-        }
+        // Explicit marker from login helper
+        if CommandLine.arguments.contains("--launchedByLoginItem") { return false }
+        if ProcessInfo.processInfo.environment["VOLUMEHUD_LOGIN_HELPER"] == "1" { return false }
 
-        // 2) Parent process heuristics
+        // Parent process checks
         let parentPID = getppid()
 
-        // If launched by our embedded login item helper, treat as automatic
-        if isLaunchedByEmbeddedLoginItem(parentPID: parentPID) {
-            logger.info("Launch type: automatic (login item helper)")
+        if isParentEmbeddedLoginHelper(parentPID) { return false }
+
+        if let parentName = getProcessName(parentPID), parentName.contains("launchd") {
             return false
         }
 
-        var name = [CChar](repeating: 0, count: 1024)
-        let result = proc_name(parentPID, &name, UInt32(name.count))
-
-        if result > 0 {
-            // Build a String from the null-terminated C string buffer
-            let parentName: String = name.withUnsafeBufferPointer { buffer in
-                String(cString: buffer.baseAddress!)
-            }
-            logger.debug("Parent process: \(parentName) (PID: \(parentPID))")
-
-            // If parent is launchd, likely an auto-launch during startup
-            let isLaunchdLaunch = parentName.contains("launchd")
-            logger.info("Launch type: \(isLaunchdLaunch ? "automatic (launchd)" : "manual")")
-
-            return !isLaunchdLaunch
-        } else {
-            logger.info("Failed to get parent process name (PID: \(parentPID)), assuming manual launch.")
-            return true // Default to manual if we can't determine
-        }
+        // Default to manual launch
+        return true
     }
 
-    /// Returns true if the given parent PID corresponds to an embedded login item helper inside
-    /// Contents/Library/LoginItems of our main bundle.
-    private nonisolated func isLaunchedByEmbeddedLoginItem(parentPID: pid_t) -> Bool {
+    /// Gets the process name for a given PID.
+    private nonisolated func getProcessName(_ pid: pid_t) -> String? {
+        var name = [CChar](repeating: 0, count: 1024)
+        guard proc_name(pid, &name, UInt32(name.count)) > 0 else { return nil }
+        return name.withUnsafeBufferPointer { String(cString: $0.baseAddress!) }
+    }
+
+    /// Checks if the parent PID is our embedded login helper in Contents/Library/LoginItems.
+    private nonisolated func isParentEmbeddedLoginHelper(_ parentPID: pid_t) -> Bool {
         guard let parentBundlePath = getBundlePath(for: parentPID) else { return false }
 
-        let loginItemsURL = Bundle.main.bundleURL.appendingPathComponent("Contents/Library/LoginItems", isDirectory: true)
+        let loginItemsURL = Bundle.main.bundleURL
+            .appendingPathComponent("Contents/Library/LoginItems", isDirectory: true)
+
         var isDir: ObjCBool = false
-        guard FileManager.default.fileExists(atPath: loginItemsURL.path, isDirectory: &isDir), isDir.boolValue else {
+        guard FileManager.default.fileExists(atPath: loginItemsURL.path, isDirectory: &isDir),
+              isDir.boolValue
+        else {
             return false
         }
 
-        guard let contents = try? FileManager.default.contentsOfDirectory(at: loginItemsURL, includingPropertiesForKeys: nil) else {
+        guard let contents = try? FileManager.default.contentsOfDirectory(
+            at: loginItemsURL,
+            includingPropertiesForKeys: nil,
+        ) else {
             return false
         }
 
-        for url in contents where url.pathExtension == "app" {
-            if url.path == parentBundlePath {
-                return true
-            }
-        }
-
-        return false
+        return contents.contains { $0.pathExtension == "app" && $0.path == parentBundlePath }
     }
 
     // If we get a new "open" event, also show the about window
