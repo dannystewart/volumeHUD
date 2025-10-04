@@ -24,11 +24,7 @@ brew install dannystewart/apps/volumehud
 
 ### Interface
 
-Launching the app a second time while it's running will show the About window:
-
-<img src="volumeHUD.png" alt="volumeHUD Interface" height="400"></img>
-
-From here, you can set the app to open at login, enable the brightness HUD (off by default—it's *volumeHUD* after all), see if an update is available, and quit the app.
+Launching the app a second time while it's running will show the About window, where you can set it to open at login, enable the brightness HUD (off by default—it's *volumeHUD* after all), see if an update is available, and quit.
 
 ### Permissions
 
