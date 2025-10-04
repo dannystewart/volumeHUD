@@ -15,6 +15,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
     var brightnessMonitor: BrightnessMonitor!
     var hudController: HUDController!
     var aboutWindow: NSPanel?
+    var loginItemManager: LoginItemManager!
 
     let logger = PolyLog()
 
@@ -46,7 +47,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         // Set up the notifications delegate BEFORE scheduling any notifications
         UNUserNotificationCenter.current().delegate = self
 
-        // Initialize the monitors and HUD controller (never in preview mode here since we early return)
+        // Initialize login item manager, monitors, and HUD controller
+        loginItemManager = LoginItemManager()
         volumeMonitor = VolumeMonitor(isPreviewMode: false)
         brightnessMonitor = BrightnessMonitor(isPreviewMode: false)
         hudController = HUDController(isPreviewMode: false)
@@ -270,6 +272,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
                 self?.aboutWindow = nil
                 self?.gracefulTerminate()
             }, appDelegate: self,
+            loginItemManager: loginItemManager,
         )
 
         let hostingController = NSHostingController(rootView: aboutView)

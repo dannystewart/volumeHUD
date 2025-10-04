@@ -15,8 +15,8 @@ struct AboutView: View {
     // State to track if an update is available
     @State private var isUpdateAvailable: Bool = false
 
-    // Login item manager (can be overridden for preview)
-    @ObservedObject var loginItemManager: LoginItemManager = .init()
+    // Login item manager
+    @ObservedObject var loginItemManager: LoginItemManager
 
     // GitHub repository info
     private let githubOwner = "dannystewart"
