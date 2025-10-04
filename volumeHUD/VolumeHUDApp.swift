@@ -57,7 +57,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         volumeMonitor.hudController = hudController
         brightnessMonitor.hudController = hudController
 
-        // Request accessibility permissions if this is the first run or they're not granted
+        // Request accessibility permissions if needed
         requestAccessibilityPermissionsIfNeeded()
 
         // Request notification permission and post "started" notification (only if manually launched)
@@ -193,8 +193,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
     private nonisolated func isManualLaunch() -> Bool {
         if isRunningInDevEnvironment() { return false }
 
-        // Check if launched by launchd (startup item) or manually
+        // 1) Explicit marker from helper (most reliable)
+        let env = ProcessInfo.processInfo.environment
+        if env["VOLUMEHUD_LOGIN_HELPER"] == "1" || CommandLine.arguments.contains("--launchedByLoginItem") {
+            logger.info("Launch type: automatic (login item helper via marker)")
+            return false
+        }
+
+        // 2) Parent process heuristics
         let parentPID = getppid()
+
+        // If launched by our embedded login item helper, treat as automatic
+        if isLaunchedByEmbeddedLoginItem(parentPID: parentPID) {
+            logger.info("Launch type: automatic (login item helper)")
+            return false
+        }
+
         var name = [CChar](repeating: 0, count: 1024)
         let result = proc_name(parentPID, &name, UInt32(name.count))
 
@@ -214,6 +228,30 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
             logger.info("Failed to get parent process name (PID: \(parentPID)), assuming manual launch.")
             return true // Default to manual if we can't determine
         }
+    }
+
+    /// Returns true if the given parent PID corresponds to an embedded login item helper inside
+    /// Contents/Library/LoginItems of our main bundle.
+    private nonisolated func isLaunchedByEmbeddedLoginItem(parentPID: pid_t) -> Bool {
+        guard let parentBundlePath = getBundlePath(for: parentPID) else { return false }
+
+        let loginItemsURL = Bundle.main.bundleURL.appendingPathComponent("Contents/Library/LoginItems", isDirectory: true)
+        var isDir: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: loginItemsURL.path, isDirectory: &isDir), isDir.boolValue else {
+            return false
+        }
+
+        guard let contents = try? FileManager.default.contentsOfDirectory(at: loginItemsURL, includingPropertiesForKeys: nil) else {
+            return false
+        }
+
+        for url in contents where url.pathExtension == "app" {
+            if url.path == parentBundlePath {
+                return true
+            }
+        }
+
+        return false
     }
 
     // If we get a new "open" event, also show the about window
@@ -303,10 +341,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
             return
         }
 
-        // If not trusted, request with prompt. macOS handles showing the prompt only once:
-        // - If app is NOT in Accessibility list → Shows prompt (adds to list)
-        // - If app IS in list but disabled → No prompt shown, just returns false
-        // - If user removes app from list → Will prompt again on next launch
+        // If not trusted, request with prompt.
         logger.info("Prompting/checking for accessibility permissions.")
 
         let promptKey = "AXTrustedCheckOptionPrompt"
@@ -316,7 +351,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         // Update accessibility status after the request
         Task { @MainActor [weak self] in
             guard let self else { return }
-            try? await Task.sleep(nanoseconds: 500000000) // 0.5 second delay
+            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 second delay
             let newStatus = AXIsProcessTrusted()
             updateAccessibilityStatus()
 

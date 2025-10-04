@@ -13,9 +13,10 @@ class LoginHelperDelegate: NSObject, NSApplicationDelegate {
         let contentsURL = libraryURL.deletingLastPathComponent()
         let mainAppURL = contentsURL.deletingLastPathComponent()
 
-        // Launch the main app
+        // Launch the main app with a marker argument to indicate it was launched by login item
         let configuration = NSWorkspace.OpenConfiguration()
-        configuration.activates = false // Don't activate the main app (it's a menu bar utility)
+        configuration.activates = false // Don't activate the main app (it's a background utility)
+        configuration.arguments = ["--launchedByLoginItem"]
 
         NSWorkspace.shared.openApplication(at: mainAppURL, configuration: configuration) { _, error in
             if let error {
