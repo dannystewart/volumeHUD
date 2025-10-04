@@ -4,27 +4,35 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog], and this project adheres to [Semantic Versioning].
 
-## 2.0.0 (Unreleased)
+## [2.0.0] (2025-10-04)
 
 ### Added
 
-- Adds brightness monitoring and unified HUD display for both volume and brightness changes. The brightness HUD should appear only for user-initiated changes and not automatic adjustments like ambient light change or dimming while on battery power.
-- Adds a new About window with a proper "Quit volumeHUD" button.
-- Adds a simple automatic update check using the GitHub API, showing a small link on the About screen when an update is available.
+- **Brightness:** The app now supports brightness! The brightness HUD is off by default (the app is volumeHUD, after all) but can be enabled from the new About window. It should only appear for user-initiated changes, not automatic triggers like ambient light or battery power.
+- **Open at Login:** You can now set it to open at login from directly from the app.
+- **Interface:** A new About window now provides controls for the brightness HUD and opening at login, as well as a proper quit button. Clicking the startup notification will now open the About window (as will relaunching the app).
+- **Update Check:** Adds a simple automatic update check using the GitHub API, showing a small link on the About screen when an update is available. I hesitated to add network access, but it's just one anonymous call to GitHub, failing silently if it can't connect. No nag, no automatic download.
 
 ### Changed
 
-- Sets the app to run as a background agent without appearing in the Dock. This should also avoid having it briefly brought to the foreground and stealing window focus on launch.
-- Changes notification behavior. A notification now appears on every launch, but only when started manually and not as a login item. In practice, I found the lack of notification on startup to be confusing. The app likely isn't being restarted often enough for this to become annoying, and my main concern was avoiding a notification when launching automatically on startup.
+- **Notifications:** Now notifies on startup rather than quit, but only when run manually (not as a login item). I've found it helpful to be sure you've launched an app that's otherwise transparent. Notifications remain completely optional.
+
+### Fixed
+
+- Now runs as a proper background agent, which should prevent it from temporarily appearing in the Dock or stealing window focus on launch.
+- Detects when another instance of the app is already running from another location, preventing accidentally opening multiple copies at once.
+- Fixes detection of Accessibility permissions. The app has always been designed to work without permissions but it turns out I was doing too good a job, as it always assumed it didn't have them and never asked. It should now request them properly on first launch. (See known issues below.)
 
 ### Removed
 
-- Removes app sandbox restrictions to enable brightness functionality. I tried to avoid this, but reliable brightness detection was harder than volume without using private frameworks.
-- Removes the quit-on-relaunch behavior, now showing the About box on relaunch instead. Also removes the notification when quitting, since it's now clear and explicit.
+- Removes quit-on-relaunch behavior and the quit notification.
+- Removes App Sandbox restrictions due to brightness functionality. I tried to avoid it, but brightness detection was too unreliable without private frameworks.
 
-### Known Issues
+### Notes and Known Issues
 
-- The brightness HUD currently only supports built-in displays. Considering the app was only intended for volume originally, brightness is kind of a bonus feature. Supporting external displays seems like a nightmare with DDC/CI variability, private APIs, event handling, supporting random USB/Thunderbolt docks, etc. If you'd like to help, PRs are welcome!
+- Brightness detection *may* be slightly less reliable than volume, especially for ambient light detection and switching to battery, but it should be accounting for all that. It's been working well for me with no issues, but should be considered experimental (another reason it's off by default).
+- Brightness detection only supports built-in displays. Supporting external displays seems like a nightmare with DDC/CI variability, private APIs, event handling, supporting random USB/Thunderbolt docks, and other things that aren't fun. If you'd like to help, PRs are welcome!
+- If you had the app installed previously and want to be able to use key presses to track volume and brightness when at min/max, you will likely have to grant it Accessibility permissions manually (or remove it from the list so it can ask properly).
 
 ## [1.2.6] (2025-09-28)
 
@@ -117,6 +125,7 @@ Initial release.
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
 <!-- Versions -->
+[2.0.0]: https://github.com/dannystewart/volumeHUD/compare/v1.2.6...v2.0.0
 [1.2.6]: https://github.com/dannystewart/volumeHUD/compare/v1.2.5...v1.2.6
 [1.2.5]: https://github.com/dannystewart/volumeHUD/compare/v1.2.4...v1.2.5
 [1.2.4]: https://github.com/dannystewart/volumeHUD/compare/v1.2.3...v1.2.4
