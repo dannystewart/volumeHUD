@@ -1,7 +1,7 @@
 import AppKit
 import Darwin
 import Foundation
-import Polykit
+import PolyKit
 import SwiftUI
 @preconcurrency import UserNotifications
 
@@ -316,7 +316,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         // Update accessibility status after the request
         Task { @MainActor [weak self] in
             guard let self else { return }
-            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 second delay
+            try? await Task.sleep(nanoseconds: 500000000) // 0.5 second delay
             let newStatus = AXIsProcessTrusted()
             updateAccessibilityStatus()
 

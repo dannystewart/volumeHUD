@@ -1,7 +1,7 @@
 import AppKit
 import Combine
 import Foundation
-import Polykit
+import PolyKit
 import SwiftUI
 
 @MainActor

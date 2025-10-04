@@ -1,9 +1,9 @@
 import Combine
 import Foundation
-import Polykit
+import PolyKit
 import ServiceManagement
 
-/// Manages login item functionality using the modern SMAppService API
+/// Manages login item functionality using the modern SMAppService API.
 @MainActor
 class LoginItemManager: ObservableObject {
     private let logger = PolyLog()

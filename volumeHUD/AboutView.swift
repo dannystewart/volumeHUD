@@ -1,4 +1,4 @@
-import Polykit
+import PolyKit
 import SwiftUI
 
 // MARK: - AboutView

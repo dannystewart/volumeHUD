@@ -11,9 +11,9 @@
 		302AB2F92E902DE000889BBF /* LoginHelper.app in Copy Files */ = {isa = PBXBuildFile; fileRef = 302AB2E42E902CF100889BBF /* LoginHelper.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		3045B1B12E8CB81A00C34F16 /* CHANGELOG.md in Resources */ = {isa = PBXBuildFile; fileRef = 3045B1AF2E8CB81A00C34F16 /* CHANGELOG.md */; };
 		3045B1B22E8CB81A00C34F16 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 3045B1B02E8CB81A00C34F16 /* README.md */; };
+		307117552E915852001C5D7E /* PolyKit in Frameworks */ = {isa = PBXBuildFile; productRef = 307117542E915852001C5D7E /* PolyKit */; };
 		3072CFF02E8E299200133C4D /* volumehud-beta.rb in Resources */ = {isa = PBXBuildFile; fileRef = 3072CFEF2E8E299200133C4D /* volumehud-beta.rb */; };
 		3072CFF12E8E299200133C4D /* volumehud.rb in Resources */ = {isa = PBXBuildFile; fileRef = 3072CFEE2E8E299200133C4D /* volumehud.rb */; };
-		30991F012E8C9E990008AD92 /* Polykit in Frameworks */ = {isa = PBXBuildFile; productRef = 30991F002E8C9E990008AD92 /* Polykit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -87,7 +87,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				30991F012E8C9E990008AD92 /* Polykit in Frameworks */,
+				307117552E915852001C5D7E /* PolyKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -168,7 +168,7 @@
 			);
 			name = volumeHUD;
 			packageProductDependencies = (
-				30991F002E8C9E990008AD92 /* Polykit */,
+				307117542E915852001C5D7E /* PolyKit */,
 			);
 			productName = volumeHUD;
 			productReference = 30C937682E806B79004B5AF5 /* volumeHUD.app */;
@@ -577,9 +577,10 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		30991F002E8C9E990008AD92 /* Polykit */ = {
+		307117542E915852001C5D7E /* PolyKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = Polykit;
+			package = 30991EFF2E8C9E990008AD92 /* XCLocalSwiftPackageReference "../polykit-swift" */;
+			productName = PolyKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

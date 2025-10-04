@@ -4,7 +4,7 @@ import CoreGraphics
 import Foundation
 import IOKit
 import IOKit.pwr_mgt
-import Polykit
+import PolyKit
 
 class BrightnessMonitor: ObservableObject, @unchecked Sendable {
     @Published var currentBrightness: Float = 0.0

@@ -19,7 +19,7 @@ let package = Package(
         .executableTarget(
             name: "volumeHUD",
             dependencies: [
-                .product(name: "Polykit", package: "polykit-swift"),
+                .product(name: "PolyKit", package: "polykit-swift"),
             ],
             path: "volumeHUD",
             resources: [

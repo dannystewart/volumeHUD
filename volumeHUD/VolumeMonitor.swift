@@ -5,7 +5,7 @@ import Combine
 import CoreAudio
 import Foundation
 import IOKit
-import Polykit
+import PolyKit
 
 class VolumeMonitor: ObservableObject, @unchecked Sendable {
     @Published var currentVolume: Float = 0.0
