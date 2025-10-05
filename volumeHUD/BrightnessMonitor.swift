@@ -18,6 +18,7 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
     private var eventTapRunLoopSource: CFRunLoopSource?
     private var lastBrightnessKeyTime: TimeInterval = 0
     private var hasLoggedBrightnessError = false
+    private var hasLoggedNoDisplayDetected = false
     private var brightnessAvailable = false
     private let isPreviewMode: Bool
 
@@ -206,19 +207,22 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
         guard let canChangeBrightness = canChangeBrightnessFunc,
               let getBrightness = getBrightnessFunc
         else {
-            logger.error("getCurrentBrightness: function pointers not available.")
+            logger.error("getCurrentBrightness: Function pointers not available.")
             return nil
         }
 
         // Always target the built-in display rather than the current main display
         guard let builtinDisplay = getBuiltinDisplayID() else {
-            logger.warning("getCurrentBrightness: no built-in display detected.")
+            if !hasLoggedNoDisplayDetected {
+                logger.warning("getCurrentBrightness: No built-in display detected.")
+                hasLoggedNoDisplayDetected = true
+            }
             return nil
         }
 
         let canChange = canChangeBrightness(builtinDisplay)
         guard canChange else {
-            logger.warning("getCurrentBrightness: built-in display cannot change brightness (id: \(builtinDisplay))")
+            logger.warning("getCurrentBrightness: Built-in display cannot change brightness (id: \(builtinDisplay))")
             return nil
         }
 
@@ -356,7 +360,7 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
             // Brightness became (or remains) unavailable
             if brightnessAvailable {
                 brightnessAvailable = false
-                logger.error("Lost access to brightness control.")
+                logger.warning("Lost access to brightness control.")
             }
             return
         }
@@ -365,6 +369,7 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
         if !brightnessAvailable {
             brightnessAvailable = true
             logger.info("Regained access to brightness control.")
+            hasLoggedNoDisplayDetected = false
         }
 
         // Quantize brightness to 16 steps to match the brightness bars
@@ -383,7 +388,7 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
             let isUserChange = isUserInitiatedBrightnessChange(delta, rawBrightness: rawBrightness)
 
             if isUserChange {
-                logger.debug("Showing HUD (step-based detection): \(Int(quantizedBrightness * 100))% (delta: \(delta))")
+                logger.debug("Showing HUD: \(Int(quantizedBrightness * 100))% (delta: \(delta))")
                 currentBrightness = quantizedBrightness
                 hudController?.showBrightnessHUD(brightness: quantizedBrightness)
             } else {
