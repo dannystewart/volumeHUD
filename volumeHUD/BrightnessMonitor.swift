@@ -16,11 +16,15 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
     private var systemEventMonitor: Any?
     private var eventTap: CFMachPort?
     private var eventTapRunLoopSource: CFRunLoopSource?
+    private var hidEventTap: CFMachPort?
+    private var hidEventTapRunLoopSource: CFRunLoopSource?
     private var lastBrightnessKeyTime: TimeInterval = 0
     private var hasLoggedBrightnessError = false
     private var hasLoggedNoDisplayDetected = false
     private var brightnessAvailable = false
     private let isPreviewMode: Bool
+    private var isObservingDisplayChanges = false
+    private var restartTask: Task<Void, Never>?
 
     /// Cache DisplayServices function pointers
     private var displayServicesHandle: UnsafeMutableRawPointer?
@@ -167,6 +171,9 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
         startSystemEventMonitoring()
         startEventTap()
 
+        // Monitor display configuration changes to restart event monitoring when needed
+        startDisplayChangeMonitoring()
+
         isMonitoring = true
         logger.debug("Started monitoring for brightness changes.")
     }
@@ -180,6 +187,13 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
         // Stop system event monitoring
         stopSystemEventMonitoring()
         stopEventTap()
+
+        // Stop display change monitoring
+        stopDisplayChangeMonitoring()
+
+        // Cancel any pending restart task
+        restartTask?.cancel()
+        restartTask = nil
 
         isMonitoring = false
         logger.debug("Stopped monitoring for brightness changes.")
@@ -291,12 +305,15 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
             options: .listenOnly,
             eventsOfInterest: systemDefinedMask,
             callback: { _, type, cgEvent, opaqueInfo -> Unmanaged<CGEvent>? in
-                // If the tap is disabled (timeout or user input), re-enable it to keep monitoring reliable
+                // If the tap is disabled (timeout or user input), re-enable both taps
                 if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
                     if let opaqueInfo {
                         let monitor = Unmanaged<BrightnessMonitor>.fromOpaque(opaqueInfo).takeUnretainedValue()
-                        if let currentTap = monitor.eventTap {
-                            CGEvent.tapEnable(tap: currentTap, enable: true)
+                        if let sessionTap = monitor.eventTap {
+                            CGEvent.tapEnable(tap: sessionTap, enable: true)
+                        }
+                        if let hidTap = monitor.hidEventTap {
+                            CGEvent.tapEnable(tap: hidTap, enable: true)
                         }
                     }
                     return Unmanaged.passUnretained(cgEvent)
@@ -333,25 +350,153 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
         eventTap = tap
         eventTapRunLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
         if let source = eventTapRunLoopSource {
-            CFRunLoopAddSource(CFRunLoopGetCurrent(), source, .commonModes)
+            CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
             CGEvent.tapEnable(tap: tap, enable: true)
-            logger.debug("Started CGEvent tap for systemDefined events.")
+            logger.debug("Started CGEvent tap (session-level) for systemDefined events.")
         } else {
             logger.warning("Failed to create run loop source for event tap.")
+        }
+
+        // Also install a HID-level tap as a backup; this may be more resilient to display configuration changes
+        if let hidTap = CGEvent.tapCreate(
+            tap: .cghidEventTap,
+            place: .headInsertEventTap,
+            options: .listenOnly,
+            eventsOfInterest: systemDefinedMask,
+            callback: { _, type, cgEvent, opaqueInfo -> Unmanaged<CGEvent>? in
+                // If the tap is disabled, re-enable both taps
+                if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+                    if let opaqueInfo {
+                        let monitor = Unmanaged<BrightnessMonitor>.fromOpaque(opaqueInfo).takeUnretainedValue()
+                        if let sessionTap = monitor.eventTap {
+                            CGEvent.tapEnable(tap: sessionTap, enable: true)
+                        }
+                        if let hidTap = monitor.hidEventTap {
+                            CGEvent.tapEnable(tap: hidTap, enable: true)
+                        }
+                    }
+                    return Unmanaged.passUnretained(cgEvent)
+                }
+
+                guard type.rawValue == 14, let nsEvent = NSEvent(cgEvent: cgEvent) else {
+                    return Unmanaged.passUnretained(cgEvent)
+                }
+                guard let opaqueInfo else {
+                    return Unmanaged.passUnretained(cgEvent)
+                }
+                let monitor = Unmanaged<BrightnessMonitor>.fromOpaque(opaqueInfo).takeUnretainedValue()
+
+                let subtype = Int(nsEvent.subtype.rawValue)
+                let data1 = Int(nsEvent.data1)
+                let keyCode = (data1 & 0xFFFF_0000) >> 16
+                let keyFlags = data1 & 0x0000_FFFF
+                let keyState = (keyFlags & 0xFF00) >> 8
+                let isKeyDown = keyState == 0x0A
+
+                Task { @MainActor in
+                    monitor.handleSystemDefinedEventData(subtype: subtype, keyCode: keyCode, isKeyDown: isKeyDown)
+                }
+
+                return Unmanaged.passUnretained(cgEvent)
+            },
+            userInfo: userInfo,
+        ) {
+            hidEventTap = hidTap
+            hidEventTapRunLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, hidTap, 0)
+            if let hidSource = hidEventTapRunLoopSource {
+                CFRunLoopAddSource(CFRunLoopGetMain(), hidSource, .commonModes)
+                CGEvent.tapEnable(tap: hidTap, enable: true)
+                logger.debug("Started CGEvent tap (HID-level) for systemDefined events.")
+            } else {
+                logger.warning("Failed to create run loop source for HID event tap.")
+            }
+        } else {
+            logger.debug("HID-level event tap not available; relying on session-level tap only.")
         }
     }
 
     private func stopEventTap() {
         if let source = eventTapRunLoopSource {
-            CFRunLoopRemoveSource(CFRunLoopGetCurrent(), source, .commonModes)
+            CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes)
         }
         if let tap = eventTap {
             CGEvent.tapEnable(tap: tap, enable: false)
         }
         eventTapRunLoopSource = nil
         eventTap = nil
-        logger.debug("Stopped CGEvent tap for systemDefined events.")
+
+        if let hidSource = hidEventTapRunLoopSource {
+            CFRunLoopRemoveSource(CFRunLoopGetMain(), hidSource, .commonModes)
+        }
+        if let hidTap = hidEventTap {
+            CGEvent.tapEnable(tap: hidTap, enable: false)
+        }
+        hidEventTapRunLoopSource = nil
+        hidEventTap = nil
+
+        logger.debug("Stopped CGEvent taps for systemDefined events.")
     }
+
+    // MARK: - Display Change Monitoring
+
+    private func startDisplayChangeMonitoring() {
+        guard !isObservingDisplayChanges else { return }
+        if isPreviewMode {
+            isObservingDisplayChanges = true
+            return
+        }
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(displayConfigurationDidChange(_:)),
+            name: NSApplication.didChangeScreenParametersNotification,
+            object: nil,
+        )
+        isObservingDisplayChanges = true
+        logger.debug("Started monitoring display configuration changes.")
+    }
+
+    private func stopDisplayChangeMonitoring() {
+        guard isObservingDisplayChanges else { return }
+        NotificationCenter.default.removeObserver(
+            self,
+            name: NSApplication.didChangeScreenParametersNotification,
+            object: nil,
+        )
+        isObservingDisplayChanges = false
+        logger.debug("Stopped monitoring display configuration changes.")
+    }
+
+    @objc
+    private func displayConfigurationDidChange(_: Notification) {
+        // Cancel any pending restart task to debounce rapid-fire display config changes
+        restartTask?.cancel()
+
+        // Debounce rapid-fire display configuration changes (e.g., lid close/open)
+        restartTask = Task { @MainActor in
+            do {
+                try await Task.sleep(nanoseconds: 100_000_000) // 100ms
+                logger.info("Display configuration changed, restarting brightness event monitoring.")
+                self.restartEventMonitoring()
+            } catch {
+                // Task was cancelled, which is fine - a newer restart is pending
+            }
+        }
+    }
+
+    @MainActor
+    private func restartEventMonitoring() {
+        logger.debug("Stopping event monitoring for restart...")
+        stopSystemEventMonitoring()
+        stopEventTap()
+
+        logger.debug("Restarting event monitoring...")
+        startSystemEventMonitoring()
+        startEventTap()
+        logger.debug("Event monitoring restarted successfully.")
+    }
+
+    // MARK: - Brightness Change Detection
 
     @MainActor
     private func checkForBrightnessChange() {
