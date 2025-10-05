@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import CoreGraphics
 import Foundation
 import PolyKit
 import SwiftUI
@@ -34,7 +35,7 @@ class HUDController: ObservableObject {
     func showBrightnessHUD(brightness: Float) {
         // Only show brightness HUD if the feature is enabled
         guard UserDefaults.standard.bool(forKey: "brightnessEnabled") else {
-            logger.debug("Brightness HUD disabled - skipping display")
+            logger.debug("Brightness HUD disabled; skipping display.")
             return
         }
         displayHUD(hudType: .brightness, value: brightness, isMuted: false)
@@ -90,6 +91,11 @@ class HUDController: ObservableObject {
         // If the HUD window exists, update its position
         if hudWindow != nil {
             updateWindowPosition()
+            // Re-apply after a short delay to handle transient frame/layout updates
+            // macOS screen geometry may still be adjusting after didChangeScreenParameters fires
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
+                self?.updateWindowPosition()
+            }
         }
     }
 
@@ -99,14 +105,14 @@ class HUDController: ObservableObject {
 
         let windowSize = NSSize(width: 210, height: 210)
 
-        // Get the current main screen
-        guard let screen = NSScreen.main else { return }
+        // Prefer the built-in screen if available, otherwise fall back to the main screen
+        guard let screen = getBuiltinScreen() ?? NSScreen.main else { return }
 
-        // Calculate new position
-        let screenFrame = screen.frame
+        // Calculate new position using visible frame to respect menu bar/dock areas
+        let screenFrame = screen.visibleFrame
         let newWindowRect = NSRect(
-            x: (screenFrame.width - windowSize.width) / 2,
-            y: screenFrame.height * 0.17, // Distance from bottom of screen
+            x: screenFrame.origin.x + (screenFrame.width - windowSize.width) / 2,
+            y: screenFrame.origin.y + screenFrame.height * 0.17, // Distance from bottom of screen
             width: windowSize.width,
             height: windowSize.height,
         )
@@ -115,6 +121,19 @@ class HUDController: ObservableObject {
         window.setFrame(newWindowRect, display: true)
 
         logger.debug("Updated HUD window position to: \(newWindowRect)")
+    }
+
+    /// Returns the NSScreen corresponding to the built-in display, if present
+    private func getBuiltinScreen() -> NSScreen? {
+        for screen in NSScreen.screens {
+            if let screenNumber = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber {
+                let displayID = CGDirectDisplayID(screenNumber.uint32Value)
+                if CGDisplayIsBuiltin(displayID) != 0 {
+                    return screen
+                }
+            }
+        }
+        return nil
     }
 
     @MainActor
