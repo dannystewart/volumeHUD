@@ -33,8 +33,9 @@ I worked hard to ensure the app would function as well as possible without requi
 
 ## Troubleshooting
 
-- **Issues with key press detection:** Go to **System Settings** > **Privacy & Security** > **Accessibility**. Make sure volumeHUD is in the list and turned on. If it is but it's still not working, you may need to remove it from the list entirely and re-add it.
-- **Brightness HUD stops appearing after display changes:** 2.0.1 will be out soon with a fix for this, but in the meantime you can simply restart volumeHUD to restore it.
+If you're experiencing inconsistent behavior and aren't using Accessibility permissions, try granting those first, if you're comfortable doing so. They're optional but enabling them should improve reliability.
+
+If you're unsure whether you've granted them or want to reset them, go to **System Settings** > **Privacy & Security** > **Accessibility**. Make sure volumeHUD is in the list and turned on, and if it's still not working, try removing it from the list entirely and then re-adding it.
 
 ## License
 
