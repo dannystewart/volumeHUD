@@ -19,6 +19,8 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
     private var hidEventTap: CFMachPort?
     private var hidEventTapRunLoopSource: CFRunLoopSource?
     private var lastBrightnessKeyTime: TimeInterval = 0
+    private var lastHandledKeyCode: Int = 0
+    private var lastKeyHandleTime: TimeInterval = 0
     private var hasLoggedBrightnessError = false
     private var hasLoggedNoDisplayDetected = false
     private var brightnessAvailable = false
@@ -291,13 +293,14 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
         if let monitor = systemEventMonitor {
             NSEvent.removeMonitor(monitor)
             systemEventMonitor = nil
-            logger.debug("Stopped monitoring system-defined events (NSEvent).")
         }
     }
 
     private func startEventTap() {
         // Install a CGEvent tap to reliably observe NX_SYSDEFINED events without capturing context
         let systemDefinedMask: CGEventMask = 1 << 14 // kCGEventSystemDefined = 14
+        // Both session and HID taps share the same userInfo pointer to self
+        // This is safe because self outlives both taps (stopped in stopEventTap)
         let userInfo = Unmanaged.passUnretained(self).toOpaque()
         guard let tap = CGEvent.tapCreate(
             tap: .cgSessionEventTap,
@@ -433,8 +436,6 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
         }
         hidEventTapRunLoopSource = nil
         hidEventTap = nil
-
-        logger.debug("Stopped CGEvent taps for systemDefined events.")
     }
 
     // MARK: - Display Change Monitoring
@@ -453,7 +454,6 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
             object: nil,
         )
         isObservingDisplayChanges = true
-        logger.debug("Started monitoring display configuration changes.")
     }
 
     private func stopDisplayChangeMonitoring() {
@@ -464,7 +464,6 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
             object: nil,
         )
         isObservingDisplayChanges = false
-        logger.debug("Stopped monitoring display configuration changes.")
     }
 
     @objc
@@ -472,28 +471,27 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
         // Cancel any pending restart task to debounce rapid-fire display config changes
         restartTask?.cancel()
 
-        // Debounce rapid-fire display configuration changes (e.g., lid close/open)
+        // Debounce display configuration changes that fire in rapid succession
+        // Lid close/open can trigger 3-4 notifications over ~1 second
         restartTask = Task { @MainActor in
             do {
-                try await Task.sleep(nanoseconds: 100_000_000) // 100ms
-                logger.info("Display configuration changed, restarting brightness event monitoring.")
+                try await Task.sleep(nanoseconds: 500000000) // 500ms
+                logger.info("Display configuration stabilized, restarting brightness event monitoring.")
                 self.restartEventMonitoring()
             } catch {
-                // Task was cancelled, which is fine - a newer restart is pending
+                // Task was cancelled - a newer restart is pending
+                logger.debug("Display configuration restart cancelled (newer pending).")
             }
         }
     }
 
     @MainActor
     private func restartEventMonitoring() {
-        logger.debug("Stopping event monitoring for restart...")
         stopSystemEventMonitoring()
         stopEventTap()
-
-        logger.debug("Restarting event monitoring...")
         startSystemEventMonitoring()
         startEventTap()
-        logger.debug("Event monitoring restarted successfully.")
+        logger.debug("Event monitoring restarted.")
     }
 
     // MARK: - Brightness Change Detection
@@ -555,17 +553,26 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
 
     @MainActor
     private func handleSystemDefinedEventData(subtype: Int, keyCode: Int, isKeyDown: Bool) {
-        // Brightness keys generate NSSystemDefined events with subtype 8 (logging is noisy)
-        // logger.debug("System event: subtype=\(subtype), keyCode=\(keyCode), isKeyDown=\(isKeyDown)")
+        // Brightness keys generate NSSystemDefined events with subtype 8
         if subtype == 8 {
             guard isKeyDown else { return }
 
-            // NX key codes: 2 = brightness down, 3 = brightness up
+            // NX key codes: 2 = brightness up, 3 = brightness down
             switch keyCode {
             case 2, 3:
-                logger.debug("Brightness key detected: \(keyCode == 2 ? "brightness down" : "brightness up")")
+                // Attempt to reduce duplicate logging: both session and HID taps fire for same keypress
+                // Due to @MainActor queuing, both may pass this check (race condition), which is fine
+                let now = Date().timeIntervalSince1970
+                if keyCode == lastHandledKeyCode, now - lastKeyHandleTime < 0.05 {
+                    return
+                }
+
+                lastHandledKeyCode = keyCode
+                lastKeyHandleTime = now
+
+                logger.debug("Brightness key detected: keyCode=\(keyCode) (\(keyCode == 2 ? "up" : "down"))")
                 // Track when a brightness key was pressed
-                lastBrightnessKeyTime = Date().timeIntervalSince1970
+                lastBrightnessKeyTime = now
                 showHUDForBrightnessKeyPress()
                 // Trigger an immediate state check to avoid waiting for the 0.1s polling tick
                 checkForBrightnessChange()
