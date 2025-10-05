@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog], and this project adheres to [Semantic Versioning].
 
+## [2.0.1] (2025-10-05)
+
+### Added
+
+- Adds dual-tap monitoring system for improved brightness key detection reliability using both session-level and HID-level event monitoring.
+- Adds automatic restart of event monitoring when display configuration changes are detected.
+
+### Changed
+
+- Improves display targeting by focusing on the *built-in* display rather than *main* display for consistent brightness control.
+- Improves HUD positioning for multi-display setups by prioritizing the built-in display and respecting the menu bar and Dock areas.
+- Increases display configuration change debounce from 100ms to 500ms for better handling of rapid changes during lid operations.
+
+### Fixed
+
+- Fixes potentially duplicated HUD displays by adding 50ms deduplication window when multiple event taps fire simultaneously.
+- Fixes monitoring reliability by adding automatic recovery when event tap becomes disabled and removing early exit conditions that prevented recovery.
+
 ## [2.0.0] (2025-10-04)
 
 ### Added
@@ -125,6 +143,7 @@ Initial release.
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
 <!-- Versions -->
+[2.0.1]: https://github.com/dannystewart/volumeHUD/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/dannystewart/volumeHUD/compare/v1.2.6...v2.0.0
 [1.2.6]: https://github.com/dannystewart/volumeHUD/compare/v1.2.5...v1.2.6
 [1.2.5]: https://github.com/dannystewart/volumeHUD/compare/v1.2.4...v1.2.5
