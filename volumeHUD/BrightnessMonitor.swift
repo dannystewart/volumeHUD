@@ -118,6 +118,29 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
         logger.info("DisplayServices framework loaded successfully!")
     }
 
+    /// Returns the CGDirectDisplayID for the built-in display, if present
+    private func getBuiltinDisplayID() -> CGDirectDisplayID? {
+        var displayCount: UInt32 = 0
+        var result = CGGetActiveDisplayList(0, nil, &displayCount)
+        if result != .success || displayCount == 0 {
+            return nil
+        }
+
+        var activeDisplays = [CGDirectDisplayID](repeating: 0, count: Int(displayCount))
+        result = CGGetActiveDisplayList(displayCount, &activeDisplays, &displayCount)
+        if result != .success {
+            return nil
+        }
+
+        for display in activeDisplays.prefix(Int(displayCount)) {
+            if CGDisplayIsBuiltin(display) != 0 {
+                return display
+            }
+        }
+
+        return nil
+    }
+
     func startMonitoring() {
         guard !isMonitoring else { return }
 
@@ -187,17 +210,20 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
             return nil
         }
 
-        let mainDisplay = CGMainDisplayID()
-        let canChange = canChangeBrightness(mainDisplay)
+        // Always target the built-in display rather than the current main display
+        guard let builtinDisplay = getBuiltinDisplayID() else {
+            logger.warning("getCurrentBrightness: no built-in display detected.")
+            return nil
+        }
 
+        let canChange = canChangeBrightness(builtinDisplay)
         guard canChange else {
-            logger.warning("getCurrentBrightness: canChangeBrightness returned false for display \(mainDisplay)")
+            logger.warning("getCurrentBrightness: built-in display cannot change brightness (id: \(builtinDisplay))")
             return nil
         }
 
         var brightness: Float = 0.0
-        let result = getBrightness(mainDisplay, &brightness)
-
+        let result = getBrightness(builtinDisplay, &brightness)
         if result == KERN_SUCCESS {
             return brightness
         }
@@ -261,6 +287,18 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
             options: .listenOnly,
             eventsOfInterest: systemDefinedMask,
             callback: { _, type, cgEvent, opaqueInfo -> Unmanaged<CGEvent>? in
+                // If the tap is disabled (timeout or user input), re-enable it to keep monitoring reliable
+                if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+                    if let opaqueInfo {
+                        let monitor = Unmanaged<BrightnessMonitor>.fromOpaque(opaqueInfo).takeUnretainedValue()
+                        if let currentTap = monitor.eventTap {
+                            CGEvent.tapEnable(tap: currentTap, enable: true)
+                        }
+                    }
+                    return Unmanaged.passUnretained(cgEvent)
+                }
+
+                // Only handle systemDefined events (kCGEventSystemDefined = 14)
                 guard type.rawValue == 14, let nsEvent = NSEvent(cgEvent: cgEvent) else {
                     return Unmanaged.passUnretained(cgEvent)
                 }
@@ -313,11 +351,9 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
 
     @MainActor
     private func checkForBrightnessChange() {
-        // Skip polling if brightness isn't available
-        guard brightnessAvailable else { return }
-
+        // Always probe brightness so we can recover after display config changes
         guard let brightness = getCurrentBrightness() else {
-            // Brightness became unavailable
+            // Brightness became (or remains) unavailable
             if brightnessAvailable {
                 brightnessAvailable = false
                 logger.error("Lost access to brightness control.")
