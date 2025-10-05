@@ -31,6 +31,11 @@ I worked hard to ensure the app would function as well as possible without requi
 - **Accessibility:** The app works by detecting changes to volume and brightness levels, which means the HUD won't appear when you try to go below 0% or above 100% since the levels don't change. Input monitoring works around this by watching for key presses. That's the only thing you'll lose if you leave it off.
 - **Notifications:** Used only to confirm the app has started (and only when launched manually, not as a login item). Feel free to leave them disabled if you find them unnecessary.
 
+## Troubleshooting
+
+- **Issues with key press detection:** Go to **System Settings** > **Privacy & Security** > **Accessibility**. Make sure volumeHUD is in the list and turned on. If it is but it's still not working, you may need to remove it from the list entirely and re-add it.
+- **Brightness HUD stops appearing after display changes:** 2.0.1 will be out soon with a fix for this, but in the meantime you can simply restart volumeHUD to restore it.
+
 ## License
 
 This project is open source under the [MIT License](./LICENSE). Feel free to do what you like with it, or contribute!
