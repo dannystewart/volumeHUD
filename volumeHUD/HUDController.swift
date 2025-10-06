@@ -100,16 +100,24 @@ class HUDController: ObservableObject {
     }
 
     @MainActor
-    private func updateWindowPosition() {
+    private func updateWindowPosition(for hudType: HUDType? = nil) {
         guard let window = hudWindow else { return }
 
         let windowSize = NSSize(width: 210, height: 210)
 
-        // Show on the screen that currently has the mouse cursor
-        guard let screen = getScreenWithMouse() ?? NSScreen.main else { return }
+        // Brightness HUD always shows on built-in display (since that's what it controls)
+        // Volume HUD follows the mouse cursor across all screens
+        let screen: NSScreen? =
+            if hudType == .brightness {
+                getBuiltinScreen() ?? NSScreen.main
+            } else {
+                getScreenWithMouse() ?? NSScreen.main
+            }
+
+        guard let targetScreen = screen else { return }
 
         // Calculate new position using visible frame to respect menu bar/dock areas
-        let screenFrame = screen.visibleFrame
+        let screenFrame = targetScreen.visibleFrame
         let newWindowRect = NSRect(
             x: screenFrame.origin.x + (screenFrame.width - windowSize.width) / 2,
             y: screenFrame.origin.y + screenFrame.height * 0.17, // Distance from bottom of screen
@@ -133,6 +141,19 @@ class HUDController: ObservableObject {
             }
         }
 
+        return nil
+    }
+
+    /// Returns the NSScreen corresponding to the built-in display, if present
+    private func getBuiltinScreen() -> NSScreen? {
+        for screen in NSScreen.screens {
+            if let screenNumber = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber {
+                let displayID = CGDirectDisplayID(screenNumber.uint32Value)
+                if CGDisplayIsBuiltin(displayID) != 0 {
+                    return screen
+                }
+            }
+        }
         return nil
     }
 
@@ -183,8 +204,8 @@ class HUDController: ObservableObject {
             window.contentView = newHostingView
             hostingView = newHostingView
 
-            // Update position to follow the mouse cursor
-            updateWindowPosition()
+            // Update position based on HUD type
+            updateWindowPosition(for: hudType)
 
             // Show the window
             window.orderFront(nil)
