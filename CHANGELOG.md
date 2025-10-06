@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog], and this project adheres to [Semantic Versioning].
 
+## [2.0.2] (2025-10-05)
+
+### Added
+
+- The volume HUD now shows on the screen with the mouse cursor instead of always using the main display. The brightness HUD always shows on the built-in screen since that's what it controls.
+
 ## [2.0.1] (2025-10-05)
 
 ### Added
@@ -143,6 +149,7 @@ Initial release.
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
 <!-- Versions -->
+[2.0.2]: https://github.com/dannystewart/volumeHUD/compare/v2.0.1...v2.0.2
 [2.0.1]: https://github.com/dannystewart/volumeHUD/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/dannystewart/volumeHUD/compare/v1.2.6...v2.0.0
 [1.2.6]: https://github.com/dannystewart/volumeHUD/compare/v1.2.5...v1.2.6
