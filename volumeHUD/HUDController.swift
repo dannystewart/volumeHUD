@@ -105,8 +105,8 @@ class HUDController: ObservableObject {
 
         let windowSize = NSSize(width: 210, height: 210)
 
-        // Prefer the built-in screen if available, otherwise fall back to the main screen
-        guard let screen = getBuiltinScreen() ?? NSScreen.main else { return }
+        // Show on the screen that currently has the mouse cursor
+        guard let screen = getScreenWithMouse() ?? NSScreen.main else { return }
 
         // Calculate new position using visible frame to respect menu bar/dock areas
         let screenFrame = screen.visibleFrame
@@ -123,16 +123,16 @@ class HUDController: ObservableObject {
         logger.debug("Updated HUD window position to: \(newWindowRect)")
     }
 
-    /// Returns the NSScreen corresponding to the built-in display, if present
-    private func getBuiltinScreen() -> NSScreen? {
+    /// Returns the NSScreen that currently contains the mouse cursor
+    private func getScreenWithMouse() -> NSScreen? {
+        let mouseLocation = NSEvent.mouseLocation
+
         for screen in NSScreen.screens {
-            if let screenNumber = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber {
-                let displayID = CGDirectDisplayID(screenNumber.uint32Value)
-                if CGDisplayIsBuiltin(displayID) != 0 {
-                    return screen
-                }
+            if screen.frame.contains(mouseLocation) {
+                return screen
             }
         }
+
         return nil
     }
 
@@ -182,6 +182,9 @@ class HUDController: ObservableObject {
 
             window.contentView = newHostingView
             hostingView = newHostingView
+
+            // Update position to follow the mouse cursor
+            updateWindowPosition()
 
             // Show the window
             window.orderFront(nil)
