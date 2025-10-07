@@ -6,7 +6,7 @@ import ServiceManagement
 /// Manages login item functionality using the modern SMAppService API.
 @MainActor
 class LoginItemManager: ObservableObject {
-    private let logger = PolyLog()
+    private let logger: PolyLog = .init()
     private let helperBundleIdentifier = "com.dannystewart.volumehud.loginhelper"
 
     @Published var isEnabled: Bool = false

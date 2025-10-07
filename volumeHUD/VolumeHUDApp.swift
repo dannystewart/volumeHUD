@@ -17,9 +17,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
     var aboutWindow: NSPanel?
     var loginItemManager: LoginItemManager!
 
-    let logger = PolyLog()
+    let logger: PolyLog = .init()
 
-    // Check to see if brightness is enabled
+    /// Check to see if brightness is enabled
     private var isBrightnessEnabled: Bool {
         UserDefaults.standard.bool(forKey: "brightnessEnabled")
     }
@@ -178,9 +178,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
 
     // MARK: - Environment Check
 
-    // Check to see if we're running in a development environment (SwiftUI preview, test mode, etc.)
+    /// Check to see if we're running in a development environment (SwiftUI preview, test mode, etc.)
     private nonisolated func isRunningInDevEnvironment() -> Bool {
-        if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" ||
+        if
+            ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" ||
             NSClassFromString("XCTest") != nil ||
             ProcessInfo.processInfo.processName.contains("XCPreviewAgent") ||
             ProcessInfo.processInfo.processName.contains("PreviewHost")
@@ -229,28 +230,31 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
             .appendingPathComponent("Contents/Library/LoginItems", isDirectory: true)
 
         var isDir: ObjCBool = false
-        guard FileManager.default.fileExists(atPath: loginItemsURL.path, isDirectory: &isDir),
-              isDir.boolValue
-        else {
+        guard
+            FileManager.default.fileExists(atPath: loginItemsURL.path, isDirectory: &isDir),
+            isDir.boolValue else
+        {
             return false
         }
 
-        guard let contents = try? FileManager.default.contentsOfDirectory(
-            at: loginItemsURL,
-            includingPropertiesForKeys: nil,
-        ) else {
+        guard
+            let contents = try? FileManager.default.contentsOfDirectory(
+                at: loginItemsURL,
+                includingPropertiesForKeys: nil,
+            ) else
+        {
             return false
         }
 
         return contents.contains { $0.pathExtension == "app" && $0.path == parentBundlePath }
     }
 
-    // If we get a new "open" event, also show the about window
+    /// If we get a new "open" event, also show the about window
     func application(_: NSApplication, open _: [URL]) {
         showAboutWindow()
     }
 
-    // Open the about window when the app is opened while already running
+    /// Open the about window when the app is opened while already running
     func applicationShouldHandleReopen(_: NSApplication, hasVisibleWindows _: Bool) -> Bool {
         showAboutWindow()
         return false
@@ -271,7 +275,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
                 self?.aboutWindow?.close()
                 self?.aboutWindow = nil
                 self?.gracefulTerminate()
-            }, appDelegate: self,
+            },
+            appDelegate: self,
             loginItemManager: loginItemManager,
         )
 
@@ -343,7 +348,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         // Update accessibility status after the request
         Task { @MainActor [weak self] in
             guard let self else { return }
-            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 second delay
+            try? await Task.sleep(nanoseconds: 500000000) // 0.5 second delay
             let newStatus = AXIsProcessTrusted()
             updateAccessibilityStatus()
 
@@ -373,12 +378,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
             switch settings.authorizationStatus {
             case .authorized, .provisional, .ephemeral:
                 completion(true)
+
             case .denied:
                 completion(false)
+
             case .notDetermined:
                 center.requestAuthorization(options: [.alert]) { granted, _ in
                     completion(granted)
                 }
+
             @unknown default:
                 completion(false)
             }
@@ -405,7 +413,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
 
     // MARK: - Notification Center Delegate
 
-    // Ensure banners appear even if the app is active
+    /// Ensure banners appear even if the app is active
     func userNotificationCenter(
         _: UNUserNotificationCenter,
         willPresent _: UNNotification,
@@ -415,7 +423,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         completionHandler([.banner])
     }
 
-    // Show the About window when the startup notification is tapped
+    /// Show the About window when the startup notification is tapped
     func userNotificationCenter(
         _: UNUserNotificationCenter,
         didReceive _: UNNotificationResponse,
@@ -427,7 +435,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
 
     // MARK: - Graceful Termination
 
-    // Stop volume and brightness monitoring and quit the app
+    /// Stop volume and brightness monitoring and quit the app
     private func gracefulTerminate() {
         logger.debug("Stopping monitoring and quitting.")
         volumeMonitor?.stopMonitoring()

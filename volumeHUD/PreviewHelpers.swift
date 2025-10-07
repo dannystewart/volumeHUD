@@ -1,11 +1,11 @@
 import Foundation
 
-/// Preview helpers for fast SwiftUI previews
-///
-/// Usage in previews:
-/// - Pass `isPreviewMode: true` to monitors and controllers
-/// - Use mock managers for heavy services like LoginItemManager
-/// - This bypasses expensive initialization like framework loading, audio device queries, etc.
+// Preview helpers for fast SwiftUI previews
+//
+// Usage in previews:
+// - Pass `isPreviewMode: true` to monitors and controllers
+// - Use mock managers for heavy services like LoginItemManager
+// - This bypasses expensive initialization like framework loading, audio device queries, etc.
 
 #if DEBUG
     extension VolumeMonitor {

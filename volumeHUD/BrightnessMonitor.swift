@@ -35,7 +35,7 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
 
     weak var hudController: HUDController?
 
-    let logger = PolyLog()
+    let logger: PolyLog = .init()
 
     init(isPreviewMode: Bool = false) {
         self.isPreviewMode = isPreviewMode
@@ -106,9 +106,10 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
 
         logger.debug("DisplayServices framework handle obtained, looking for functions...")
 
-        guard let canChangeBrightnessPtr = dlsym(handle, "DisplayServicesCanChangeBrightness"),
-              let getBrightnessPtr = dlsym(handle, "DisplayServicesGetBrightness")
-        else {
+        guard
+            let canChangeBrightnessPtr = dlsym(handle, "DisplayServicesCanChangeBrightness"),
+            let getBrightnessPtr = dlsym(handle, "DisplayServicesGetBrightness") else
+        {
             dlclose(handle)
             if let error = dlerror() {
                 logger.error("Could not find DisplayServices brightness functions: \(String(cString: error))")
@@ -220,9 +221,10 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
 
     private func getCurrentBrightness() -> Float? {
         // Use cached DisplayServices function pointers
-        guard let canChangeBrightness = canChangeBrightnessFunc,
-              let getBrightness = getBrightnessFunc
-        else {
+        guard
+            let canChangeBrightness = canChangeBrightnessFunc,
+            let getBrightness = getBrightnessFunc else
+        {
             logger.error("getCurrentBrightness: Function pointers not available.")
             return nil
         }
@@ -302,50 +304,52 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
         // Both session and HID taps share the same userInfo pointer to self
         // This is safe because self outlives both taps (stopped in stopEventTap)
         let userInfo = Unmanaged.passUnretained(self).toOpaque()
-        guard let tap = CGEvent.tapCreate(
-            tap: .cgSessionEventTap,
-            place: .headInsertEventTap,
-            options: .listenOnly,
-            eventsOfInterest: systemDefinedMask,
-            callback: { _, type, cgEvent, opaqueInfo -> Unmanaged<CGEvent>? in
-                // If the tap is disabled (timeout or user input), re-enable both taps
-                if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
-                    if let opaqueInfo {
-                        let monitor = Unmanaged<BrightnessMonitor>.fromOpaque(opaqueInfo).takeUnretainedValue()
-                        if let sessionTap = monitor.eventTap {
-                            CGEvent.tapEnable(tap: sessionTap, enable: true)
+        guard
+            let tap = CGEvent.tapCreate(
+                tap: .cgSessionEventTap,
+                place: .headInsertEventTap,
+                options: .listenOnly,
+                eventsOfInterest: systemDefinedMask,
+                callback: { _, type, cgEvent, opaqueInfo -> Unmanaged<CGEvent>? in
+                    // If the tap is disabled (timeout or user input), re-enable both taps
+                    if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+                        if let opaqueInfo {
+                            let monitor = Unmanaged<BrightnessMonitor>.fromOpaque(opaqueInfo).takeUnretainedValue()
+                            if let sessionTap = monitor.eventTap {
+                                CGEvent.tapEnable(tap: sessionTap, enable: true)
+                            }
+                            if let hidTap = monitor.hidEventTap {
+                                CGEvent.tapEnable(tap: hidTap, enable: true)
+                            }
                         }
-                        if let hidTap = monitor.hidEventTap {
-                            CGEvent.tapEnable(tap: hidTap, enable: true)
-                        }
+                        return Unmanaged.passUnretained(cgEvent)
                     }
+
+                    // Only handle systemDefined events (kCGEventSystemDefined = 14)
+                    guard type.rawValue == 14, let nsEvent = NSEvent(cgEvent: cgEvent) else {
+                        return Unmanaged.passUnretained(cgEvent)
+                    }
+                    guard let opaqueInfo else {
+                        return Unmanaged.passUnretained(cgEvent)
+                    }
+                    let monitor = Unmanaged<BrightnessMonitor>.fromOpaque(opaqueInfo).takeUnretainedValue()
+
+                    let subtype = Int(nsEvent.subtype.rawValue)
+                    let data1 = Int(nsEvent.data1)
+                    let keyCode = (data1 & 0xFFFF_0000) >> 16
+                    let keyFlags = data1 & 0x0000_FFFF
+                    let keyState = (keyFlags & 0xFF00) >> 8
+                    let isKeyDown = keyState == 0x0A
+
+                    Task { @MainActor in
+                        monitor.handleSystemDefinedEventData(subtype: subtype, keyCode: keyCode, isKeyDown: isKeyDown)
+                    }
+
                     return Unmanaged.passUnretained(cgEvent)
-                }
-
-                // Only handle systemDefined events (kCGEventSystemDefined = 14)
-                guard type.rawValue == 14, let nsEvent = NSEvent(cgEvent: cgEvent) else {
-                    return Unmanaged.passUnretained(cgEvent)
-                }
-                guard let opaqueInfo else {
-                    return Unmanaged.passUnretained(cgEvent)
-                }
-                let monitor = Unmanaged<BrightnessMonitor>.fromOpaque(opaqueInfo).takeUnretainedValue()
-
-                let subtype = Int(nsEvent.subtype.rawValue)
-                let data1 = Int(nsEvent.data1)
-                let keyCode = (data1 & 0xFFFF_0000) >> 16
-                let keyFlags = data1 & 0x0000_FFFF
-                let keyState = (keyFlags & 0xFF00) >> 8
-                let isKeyDown = keyState == 0x0A
-
-                Task { @MainActor in
-                    monitor.handleSystemDefinedEventData(subtype: subtype, keyCode: keyCode, isKeyDown: isKeyDown)
-                }
-
-                return Unmanaged.passUnretained(cgEvent)
-            },
-            userInfo: userInfo,
-        ) else {
+                },
+                userInfo: userInfo,
+            ) else
+        {
             logger.warning("Failed to create CGEvent tap for systemDefined events; falling back to NSEvent only.")
             return
         }
@@ -361,49 +365,51 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
         }
 
         // Also install a HID-level tap as a backup; this may be more resilient to display configuration changes
-        if let hidTap = CGEvent.tapCreate(
-            tap: .cghidEventTap,
-            place: .headInsertEventTap,
-            options: .listenOnly,
-            eventsOfInterest: systemDefinedMask,
-            callback: { _, type, cgEvent, opaqueInfo -> Unmanaged<CGEvent>? in
-                // If the tap is disabled, re-enable both taps
-                if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
-                    if let opaqueInfo {
-                        let monitor = Unmanaged<BrightnessMonitor>.fromOpaque(opaqueInfo).takeUnretainedValue()
-                        if let sessionTap = monitor.eventTap {
-                            CGEvent.tapEnable(tap: sessionTap, enable: true)
+        if
+            let hidTap = CGEvent.tapCreate(
+                tap: .cghidEventTap,
+                place: .headInsertEventTap,
+                options: .listenOnly,
+                eventsOfInterest: systemDefinedMask,
+                callback: { _, type, cgEvent, opaqueInfo -> Unmanaged<CGEvent>? in
+                    // If the tap is disabled, re-enable both taps
+                    if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+                        if let opaqueInfo {
+                            let monitor = Unmanaged<BrightnessMonitor>.fromOpaque(opaqueInfo).takeUnretainedValue()
+                            if let sessionTap = monitor.eventTap {
+                                CGEvent.tapEnable(tap: sessionTap, enable: true)
+                            }
+                            if let hidTap = monitor.hidEventTap {
+                                CGEvent.tapEnable(tap: hidTap, enable: true)
+                            }
                         }
-                        if let hidTap = monitor.hidEventTap {
-                            CGEvent.tapEnable(tap: hidTap, enable: true)
-                        }
+                        return Unmanaged.passUnretained(cgEvent)
                     }
+
+                    guard type.rawValue == 14, let nsEvent = NSEvent(cgEvent: cgEvent) else {
+                        return Unmanaged.passUnretained(cgEvent)
+                    }
+                    guard let opaqueInfo else {
+                        return Unmanaged.passUnretained(cgEvent)
+                    }
+                    let monitor = Unmanaged<BrightnessMonitor>.fromOpaque(opaqueInfo).takeUnretainedValue()
+
+                    let subtype = Int(nsEvent.subtype.rawValue)
+                    let data1 = Int(nsEvent.data1)
+                    let keyCode = (data1 & 0xFFFF_0000) >> 16
+                    let keyFlags = data1 & 0x0000_FFFF
+                    let keyState = (keyFlags & 0xFF00) >> 8
+                    let isKeyDown = keyState == 0x0A
+
+                    Task { @MainActor in
+                        monitor.handleSystemDefinedEventData(subtype: subtype, keyCode: keyCode, isKeyDown: isKeyDown)
+                    }
+
                     return Unmanaged.passUnretained(cgEvent)
-                }
-
-                guard type.rawValue == 14, let nsEvent = NSEvent(cgEvent: cgEvent) else {
-                    return Unmanaged.passUnretained(cgEvent)
-                }
-                guard let opaqueInfo else {
-                    return Unmanaged.passUnretained(cgEvent)
-                }
-                let monitor = Unmanaged<BrightnessMonitor>.fromOpaque(opaqueInfo).takeUnretainedValue()
-
-                let subtype = Int(nsEvent.subtype.rawValue)
-                let data1 = Int(nsEvent.data1)
-                let keyCode = (data1 & 0xFFFF_0000) >> 16
-                let keyFlags = data1 & 0x0000_FFFF
-                let keyState = (keyFlags & 0xFF00) >> 8
-                let isKeyDown = keyState == 0x0A
-
-                Task { @MainActor in
-                    monitor.handleSystemDefinedEventData(subtype: subtype, keyCode: keyCode, isKeyDown: isKeyDown)
-                }
-
-                return Unmanaged.passUnretained(cgEvent)
-            },
-            userInfo: userInfo,
-        ) {
+                },
+                userInfo: userInfo,
+            )
+        {
             hidEventTap = hidTap
             hidEventTapRunLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, hidTap, 0)
             if let hidSource = hidEventTapRunLoopSource {
@@ -576,6 +582,7 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
                 showHUDForBrightnessKeyPress()
                 // Trigger an immediate state check to avoid waiting for the 0.1s polling tick
                 checkForBrightnessChange()
+
             default:
                 break
             }

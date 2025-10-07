@@ -7,22 +7,22 @@ struct AboutView: View {
     let onQuit: () -> Void
     weak var appDelegate: AppDelegate?
 
-    let logger = PolyLog()
+    let logger: PolyLog = .init()
 
-    // Settings for app preferences
+    /// Settings for app preferences
     @AppStorage("brightnessEnabled") private var brightnessEnabled: Bool = false
 
-    // State to track if an update is available
+    /// State to track if an update is available
     @State private var isUpdateAvailable: Bool = false
 
-    // Login item manager
+    /// Login item manager
     @ObservedObject var loginItemManager: LoginItemManager
 
     // GitHub repository info
     private let githubOwner = "dannystewart"
     private let githubRepo = "volumeHUD"
 
-    // Get the app version
+    /// Get the app version
     private var appVersion: String {
         if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
             return version
@@ -137,7 +137,7 @@ struct AboutView: View {
         .frame(width: 280, height: 400)
         .onAppear {
             Task {
-                try? await Task.sleep(nanoseconds: 200_000_000) // 0.2 second delay
+                try? await Task.sleep(nanoseconds: 200000000) // 0.2 second delay
                 checkForUpdates()
             }
         }
@@ -173,16 +173,18 @@ struct AboutView: View {
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
-        guard let httpResponse = response as? HTTPURLResponse,
-              httpResponse.statusCode == 200
-        else {
+        guard
+            let httpResponse = response as? HTTPURLResponse,
+            httpResponse.statusCode == 200 else
+        {
             throw URLError(.badServerResponse)
         }
 
         // Parse JSON response
-        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let tagName = json["tag_name"] as? String
-        else {
+        guard
+            let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+            let tagName = json["tag_name"] as? String else
+        {
             throw URLError(.cannotParseResponse)
         }
 

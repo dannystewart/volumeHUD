@@ -28,7 +28,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
 
     weak var hudController: HUDController?
 
-    let logger = PolyLog()
+    let logger: PolyLog = .init()
 
     init(isPreviewMode: Bool = false) {
         self.isPreviewMode = isPreviewMode
@@ -236,7 +236,9 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 handleSystemDefinedEventData(
-                    subtype: subtype, keyCode: keyCode, keyPressed: (keyFlags & 0xFF00) >> 8,
+                    subtype: subtype,
+                    keyCode: keyCode,
+                    keyPressed: (keyFlags & 0xFF00) >> 8,
                     isKeyDown: isKeyDown,
                 )
             }
@@ -285,8 +287,10 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             switch keyCode {
             case 1: // Volume down
                 showHUDForVolumeKeyPress(isVolumeUp: false)
+
             case 0: // Volume up
                 showHUDForVolumeKeyPress(isVolumeUp: true)
+
             default:
                 break
             }

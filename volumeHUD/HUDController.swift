@@ -20,7 +20,7 @@ class HUDController: ObservableObject {
     private var lastShownHUDType: HUDType?
     private var isObservingDisplayChanges = false
     private let isPreviewMode: Bool
-    let logger = PolyLog()
+    let logger: PolyLog = .init()
 
     init(isPreviewMode: Bool = false) {
         self.isPreviewMode = isPreviewMode
@@ -177,6 +177,7 @@ class HUDController: ObservableObject {
                         || lastShownVolume == nil
                         || abs((lastShownVolume ?? -1) - value) > 0.0005
                         || (lastShownMuted ?? !isMuted) != isMuted
+
                 case .brightness:
                     hostingView == nil
                         || lastShownHUDType != hudType
@@ -220,6 +221,7 @@ class HUDController: ObservableObject {
         case .volume:
             lastShownVolume = value
             lastShownMuted = isMuted
+
         case .brightness:
             lastShownBrightness = value
         }
