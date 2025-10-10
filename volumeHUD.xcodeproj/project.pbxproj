@@ -12,7 +12,6 @@
 		3045B1B12E8CB81A00C34F16 /* CHANGELOG.md in Resources */ = {isa = PBXBuildFile; fileRef = 3045B1AF2E8CB81A00C34F16 /* CHANGELOG.md */; };
 		3045B1B22E8CB81A00C34F16 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 3045B1B02E8CB81A00C34F16 /* README.md */; };
 		305AA9A92E997C50002F116A /* PolyKit in Frameworks */ = {isa = PBXBuildFile; productRef = 305AA9A82E997C50002F116A /* PolyKit */; };
-		3072CFF12E8E299200133C4D /* volumehud.rb in Resources */ = {isa = PBXBuildFile; fileRef = 3072CFEE2E8E299200133C4D /* volumehud.rb */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -43,7 +42,6 @@
 		302AB2E42E902CF100889BBF /* LoginHelper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LoginHelper.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3045B1AF2E8CB81A00C34F16 /* CHANGELOG.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CHANGELOG.md; sourceTree = "<group>"; };
 		3045B1B02E8CB81A00C34F16 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
-		3072CFEE2E8E299200133C4D /* volumehud.rb */ = {isa = PBXFileReference; lastKnownFileType = text.script.ruby; name = volumehud.rb; path = "../homebrew-apps/Casks/volumehud.rb"; sourceTree = SOURCE_ROOT; };
 		30C937682E806B79004B5AF5 /* volumeHUD.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = volumeHUD.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -102,7 +100,6 @@
 		30C9375F2E806B79004B5AF5 = {
 			isa = PBXGroup;
 			children = (
-				3072CFEE2E8E299200133C4D /* volumehud.rb */,
 				3045B1AF2E8CB81A00C34F16 /* CHANGELOG.md */,
 				3045B1B02E8CB81A00C34F16 /* README.md */,
 				30C9376A2E806B79004B5AF5 /* volumeHUD */,
@@ -224,7 +221,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				3072CFF12E8E299200133C4D /* volumehud.rb in Resources */,
 				3045B1B12E8CB81A00C34F16 /* CHANGELOG.md in Resources */,
 				302AB2F52E902DA600889BBF /* LoginHelper.app in Resources */,
 				3045B1B22E8CB81A00C34F16 /* README.md in Resources */,
