@@ -1,0 +1,15 @@
+{
+  "originHash" : "a8c852d98b1a6148f02f07318f6e73a7d25aa4ee6c7c2673dd636bf3e26938e7",
+  "pins" : [
+    {
+      "identity" : "polykit-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/dannystewart/polykit-swift",
+      "state" : {
+        "branch" : "main",
+        "revision" : "2d2409828b5bee0d39a47f52389e8b1d46d53eee"
+      }
+    }
+  ],
+  "version" : 3
+}
