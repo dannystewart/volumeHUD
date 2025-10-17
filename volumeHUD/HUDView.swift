@@ -16,113 +16,162 @@ enum HUDType {
 
 // MARK: - HUDView
 
+fileprivate let shadowPadding: Double = 48
+
 struct HUDView: View {
     // MARK: Properties
+
+	@Environment(\.colorScheme) private var colorScheme
+	@Environment(\.colorSchemeContrast) private var colorSchemeContrast
 
     let hudType: HUDType
     let value: Float
     let isMuted: Bool
     let isVisible: Bool
 
-    private let hudSize: CGFloat = 200
-    private let iconSize: CGFloat = 80
+	private let cornerRadius: Double = 18
+    private let hudSize: Double = 200
+	private let iconSize: Double = 80
+	private let iconBoundsSize: Double = 112
+
+	private let hudInsets = EdgeInsets(
+		top: 31,
+		leading: 0,
+		bottom: 20,
+		trailing: 0
+	)
 
     // MARK: Computed Properties
 
-    private var iconName: String {
-        switch hudType {
-        case .volume:
-            if isMuted {
-                "speaker.slash.fill"
-            } else if value < 0.08 {
-                "speaker.fill"
-            } else if value < 0.33 {
-                "speaker.wave.1.fill"
-            } else if value < 0.66 {
-                "speaker.wave.2.fill"
-            } else {
-                "speaker.wave.3.fill"
-            }
+	// SF Symbols has slight misalignment between speaker.slash.fill and speaker.fill
+	private var speakerMutedIconOffset: Double {
+		hudType == .volume && isMuted ? 3 : 0
+	}
 
-        case .brightness:
-            "sun.max"
-        }
-    }
+	private var iconStyle: some ShapeStyle {
+		switch colorSchemeContrast {
+			case .increased:
+				HierarchicalShapeStyle.primary
+			case _:
+				colorScheme == .dark ? HierarchicalShapeStyle.secondary : HierarchicalShapeStyle.tertiary
+		}
+	}
 
     // MARK: Content Properties
 
     var body: some View {
         VStack(spacing: 0) {
-            VStack { // Icon section
-                Spacer()
-                    .frame(height: 56)
-                Image(systemName: iconName)
-                    .font(.system(size: iconSize, weight: .medium))
-                    .foregroundColor(.white.opacity(0.8))
-                    // SF Symbols has slight misalignment between speaker.slash.fill and speaker.fill
-                    .offset(y: hudType == .volume && isMuted ? 2 : 0)
-                Spacer()
-            }
-            .frame(height: 100)
+			// Icon
+			Image(systemName: iconName, variableValue: Double(value))
+				.font(.system(size: iconSize))
+				.foregroundStyle(iconStyle)
+				.offset(y: speakerMutedIconOffset)
+				.frame(width: iconBoundsSize, height: iconBoundsSize)
 
-            VStack { // Value bar section
-                Spacer()
-                    .frame(height: 40)
-                HStack(spacing: 2) {
-                    Spacer()
-                        .frame(width: 20)
-                    ForEach(0 ..< 16, id: \.self) { index in
-                        Rectangle()
-                            .fill(barColor(for: index))
-                            .frame(width: 7.5, height: 7.5)
-                    }
-                    Spacer()
-                        .frame(width: 20)
-                }
-            }
-            .frame(height: 80)
+			// Space divider
+			Spacer()
+
+			// The pip bar
+			HUDProgressBar(value: Double(value))
+				.disabled(isMuted)
         }
+		.padding(hudInsets)
         .frame(width: hudSize, height: hudSize)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(.regularMaterial)
-                .environment(\.colorScheme, .dark),
-        )
+		.glassEffect(.regular, in: .rect(cornerRadius: cornerRadius))
+		.padding(shadowPadding) // allow some padding so the glass effect's subtle drop shadow isn't clipped
     }
 
     // MARK: Functions
 
-    private func barColor(for index: Int) -> Color {
-        if hudType == .volume, isMuted {
-            return .white.opacity(0.2)
-        }
+    private var iconName: String {
+        switch hudType {
+			case .volume:
+				if isMuted || value < 0.005 {
+					"speaker.slash.fill"
+				} else {
+					"speaker.wave.3.fill"
+				}
 
-        let threshold = Float(index) / 16.0
-        if value > threshold {
-            return .white.opacity(0.8)
-        } else {
-            return .white.opacity(0.2)
+			case .brightness:
+				"sun.max"
         }
     }
 }
 
 #Preview("Volume") {
+	@Previewable @State var value: Float = 0.75
+
     ZStack {
-        Color.black.frame(width: 360, height: 380).ignoresSafeArea()
-        HUDView(hudType: .volume, value: 0.7, isMuted: false, isVisible: true)
+        Color.gray
+
+		VStack(spacing: 16) {
+			HUDView(hudType: .volume, value: value, isMuted: false, isVisible: true)
+				.padding(-shadowPadding) // counteract the shadow padding
+
+			Slider(value: $value, in: 0...1, label: {
+				Text("Volume")
+			}, minimumValueLabel: {
+				Text("")
+			}, maximumValueLabel: {
+				Text("\(String(format: "%.3f", value))")
+					.monospacedDigit()
+			})
+			.frame(width: 280)
+
+			VStack(spacing: 4) {
+				let wholePips = floor(Double(value) * 16)
+				let fractionPip = Double(value).truncatingRemainder(dividingBy: 1.0/16) * 16
+				let quantizedPip = round(fractionPip * 4) / 4
+				Text("Pips: \(String(format: "%02.2f", wholePips + quantizedPip))")
+					.monospacedDigit()
+			}
+			.foregroundStyle(.secondary)
+			.font(.subheadline)
+		}
     }
+	.frame(width: 320, height: 320)
 }
 
 #Preview("Mute") {
     ZStack {
-        Color.black.frame(width: 360, height: 380).ignoresSafeArea()
+        Color.gray
+
         HUDView(hudType: .volume, value: 0.0, isMuted: true, isVisible: true)
+			.padding(-shadowPadding) // counteract the shadow padding
     }
+	.frame(width: 320, height: 320)
 }
 
 #Preview("Brightness") {
+	@Previewable @State var value: Float = 0.5
+
     ZStack {
-        Color.black.frame(width: 360, height: 380).ignoresSafeArea()
-        HUDView(hudType: .brightness, value: 0.5, isMuted: false, isVisible: true)
+        Color.gray
+
+		VStack(spacing: 24) {
+			HUDView(hudType: .brightness, value: value, isMuted: false, isVisible: true)
+				.padding(-shadowPadding) // counteract the shadow padding
+
+			Slider(value: $value, in: 0...1, label: {
+				Text("Brightness")
+			}, minimumValueLabel: {
+				Text("")
+			}, maximumValueLabel: {
+				Text("\(String(format: "%.3f", value))")
+					.monospacedDigit()
+			})
+			.frame(width: 280)
+
+			VStack(spacing: 4) {
+				let wholePips = floor(Double(value) * 16)
+				let fractionPip = Double(value).truncatingRemainder(dividingBy: 1.0/16) * 16
+				let quantizedPip = round(fractionPip * 4) / 4
+				Text("Pips: \(String(format: "%02.2f", wholePips + quantizedPip))")
+					.monospacedDigit()
+			}
+			.foregroundStyle(.secondary)
+			.font(.subheadline)
+		}
     }
+	.frame(width: 320)
 }

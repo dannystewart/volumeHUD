@@ -217,12 +217,10 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
 
     private func updateBrightnessOnStartup() {
         if let brightness = getCurrentBrightness() {
-            // Quantize brightness to 16 steps to match the brightness bars
-            let quantizedBrightness = round(brightness * 16.0) / 16.0
-            currentBrightness = quantizedBrightness
-            previousBrightness = quantizedBrightness
+            currentBrightness = brightness
+            previousBrightness = brightness
             brightnessAvailable = true
-            logger.debug("Initial brightness set: \(Int(quantizedBrightness * 100))%")
+            logger.debug("Initial brightness set: \(Int(brightness * 100))%")
         } else {
             brightnessAvailable = false
             if !hasLoggedBrightnessError {
@@ -534,39 +532,36 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
             hasLoggedNoDisplayDetected = false
         }
 
-        // Quantize brightness to 16 steps to match the brightness bars
-        let quantizedBrightness = round(brightness * 16.0) / 16.0
-        let brightnessChanged = abs(quantizedBrightness - previousBrightness) > 0.001
-
+        let brightnessChanged = abs(brightness - previousBrightness) > 0.001
         if brightnessChanged {
-            let delta = quantizedBrightness - previousBrightness
+            let delta = brightness - previousBrightness
             let currentTime = Date().timeIntervalSince1970
             let timeSinceKeyPress = currentTime - lastBrightnessKeyTime
 
             let rawBrightness = brightness
             let stepCount = abs(delta) / 0.0625
-            logger.debug("Brightness change: \(String(format: "%.4f", delta)) (steps: \(String(format: "%.2f", stepCount))) - Raw: \(String(format: "%.6f", rawBrightness)) -> Quantized: \(String(format: "%.4f", quantizedBrightness)) - Time since key: \(String(format: "%.1f", timeSinceKeyPress))s")
+            logger.debug("Brightness change: \(String(format: "%.4f", delta)) (steps: \(String(format: "%.2f", stepCount))) - Raw: \(String(format: "%.6f", rawBrightness)) - Time since key: \(String(format: "%.1f", timeSinceKeyPress))s")
 
             let isUserChange = isUserInitiatedBrightnessChange(delta, rawBrightness: rawBrightness)
 
             if isUserChange {
-                logger.debug("Showing HUD: \(Int(quantizedBrightness * 100))% (delta: \(delta))")
-                currentBrightness = quantizedBrightness
-                hudController?.showBrightnessHUD(brightness: quantizedBrightness)
+                logger.debug("Showing HUD: \(Int(brightness * 100))% (delta: \(delta))")
+                currentBrightness = brightness
+                hudController?.showBrightnessHUD(brightness: brightness)
             } else {
-                logger.debug("Ignoring ambient/system change: \(Int(quantizedBrightness * 100))% (delta: \(delta), HUD not shown).")
-                currentBrightness = quantizedBrightness
+                logger.debug("Ignoring ambient/system change: \(Int(brightness * 100))% (delta: \(delta), HUD not shown).")
+                currentBrightness = brightness
             }
 
             // If accessibility is enabled and we had a recent key press, show HUD even if step detection failed
             if accessibilityEnabled, timeSinceKeyPress < 1.0 {
                 if !isUserChange {
-                    logger.debug("Showing HUD (accessibility override): \(Int(quantizedBrightness * 100))% (delta: \(delta))")
-                    hudController?.showBrightnessHUD(brightness: quantizedBrightness)
+                    logger.debug("Showing HUD (accessibility override): \(Int(brightness * 100))% (delta: \(delta))")
+                    hudController?.showBrightnessHUD(brightness: brightness)
                 }
             }
 
-            previousBrightness = quantizedBrightness
+            previousBrightness = brightness
         }
     }
 
@@ -606,17 +601,16 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
     private func showHUDForBrightnessKeyPress() {
         // Get fresh brightness value for accurate boundary detection
         guard let brightness = getCurrentBrightness() else { return }
-        let quantizedBrightness = round(brightness * 16.0) / 16.0
 
         // Only show HUD on key presses if we're at brightness boundaries (0% or 100%)
-        let atMinBrightness = quantizedBrightness <= 0.001
-        let atMaxBrightness = quantizedBrightness >= 0.999
+        let atMinBrightness = brightness <= 0.001
+        let atMaxBrightness = brightness >= 0.999
 
         if !atMinBrightness, !atMaxBrightness { return }
 
         // Update current brightness and show HUD
-        currentBrightness = quantizedBrightness
-        hudController?.showBrightnessHUD(brightness: quantizedBrightness)
-        logger.debug("Showing HUD for brightness key press at boundary: \(Int(quantizedBrightness * 100))%")
+        currentBrightness = brightness
+        hudController?.showBrightnessHUD(brightness: brightness)
+        logger.debug("Showing HUD for brightness key press at boundary: \(Int(brightness * 100))%")
     }
 }

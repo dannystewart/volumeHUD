@@ -22,8 +22,8 @@ class HUDController: ObservableObject {
     weak var brightnessMonitor: BrightnessMonitor?
     let logger: PolyLog = .init()
 
-    private var hudWindow: NSWindow?
-    private var hostingView: NSHostingView<HUDView>?
+    private var hudWindow: HUDWindow?
+    private var rootView: NSHostingView<HUDView>?
     private var hideTimer: Timer?
     private var lastShownVolume: Float?
     private var lastShownMuted: Bool?
@@ -192,14 +192,14 @@ class HUDController: ObservableObject {
             let shouldUpdateContent: Bool =
                 switch hudType {
                 case .volume:
-                    hostingView == nil
+                    rootView == nil
                         || lastShownHUDType != hudType
                         || lastShownVolume == nil
                         || abs((lastShownVolume ?? -1) - value) > 0.0005
                         || (lastShownMuted ?? !isMuted) != isMuted
 
                 case .brightness:
-                    hostingView == nil
+                    rootView == nil
                         || lastShownHUDType != hudType
                         || lastShownBrightness == nil
                         || abs((lastShownBrightness ?? -1) - value) > 0.0005
@@ -222,8 +222,8 @@ class HUDController: ObservableObject {
             // Remove old content view if it exists
             if let oldView = window.contentView { oldView.removeFromSuperview() }
 
-            window.contentView = newHostingView
-            hostingView = newHostingView
+			window.contentView = newHostingView
+			rootView = newHostingView
 
             // Update position based on HUD type
             updateWindowPosition(for: hudType)
@@ -259,29 +259,13 @@ class HUDController: ObservableObject {
 
     @MainActor
     private func createHUDWindow() {
-        // Create the window with special properties for overlay
-        hudWindow = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 210, height: 210),
-            styleMask: [.borderless],
-            backing: .buffered,
-            defer: false,
-        )
+		// Create HUDWindow
+        hudWindow = HUDWindow()
 
         guard let window = hudWindow else {
-            logger.error("createHUDWindow: failed to create NSWindow (hudWindow is nil)")
+            logger.error("createHUDWindow: failed to create HUDWindow (hudWindow is nil)")
             return
         }
-
-        // Configure window properties for overlay behavior
-        window.level = .statusBar + 1 // Above menu bar
-        window.isOpaque = false
-        window.backgroundColor = .clear
-        window.hasShadow = false
-        window.ignoresMouseEvents = true
-        window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
-
-        // Make sure window appears on all spaces and can't be activated
-        window.canHide = false
 
         // Set the initial position
         updateWindowPosition()
