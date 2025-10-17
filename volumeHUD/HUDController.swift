@@ -115,15 +115,19 @@ class HUDController: ObservableObject {
         let windowSize = NSSize(width: 210, height: 210)
 
         // Brightness HUD always shows on built-in display (since that's what it controls)
-        // Volume HUD follows the mouse cursor across all screens
-        let screen: NSScreen? =
-            if hudType == .brightness {
-                getBuiltinScreen() ?? NSScreen.main
+        // Volume HUD respects user preference for display location
+        let targetScreen: NSScreen
+        if hudType == .brightness {
+            targetScreen = getBuiltinScreen() ?? NSScreen.main ?? NSScreen.screens.first!
+        } else {
+            // Check user preference for volume HUD location
+            let followMouse = UserDefaults.standard.bool(forKey: "volumeHUDFollowsMouse")
+            if followMouse {
+                targetScreen = getScreenWithMouse() ?? NSScreen.main ?? NSScreen.screens.first!
             } else {
-                getScreenWithMouse() ?? NSScreen.main
+                targetScreen = getBuiltinScreen() ?? NSScreen.main ?? NSScreen.screens.first!
             }
-
-        guard let targetScreen = screen else { return }
+        }
 
         // Calculate new position using visible frame to respect menu bar/dock areas
         let screenFrame = targetScreen.visibleFrame

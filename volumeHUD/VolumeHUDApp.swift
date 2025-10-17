@@ -331,7 +331,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
 
         // Use NSPanel to remain in accessory mode
         let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 280, height: 450),
+            contentRect: NSRect(x: 0, y: 0, width: 280, height: 490),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false,
@@ -347,7 +347,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         if let screen = NSScreen.main {
             let screenFrame = screen.visibleFrame
             let windowWidth: CGFloat = 280
-            let windowHeight: CGFloat = 450
+            let windowHeight: CGFloat = 490
 
             let x = screenFrame.origin.x + (screenFrame.width - windowWidth) / 2
             let y = screenFrame.origin.y + screenFrame.height * 0.66 - windowHeight / 2

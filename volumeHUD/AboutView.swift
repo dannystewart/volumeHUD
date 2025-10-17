@@ -11,6 +11,7 @@ struct AboutView: View {
 
     /// Settings for app preferences
     @AppStorage("brightnessEnabled") private var brightnessEnabled: Bool = false
+    @AppStorage("volumeHUDFollowsMouse") private var volumeHUDFollowsMouse: Bool = false
 
     /// State to track if an update is available
     @State private var isUpdateAvailable: Bool = false
@@ -120,6 +121,38 @@ struct AboutView: View {
                         .frame(height: 16, alignment: .init(horizontal: .center, vertical: .top))
                 }
                 .animation(.easeInOut(duration: 0.3), value: brightnessEnabled)
+
+                // MARK: - Volume HUD Display Location
+
+                VStack(spacing: 6) {
+                    HStack {
+                        Image(systemName: volumeHUDFollowsMouse ? "cursorarrow.click.2" : "laptopcomputer")
+                            .foregroundStyle(volumeHUDFollowsMouse ? .blue : .gray)
+                            .font(.system(size: 14))
+                            .animation(.easeInOut(duration: 0.3), value: volumeHUDFollowsMouse)
+
+                        Text("Follow Mouse")
+                            .font(.system(size: 12, weight: .medium))
+
+                        Spacer()
+
+                        Toggle("", isOn: $volumeHUDFollowsMouse)
+                            .toggleStyle(SwitchToggleStyle(tint: .accentColor))
+                            .scaleEffect(0.8)
+                            .onChange(of: volumeHUDFollowsMouse) { oldValue, newValue in
+                                logger.debug("Volume HUD display setting changed from \(oldValue) to \(newValue).")
+                            }
+                    }
+                    .padding(.horizontal, 14)
+
+                    Text(volumeHUDFollowsMouse ? "Show volume on screen with cursor" : "Always show volume on main display")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .opacity(0.8)
+                        .frame(height: 16, alignment: .init(horizontal: .center, vertical: .top))
+                }
+                .animation(.easeInOut(duration: 0.3), value: volumeHUDFollowsMouse)
                 Spacer()
             }
 
@@ -134,7 +167,7 @@ struct AboutView: View {
             .keyboardShortcut(.defaultAction)
         }
         .padding(32)
-        .frame(width: 280, height: 400)
+        .frame(width: 280, height: 460)
         .onAppear {
             Task {
                 try? await Task.sleep(nanoseconds: 200000000) // 0.2 second delay
