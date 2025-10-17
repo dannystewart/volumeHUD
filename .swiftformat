@@ -38,10 +38,10 @@
 --group-blank-lines true
 --grouped-extension "MARK: %c"
 --guard-else same-line
---header strip
+--header \n {file}\n by Danny Stewart ({created.year})\n MIT License\n https://github.com/dannystewart/volumeHUD\n
 --hex-grouping 4,8
 --hex-literal-case uppercase
---ifdef indent
+--ifdef no-indent
 --import-grouping alpha
 --indent 4
 --indent-case false

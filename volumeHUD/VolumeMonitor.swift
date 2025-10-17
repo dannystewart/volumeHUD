@@ -1,3 +1,10 @@
+//
+//  VolumeMonitor.swift
+//  by Danny Stewart (2025)
+//  MIT License
+//  https://github.com/dannystewart/volumeHUD
+//
+
 import AppKit
 import AudioToolbox
 import AVFoundation
