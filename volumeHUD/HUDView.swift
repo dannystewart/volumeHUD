@@ -10,6 +10,8 @@ enum HUDType {
 // MARK: - HUDView
 
 struct HUDView: View {
+    // MARK: Properties
+
     let hudType: HUDType
     let value: Float
     let isMuted: Bool
@@ -17,6 +19,30 @@ struct HUDView: View {
 
     private let hudSize: CGFloat = 200
     private let iconSize: CGFloat = 80
+
+    // MARK: Computed Properties
+
+    private var iconName: String {
+        switch hudType {
+        case .volume:
+            if isMuted {
+                "speaker.slash.fill"
+            } else if value < 0.08 {
+                "speaker.fill"
+            } else if value < 0.33 {
+                "speaker.wave.1.fill"
+            } else if value < 0.66 {
+                "speaker.wave.2.fill"
+            } else {
+                "speaker.wave.3.fill"
+            }
+
+        case .brightness:
+            "sun.max"
+        }
+    }
+
+    // MARK: Content Properties
 
     var body: some View {
         VStack(spacing: 0) {
@@ -57,25 +83,7 @@ struct HUDView: View {
         )
     }
 
-    private var iconName: String {
-        switch hudType {
-        case .volume:
-            if isMuted {
-                "speaker.slash.fill"
-            } else if value < 0.08 {
-                "speaker.fill"
-            } else if value < 0.33 {
-                "speaker.wave.1.fill"
-            } else if value < 0.66 {
-                "speaker.wave.2.fill"
-            } else {
-                "speaker.wave.3.fill"
-            }
-
-        case .brightness:
-            "sun.max"
-        }
-    }
+    // MARK: Functions
 
     private func barColor(for index: Int) -> Color {
         if hudType == .volume, isMuted {

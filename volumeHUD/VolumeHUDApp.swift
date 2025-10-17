@@ -9,8 +9,13 @@ import SwiftUI
 
 @MainActor
 class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotificationCenterDelegate {
-    // Constants for process path info
+    // MARK: Static Properties
+
+    /// Constants for process path info
     private nonisolated static let PROC_PIDPATHINFO_MAXSIZE = 4096
+
+    // MARK: Properties
+
     var volumeMonitor: VolumeMonitor!
     var brightnessMonitor: BrightnessMonitor!
     var hudController: HUDController!
@@ -19,10 +24,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
 
     let logger: PolyLog = .init()
 
+    // MARK: Computed Properties
+
     /// Check to see if brightness is enabled
     private var isBrightnessEnabled: Bool {
         UserDefaults.standard.bool(forKey: "brightnessEnabled")
     }
+
+    // MARK: Lifecycle
+
+    deinit {
+        DistributedNotificationCenter.default().removeObserver(self)
+    }
+
+    // MARK: Functions
 
     // MARK: - On Finish Launching
 
@@ -88,6 +103,49 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
 
         // Start monitoring display configuration changes
         hudController.startDisplayChangeMonitoring()
+    }
+
+    /// If we get a new "open" event, also show the about window
+    func application(_: NSApplication, open _: [URL]) {
+        showAboutWindow()
+    }
+
+    /// Open the about window when the app is opened while already running
+    func applicationShouldHandleReopen(_: NSApplication, hasVisibleWindows _: Bool) -> Bool {
+        showAboutWindow()
+        return false
+    }
+
+    @MainActor
+    func startBrightnessMonitoringIfEnabled() {
+        if isBrightnessEnabled {
+            logger.info("Brightness HUD enabled; starting brightness monitoring.")
+            brightnessMonitor.startMonitoring()
+        } else {
+            logger.info("Brightness HUD disabled; skipping brightness monitoring.")
+        }
+    }
+
+    // MARK: - Notification Center Delegate
+
+    /// Ensure banners appear even if the app is active
+    func userNotificationCenter(
+        _: UNUserNotificationCenter,
+        willPresent _: UNNotification,
+        withCompletionHandler completionHandler:
+        @escaping (UNNotificationPresentationOptions) -> Void,
+    ) {
+        completionHandler([.banner])
+    }
+
+    /// Show the About window when the startup notification is tapped
+    func userNotificationCenter(
+        _: UNUserNotificationCenter,
+        didReceive _: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void,
+    ) {
+        Task { @MainActor in self.showAboutWindow() }
+        completionHandler()
     }
 
     // MARK: - Instance Check
@@ -249,17 +307,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         return contents.contains { $0.pathExtension == "app" && $0.path == parentBundlePath }
     }
 
-    /// If we get a new "open" event, also show the about window
-    func application(_: NSApplication, open _: [URL]) {
-        showAboutWindow()
-    }
-
-    /// Open the about window when the app is opened while already running
-    func applicationShouldHandleReopen(_: NSApplication, hasVisibleWindows _: Bool) -> Bool {
-        showAboutWindow()
-        return false
-    }
-
     // MARK: - Show About Window
 
     private func showAboutWindow() {
@@ -314,16 +361,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
 
         // Show the panel without changing activation policy
         panel.makeKeyAndOrderFront(nil)
-    }
-
-    @MainActor
-    func startBrightnessMonitoringIfEnabled() {
-        if isBrightnessEnabled {
-            logger.info("Brightness HUD enabled; starting brightness monitoring.")
-            brightnessMonitor.startMonitoring()
-        } else {
-            logger.info("Brightness HUD disabled; skipping brightness monitoring.")
-        }
     }
 
     // MARK: - Accessibility Permissions
@@ -411,28 +448,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         }
     }
 
-    // MARK: - Notification Center Delegate
-
-    /// Ensure banners appear even if the app is active
-    func userNotificationCenter(
-        _: UNUserNotificationCenter,
-        willPresent _: UNNotification,
-        withCompletionHandler completionHandler:
-        @escaping (UNNotificationPresentationOptions) -> Void,
-    ) {
-        completionHandler([.banner])
-    }
-
-    /// Show the About window when the startup notification is tapped
-    func userNotificationCenter(
-        _: UNUserNotificationCenter,
-        didReceive _: UNNotificationResponse,
-        withCompletionHandler completionHandler: @escaping () -> Void,
-    ) {
-        Task { @MainActor in self.showAboutWindow() }
-        completionHandler()
-    }
-
     // MARK: - Graceful Termination
 
     /// Stop volume and brightness monitoring and quit the app
@@ -446,10 +461,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         // Terminate without activating the app
         NSApp.terminate(nil)
     }
-
-    deinit {
-        DistributedNotificationCenter.default().removeObserver(self)
-    }
 }
 
 // MARK: - VolumeHUDApp
@@ -457,7 +468,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
 @main
 @available(macOS 26.0, *)
 struct VolumeHUDApp: App {
+    // MARK: SwiftUI Properties
+
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
+    // MARK: Computed Properties
 
     @available(macOS 26.0, *)
     var body: some Scene {

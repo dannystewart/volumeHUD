@@ -7,24 +7,33 @@ import SwiftUI
 
 @MainActor
 class HUDController: ObservableObject {
+    // MARK: Properties
+
     @Published var isShowing = false
+
+    weak var volumeMonitor: VolumeMonitor?
+    weak var brightnessMonitor: BrightnessMonitor?
+    let logger: PolyLog = .init()
 
     private var hudWindow: NSWindow?
     private var hostingView: NSHostingView<HUDView>?
     private var hideTimer: Timer?
-    weak var volumeMonitor: VolumeMonitor?
-    weak var brightnessMonitor: BrightnessMonitor?
     private var lastShownVolume: Float?
     private var lastShownMuted: Bool?
     private var lastShownBrightness: Float?
     private var lastShownHUDType: HUDType?
     private var isObservingDisplayChanges = false
     private let isPreviewMode: Bool
-    let logger: PolyLog = .init()
+
+    // MARK: Lifecycle
 
     init(isPreviewMode: Bool = false) {
         self.isPreviewMode = isPreviewMode
     }
+
+    deinit {}
+
+    // MARK: Functions
 
     @MainActor
     func showVolumeHUD(volume: Float, isMuted: Bool) {
@@ -277,6 +286,4 @@ class HUDController: ObservableObject {
         hudWindow?.orderOut(nil)
         isShowing = false
     }
-
-    deinit {}
 }

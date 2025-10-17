@@ -7,7 +7,13 @@ import IOKit.pwr_mgt
 import PolyKit
 
 class BrightnessMonitor: ObservableObject, @unchecked Sendable {
+    // MARK: Properties
+
     @Published var currentBrightness: Float = 0.0
+
+    weak var hudController: HUDController?
+
+    let logger: PolyLog = .init()
 
     private var accessibilityEnabled: Bool
     private var isMonitoring = false
@@ -33,9 +39,7 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
     private var canChangeBrightnessFunc: (@convention(c) (CGDirectDisplayID) -> Bool)?
     private var getBrightnessFunc: (@convention(c) (CGDirectDisplayID, UnsafeMutablePointer<Float>) -> kern_return_t)?
 
-    weak var hudController: HUDController?
-
-    let logger: PolyLog = .init()
+    // MARK: Lifecycle
 
     init(isPreviewMode: Bool = false) {
         self.isPreviewMode = isPreviewMode
@@ -59,6 +63,8 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
 
     deinit {}
 
+    // MARK: Functions
+
     /// Update the accessibility status after permissions may have changed
     func updateAccessibilityStatus() {
         let newAccessibilityEnabled = AXIsProcessTrusted()
@@ -67,6 +73,59 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
             logger.info("Brightness monitor accessibility status changed: \(accessibilityEnabled) -> \(newAccessibilityEnabled)")
             accessibilityEnabled = newAccessibilityEnabled
         }
+    }
+
+    func startMonitoring() {
+        guard !isMonitoring else { return }
+
+        // Skip all monitoring in preview mode
+        if isPreviewMode {
+            logger.debug("Skipping brightness monitoring in preview mode.")
+            isMonitoring = true
+            return
+        }
+
+        logger.debug("BrightnessMonitor.startMonitoring() called")
+        logger.debug("DisplayServices handle: \(displayServicesHandle != nil)")
+        logger.debug("canChangeBrightnessFunc: \(canChangeBrightnessFunc != nil)")
+        logger.debug("getBrightnessFunc: \(getBrightnessFunc != nil)")
+
+        // Get initial brightness without showing HUD
+        updateBrightnessOnStartup()
+
+        // Start polling for brightness changes
+        startBrightnessPolling()
+
+        // Start monitoring system-defined events for brightness key presses
+        startSystemEventMonitoring()
+        startEventTap()
+
+        // Monitor display configuration changes to restart event monitoring when needed
+        startDisplayChangeMonitoring()
+
+        isMonitoring = true
+        logger.debug("Started monitoring for brightness changes.")
+    }
+
+    func stopMonitoring() {
+        guard isMonitoring else { return }
+
+        // Stop polling
+        stopBrightnessPolling()
+
+        // Stop system event monitoring
+        stopSystemEventMonitoring()
+        stopEventTap()
+
+        // Stop display change monitoring
+        stopDisplayChangeMonitoring()
+
+        // Cancel any pending restart task
+        restartTask?.cancel()
+        restartTask = nil
+
+        isMonitoring = false
+        logger.debug("Stopped monitoring for brightness changes.")
     }
 
     /// Check if a brightness delta matches user-initiated key press patterns
@@ -147,59 +206,6 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
         }
 
         return nil
-    }
-
-    func startMonitoring() {
-        guard !isMonitoring else { return }
-
-        // Skip all monitoring in preview mode
-        if isPreviewMode {
-            logger.debug("Skipping brightness monitoring in preview mode.")
-            isMonitoring = true
-            return
-        }
-
-        logger.debug("BrightnessMonitor.startMonitoring() called")
-        logger.debug("DisplayServices handle: \(displayServicesHandle != nil)")
-        logger.debug("canChangeBrightnessFunc: \(canChangeBrightnessFunc != nil)")
-        logger.debug("getBrightnessFunc: \(getBrightnessFunc != nil)")
-
-        // Get initial brightness without showing HUD
-        updateBrightnessOnStartup()
-
-        // Start polling for brightness changes
-        startBrightnessPolling()
-
-        // Start monitoring system-defined events for brightness key presses
-        startSystemEventMonitoring()
-        startEventTap()
-
-        // Monitor display configuration changes to restart event monitoring when needed
-        startDisplayChangeMonitoring()
-
-        isMonitoring = true
-        logger.debug("Started monitoring for brightness changes.")
-    }
-
-    func stopMonitoring() {
-        guard isMonitoring else { return }
-
-        // Stop polling
-        stopBrightnessPolling()
-
-        // Stop system event monitoring
-        stopSystemEventMonitoring()
-        stopEventTap()
-
-        // Stop display change monitoring
-        stopDisplayChangeMonitoring()
-
-        // Cancel any pending restart task
-        restartTask?.cancel()
-        restartTask = nil
-
-        isMonitoring = false
-        logger.debug("Stopped monitoring for brightness changes.")
     }
 
     private func updateBrightnessOnStartup() {

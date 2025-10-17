@@ -8,8 +8,14 @@ import IOKit
 import PolyKit
 
 class VolumeMonitor: ObservableObject, @unchecked Sendable {
+    // MARK: Properties
+
     @Published var currentVolume: Float = 0.0
     @Published var isMuted: Bool = false
+
+    weak var hudController: HUDController?
+
+    let logger: PolyLog = .init()
 
     private var audioObjectPropertyAddress: AudioObjectPropertyAddress
     private var isMonitoring = false
@@ -26,9 +32,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
     private var devicePollingTimer: Timer?
     private let isPreviewMode: Bool
 
-    weak var hudController: HUDController?
-
-    let logger: PolyLog = .init()
+    // MARK: Lifecycle
 
     init(isPreviewMode: Bool = false) {
         self.isPreviewMode = isPreviewMode
@@ -50,6 +54,8 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             accessibilityEnabled = AXIsProcessTrusted()
         }
     }
+
+    // MARK: Functions
 
     /// Update accessibility status (to be called when permissions change)
     func updateAccessibilityStatus() {
