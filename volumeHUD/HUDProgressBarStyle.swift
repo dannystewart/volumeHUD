@@ -1,24 +1,19 @@
 import SwiftUI
 
-struct HUDProgressBar: View {
+struct HUDProgressBarStyle: ProgressViewStyle {
 	@Environment(\.colorScheme) private var colorScheme
 	@Environment(\.colorSchemeContrast) private var colorSchemeContrast
 	@Environment(\.isEnabled) private var isEnabled
 
-	var value: Double
 	var pips: UInt = 16
 	var pipParts: UInt = 4
 
 	private let pipWidth: Double = 9
 	private let pipHeight: Double = 6
-	
-	private var barWidth: Double { Double(pips) * pipWidth + Double(pips+1) }
-	private var barHeight: Double { pipHeight + 2 }
+	private var barWidth: Double { Double(pips) * pipWidth + Double(pips+1) } // 161
+	private var barHeight: Double { pipHeight + 2 } // 8
 
-	/// The number of pips that should be shown for the current input value.
-	private var shownPipsNum: Int {
-		Int(floor(value * Double(pips)))
-	}
+	private let padding: Double = 1
 
 	private var pipOpacity: Double {
 		if colorSchemeContrast == .standard {
@@ -31,13 +26,17 @@ struct HUDProgressBar: View {
 	private var pip: some View {
 		Rectangle()
 			.fill(.pipsFill)
-			.frame(height: pipHeight)
 			.opacity(pipOpacity)
+	}
+
+	/// The number of pips that should be shown for the current input value.
+	private func shownPipsNum(value: Double) -> Int {
+		Int(floor(value * Double(pips)))
 	}
 
 	/// The width of the last fractional pip that might be shown *in addition* to the `shownPipsNum` pips that are already visible.
 	/// Contained to the range `0...1`, in increments of `0.25`.
-	private var fractionalPipWidth: Double {
+	private func fractionalPipWidth(value: Double) -> Double {
 		let parts = Double(max(1, pipParts))
 		let onePip = 1 / Double(max(1, pips))
 		let fractionPipWidth = value.truncatingRemainder(dividingBy: onePip) * Double(pips)
@@ -45,15 +44,19 @@ struct HUDProgressBar: View {
 		return quantizedPipWidth
 	}
 
-    var body: some View {
+	func makeBody(configuration: Configuration) -> some View {
 		ZStack(alignment: .leading) {
 			// The pip bar's background
 			Rectangle()
 				.fill(.pipsBackground)
 
-			HStack(spacing: 1) {
+			let value = configuration.fractionCompleted ?? 0
+			let shownPips = shownPipsNum(value: value)
+			let fractionalPipWidth = fractionalPipWidth(value: value)
+
+			HStack(spacing: padding) {
 				// Show "whole" pips first
-				ForEach(0 ..< shownPipsNum, id: \.self) { index in
+				ForEach(0 ..< shownPips, id: \.self) { index in
 					pip.frame(width: pipWidth)
 				}
 
@@ -62,20 +65,38 @@ struct HUDProgressBar: View {
 					pip.frame(width: pipWidth * fractionalPipWidth)
 				}
 			}
-			.padding(1)
+			.padding(padding)
 		}
 		.frame(width: barWidth, height: barHeight)
-    }
+	}
 }
 
-#Preview ("HUDProgressBar"){
+extension ProgressViewStyle where Self == HUDProgressBarStyle {
+	static var hud: HUDProgressBarStyle {
+		HUDProgressBarStyle()
+	}
+}
+
+
+#Preview ("HUDProgressBarStyle"){
 	@Previewable @State var value: Double = 0.5
+	@Previewable @State var disabled: Bool = false
 
 	ZStack {
 		Color.gray
 
-		VStack(spacing: 24) {
-			HUDProgressBar(value: value)
+		VStack(spacing: 12) {
+			ProgressView(value: value)
+				.progressViewStyle(.hud)
+				.disabled(disabled)
+
+			let wholePips = floor(Double(value) * 16)
+			let fractionPip = Double(value).truncatingRemainder(dividingBy: 1.0/16) * 16
+			let quantizedPip = round(fractionPip * 4) / 4
+			Text("Pips: \(String(format: "%.2f", wholePips + quantizedPip))")
+				.monospacedDigit()
+				.foregroundStyle(.secondary)
+				.font(.subheadline)
 
 			Slider(value: $value, in: 0...1, label: {
 				Text("Value")
@@ -87,15 +108,7 @@ struct HUDProgressBar: View {
 			})
 			.frame(width: 280)
 
-			VStack(spacing: 4) {
-				let wholePips = floor(Double(value) * 16)
-				let fractionPip = Double(value).truncatingRemainder(dividingBy: 1.0/16) * 16
-				let quantizedPip = round(fractionPip * 4) / 4
-				Text("Pips: \(String(format: "%.2f", wholePips + quantizedPip))")
-					.monospacedDigit()
-			}
-			.foregroundStyle(.secondary)
-			.font(.subheadline)
+			Toggle("Disabled", isOn: $disabled)
 		}
 	}
 	.frame(width: 320, height: 140)

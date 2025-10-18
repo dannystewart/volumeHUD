@@ -77,7 +77,8 @@ struct HUDView: View {
 			Spacer()
 
 			// The pip bar
-			HUDProgressBar(value: Double(value))
+			ProgressView(value: value)
+				.progressViewStyle(.hud)
 				.disabled(isMuted)
         }
 		.padding(hudInsets)
@@ -89,13 +90,22 @@ struct HUDView: View {
 
 #Preview("Volume") {
 	@Previewable @State var value: Float = 0.75
+	@Previewable @State var muted: Bool = false
 
     ZStack {
         Color.gray
 
-		VStack(spacing: 16) {
-			HUDView(hudType: .volume, value: value, isMuted: false, isVisible: true)
+		VStack(spacing: 12) {
+			HUDView(hudType: .volume, value: value, isMuted: muted, isVisible: true)
 				.padding(-HUDView.shadowPadding) // counteract the shadow padding
+
+			let wholePips = floor(Double(value) * 16)
+			let fractionPip = Double(value).truncatingRemainder(dividingBy: 1.0/16) * 16
+			let quantizedPip = round(fractionPip * 4) / 4
+			Text("Pips: \(String(format: "%02.2f", wholePips + quantizedPip))")
+				.monospacedDigit()
+				.foregroundStyle(.secondary)
+				.font(.subheadline)
 
 			Slider(value: $value, in: 0...1, label: {
 				Text("Volume")
@@ -107,26 +117,8 @@ struct HUDView: View {
 			})
 			.frame(width: 280)
 
-			VStack(spacing: 4) {
-				let wholePips = floor(Double(value) * 16)
-				let fractionPip = Double(value).truncatingRemainder(dividingBy: 1.0/16) * 16
-				let quantizedPip = round(fractionPip * 4) / 4
-				Text("Pips: \(String(format: "%02.2f", wholePips + quantizedPip))")
-					.monospacedDigit()
-			}
-			.foregroundStyle(.secondary)
-			.font(.subheadline)
+			Toggle("Muted", isOn: $muted)
 		}
-    }
-	.frame(width: 320, height: 320)
-}
-
-#Preview("Mute") {
-    ZStack {
-        Color.gray
-
-        HUDView(hudType: .volume, value: 0.0, isMuted: true, isVisible: true)
-			.padding(-HUDView.shadowPadding) // counteract the shadow padding
     }
 	.frame(width: 320, height: 320)
 }
@@ -137,9 +129,17 @@ struct HUDView: View {
     ZStack {
         Color.gray
 
-		VStack(spacing: 24) {
+		VStack(spacing: 12) {
 			HUDView(hudType: .brightness, value: value, isMuted: false, isVisible: true)
 				.padding(-HUDView.shadowPadding) // counteract the shadow padding
+
+			let wholePips = floor(Double(value) * 16)
+			let fractionPip = Double(value).truncatingRemainder(dividingBy: 1.0/16) * 16
+			let quantizedPip = round(fractionPip * 4) / 4
+			Text("Pips: \(String(format: "%02.2f", wholePips + quantizedPip))")
+				.monospacedDigit()
+				.foregroundStyle(.secondary)
+				.font(.subheadline)
 
 			Slider(value: $value, in: 0...1, label: {
 				Text("Brightness")
@@ -150,16 +150,6 @@ struct HUDView: View {
 					.monospacedDigit()
 			})
 			.frame(width: 280)
-
-			VStack(spacing: 4) {
-				let wholePips = floor(Double(value) * 16)
-				let fractionPip = Double(value).truncatingRemainder(dividingBy: 1.0/16) * 16
-				let quantizedPip = round(fractionPip * 4) / 4
-				Text("Pips: \(String(format: "%02.2f", wholePips + quantizedPip))")
-					.monospacedDigit()
-			}
-			.foregroundStyle(.secondary)
-			.font(.subheadline)
 		}
     }
 	.frame(width: 320)
