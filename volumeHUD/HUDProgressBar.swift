@@ -21,18 +21,18 @@ struct HUDProgressBar: View {
 	}
 
 	private var pipOpacity: Double {
-		let enabledMult = isEnabled ? 1.0 : 0.35
-		if colorSchemeContrast == .increased {
-			return isEnabled ? 1.0 : 0.5
+		if colorSchemeContrast == .standard {
+			isEnabled ? 1.0 : 0.5
+		} else {
+			isEnabled ? 1.0 : 0.65
 		}
-
-		return (colorScheme == .dark ? 0.6 : 0.9) * enabledMult
 	}
 
 	private var pip: some View {
 		Rectangle()
-			.fill(.white.opacity(pipOpacity))
+			.fill(.pipsFill)
 			.frame(height: pipHeight)
+			.opacity(pipOpacity)
 	}
 
 	/// The width of the last fractional pip that might be shown *in addition* to the `shownPipsNum` pips that are already visible.
@@ -49,8 +49,7 @@ struct HUDProgressBar: View {
 		ZStack(alignment: .leading) {
 			// The pip bar's background
 			Rectangle()
-				.fill(.secondary)
-				.environment(\.colorScheme, .light) // ensures the background always uses a dark color
+				.fill(.pipsBackground)
 
 			HStack(spacing: 1) {
 				// Show "whole" pips first

@@ -41,19 +41,24 @@ struct HUDView: View {
 		trailing: 0
 	)
 
-    // MARK: Computed Properties
+	// MARK: Computed Properties
 
 	// SF Symbols has slight misalignment between speaker.slash.fill and speaker.fill
 	private var speakerMutedIconOffset: Double {
 		hudType == .volume && isMuted ? 3 : 0
 	}
 
-	private var iconStyle: some ShapeStyle {
-		switch colorSchemeContrast {
-			case .increased:
-				HierarchicalShapeStyle.primary
-			case _:
-				colorScheme == .dark ? HierarchicalShapeStyle.secondary : HierarchicalShapeStyle.tertiary
+	private var iconName: String {
+		switch hudType {
+			case .volume:
+				if isMuted || value < 0.005 {
+					"speaker.slash.fill"
+				} else {
+					"speaker.wave.3.fill"
+				}
+
+			case .brightness:
+				"sun.max"
 		}
 	}
 
@@ -64,7 +69,7 @@ struct HUDView: View {
 			// Icon
 			Image(systemName: iconName, variableValue: Double(value))
 				.font(.system(size: iconSize))
-				.foregroundStyle(iconStyle)
+				.foregroundStyle(.iconFill)
 				.offset(y: speakerMutedIconOffset)
 				.frame(width: iconBoundsSize, height: iconBoundsSize)
 
@@ -79,22 +84,6 @@ struct HUDView: View {
         .frame(width: hudSize, height: hudSize)
 		.glassEffect(.regular, in: .rect(cornerRadius: cornerRadius))
 		.padding(shadowPadding) // allow some padding so the glass effect's subtle drop shadow isn't clipped
-    }
-
-    // MARK: Functions
-
-    private var iconName: String {
-        switch hudType {
-			case .volume:
-				if isMuted || value < 0.005 {
-					"speaker.slash.fill"
-				} else {
-					"speaker.wave.3.fill"
-				}
-
-			case .brightness:
-				"sun.max"
-        }
     }
 }
 
