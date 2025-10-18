@@ -16,8 +16,6 @@ enum HUDType {
 
 // MARK: - HUDView
 
-fileprivate let shadowPadding: Double = 48
-
 struct HUDView: View {
     // MARK: Properties
 
@@ -29,8 +27,10 @@ struct HUDView: View {
     let isMuted: Bool
     let isVisible: Bool
 
+	public static let hudSize: Double = 200
+	public static let shadowPadding: Double = 48
+
 	private let cornerRadius: Double = 18
-    private let hudSize: Double = 200
 	private let iconSize: Double = 80
 	private let iconBoundsSize: Double = 112
 
@@ -81,9 +81,9 @@ struct HUDView: View {
 				.disabled(isMuted)
         }
 		.padding(hudInsets)
-        .frame(width: hudSize, height: hudSize)
+		.frame(width: Self.hudSize, height: Self.hudSize)
 		.glassEffect(.regular, in: .rect(cornerRadius: cornerRadius))
-		.padding(shadowPadding) // allow some padding so the glass effect's subtle drop shadow isn't clipped
+		.padding(Self.shadowPadding) // allow some padding so the glass effect's subtle drop shadow isn't clipped
     }
 }
 
@@ -95,7 +95,7 @@ struct HUDView: View {
 
 		VStack(spacing: 16) {
 			HUDView(hudType: .volume, value: value, isMuted: false, isVisible: true)
-				.padding(-shadowPadding) // counteract the shadow padding
+				.padding(-HUDView.shadowPadding) // counteract the shadow padding
 
 			Slider(value: $value, in: 0...1, label: {
 				Text("Volume")
@@ -126,7 +126,7 @@ struct HUDView: View {
         Color.gray
 
         HUDView(hudType: .volume, value: 0.0, isMuted: true, isVisible: true)
-			.padding(-shadowPadding) // counteract the shadow padding
+			.padding(-HUDView.shadowPadding) // counteract the shadow padding
     }
 	.frame(width: 320, height: 320)
 }
@@ -139,7 +139,7 @@ struct HUDView: View {
 
 		VStack(spacing: 24) {
 			HUDView(hudType: .brightness, value: value, isMuted: false, isVisible: true)
-				.padding(-shadowPadding) // counteract the shadow padding
+				.padding(-HUDView.shadowPadding) // counteract the shadow padding
 
 			Slider(value: $value, in: 0...1, label: {
 				Text("Brightness")

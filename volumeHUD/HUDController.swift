@@ -32,6 +32,9 @@ class HUDController: ObservableObject {
     private var isObservingDisplayChanges = false
     private let isPreviewMode: Bool
 
+	// taken from macOS Tahoe's arm64 slice of /System/Library/CoreServices/OSDUIHelper.app/Contents/MacOS/OSDUIHelper
+	private let offsetFromBottomEdge: Double = 140
+
     // MARK: Lifecycle
 
     init(isPreviewMode: Bool = false) {
@@ -119,8 +122,6 @@ class HUDController: ObservableObject {
     private func updateWindowPosition(for hudType: HUDType? = nil) {
         guard let window = hudWindow else { return }
 
-        let windowSize = NSSize(width: 210, height: 210)
-
         // Brightness HUD always shows on built-in display (since that's what it controls)
         // Volume HUD respects user preference for display location
         let targetScreen: NSScreen
@@ -136,19 +137,18 @@ class HUDController: ObservableObject {
             }
         }
 
-        // Calculate new position using visible frame to respect menu bar/dock areas
-        let screenFrame = targetScreen.visibleFrame
-        let newWindowRect = NSRect(
-            x: screenFrame.origin.x + (screenFrame.width - windowSize.width) / 2,
-            y: screenFrame.origin.y + screenFrame.height * 0.17, // Distance from bottom of screen
-            width: windowSize.width,
-            height: windowSize.height,
-        )
+        // Calculate new position (don't use visibleFrame because the system's old HUD ignores the dock anyway)
+		let screenFrame = targetScreen.frame
 
-        // Update the window frame
-        window.setFrame(newWindowRect, display: true)
+		// Update the window's position
+		let windowSize = window.frame.size
+		let newWindowOrigin = NSPoint(
+			x: (screenFrame.width - windowSize.width) / 2,
+			y: screenFrame.origin.y + offsetFromBottomEdge
+		)
+		window.setFrameOrigin(newWindowOrigin)
 
-        logger.debug("Updated HUD window position to: \(newWindowRect)")
+        logger.debug("Updated HUD window position to: \(newWindowOrigin)")
     }
 
     /// Returns the NSScreen that currently contains the mouse cursor

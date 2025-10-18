@@ -1,19 +1,22 @@
 import AppKit
 
 class HUDWindow: NSWindow {
-	convenience init() {
-		self.init(contentRect: .zero, styleMask: [.borderless], backing: .buffered, defer: false)
-		self.windowSetup()
-	}
+	// taken from macOS Tahoe's arm64 slice of /System/Library/CoreServices/OSDUIHelper.app/Contents/MacOS/OSDUIHelper
+	private let hudWindowLevel = NSWindow.Level(0x7d5)
 
-	override init(contentRect: NSRect, styleMask style: NSWindow.StyleMask, backing backingStoreType: NSWindow.BackingStoreType, defer flag: Bool) {
-		super.init(contentRect: .zero, styleMask: [.borderless], backing: .buffered, defer: false)
+	convenience init() {
+		let size = CGSize(
+			width: HUDView.hudSize + HUDView.shadowPadding * 2,
+			height: HUDView.hudSize + HUDView.shadowPadding * 2,
+		)
+		self.init(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless], backing: .buffered, defer: false)
 		self.windowSetup()
 	}
 
 	private func windowSetup() {
 		self.collectionBehavior = [.canJoinAllApplications, .canJoinAllSpaces, .stationary, .ignoresCycle, .fullScreenNone]
-		self.level = .statusBar + 1
+		self.level = hudWindowLevel
+
 		self.isOpaque = false
 		self.hasShadow = false
 		self.backgroundColor = .clear
@@ -22,6 +25,6 @@ class HUDWindow: NSWindow {
 		self.canHide = false
 	}
 
-	// needed so glass and blur effects look good
+	// needed so glass and blur effects never revert to their inactive style
 	override func _hasActiveAppearance() -> Bool { true }
 }
