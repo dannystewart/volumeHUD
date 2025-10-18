@@ -40,7 +40,12 @@ struct HUDProgressBarStyle: ProgressViewStyle {
 		let parts = Double(max(1, pipParts))
 		let onePip = 1 / Double(max(1, pips))
 		let fractionPipWidth = value.truncatingRemainder(dividingBy: onePip) * Double(pips)
-		let quantizedPipWidth = round(fractionPipWidth * parts) / parts
+		let quantizedPipWidth = ceil(fractionPipWidth * parts) / parts
+
+		// handle edge case where a quarter pip remains visible
+		// when the volume is reduced to zero very slowly
+		if value <= 0.001 && !isEnabled { return 0 }
+
 		return quantizedPipWidth
 	}
 
@@ -92,7 +97,7 @@ extension ProgressViewStyle where Self == HUDProgressBarStyle {
 
 			let wholePips = floor(Double(value) * 16)
 			let fractionPip = Double(value).truncatingRemainder(dividingBy: 1.0/16) * 16
-			let quantizedPip = round(fractionPip * 4) / 4
+			let quantizedPip = ceil(fractionPip * 4) / 4
 			Text("Pips: \(String(format: "%.2f", wholePips + quantizedPip))")
 				.monospacedDigit()
 				.foregroundStyle(.secondary)
@@ -103,7 +108,7 @@ extension ProgressViewStyle where Self == HUDProgressBarStyle {
 			}, minimumValueLabel: {
 				Text("")
 			}, maximumValueLabel: {
-				Text("\(String(format: "%.3f", value))")
+				Text("\(String(format: "%.5f", value))")
 					.monospacedDigit()
 			})
 			.frame(width: 280)

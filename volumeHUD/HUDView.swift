@@ -51,7 +51,7 @@ struct HUDView: View {
 	private var iconName: String {
 		switch hudType {
 			case .volume:
-				if isMuted || value < 0.005 {
+				if isMuted {
 					"speaker.slash.fill"
 				} else {
 					"speaker.wave.3.fill"
@@ -101,7 +101,7 @@ struct HUDView: View {
 
 			let wholePips = floor(Double(value) * 16)
 			let fractionPip = Double(value).truncatingRemainder(dividingBy: 1.0/16) * 16
-			let quantizedPip = round(fractionPip * 4) / 4
+			let quantizedPip = ceil(fractionPip * 4) / 4
 			Text("Pips: \(String(format: "%02.2f", wholePips + quantizedPip))")
 				.monospacedDigit()
 				.foregroundStyle(.secondary)
@@ -135,7 +135,7 @@ struct HUDView: View {
 
 			let wholePips = floor(Double(value) * 16)
 			let fractionPip = Double(value).truncatingRemainder(dividingBy: 1.0/16) * 16
-			let quantizedPip = round(fractionPip * 4) / 4
+			let quantizedPip = ceil(fractionPip * 4) / 4
 			Text("Pips: \(String(format: "%02.2f", wholePips + quantizedPip))")
 				.monospacedDigit()
 				.foregroundStyle(.secondary)
