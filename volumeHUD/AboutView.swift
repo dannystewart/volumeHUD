@@ -45,11 +45,10 @@ struct AboutView: View {
             VStack(spacing: 4) {
                 // MARK: - App Information
 
-                if let appIcon = NSImage(named: "AppIcon") {
-                    Image(nsImage: appIcon)
-                        .resizable()
-                        .frame(width: 80, height: 80)
-                }
+				Image("VolumeHUDIcon")
+					.resizable()
+					.frame(width: 80, height: 80)
+
                 Text("volumeHUD")
                     .font(.system(size: 24, weight: .medium))
                 Text("by Danny Stewart")
