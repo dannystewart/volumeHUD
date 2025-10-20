@@ -68,13 +68,17 @@ struct HUDView: View {
             VStack { // Value bar section
                 Spacer()
                     .frame(height: 40)
-                HStack(spacing: 2) {
+                HStack(spacing: 0) {
                     Spacer()
                         .frame(width: 20)
-                    ForEach(0 ..< 16, id: \.self) { index in
+                    ForEach(0 ..< 64, id: \.self) { index in
                         Rectangle()
                             .fill(barColor(for: index))
-                            .frame(width: 7.5, height: 7.5)
+                            .frame(width: 1.875, height: 7.5)
+                        if index % 4 == 3 {
+                            Spacer()
+                                .frame(width: 2)
+                        }
                     }
                     Spacer()
                         .frame(width: 20)
@@ -97,7 +101,7 @@ struct HUDView: View {
             return .white.opacity(0.2)
         }
 
-        let threshold = Float(index) / 16.0
+        let threshold = Float(index) / 64.0
         if value > threshold {
             return .white.opacity(0.8)
         } else {
@@ -109,7 +113,7 @@ struct HUDView: View {
 #Preview("Volume") {
     ZStack {
         Color.black.frame(width: 360, height: 380).ignoresSafeArea()
-        HUDView(hudType: .volume, value: 0.7, isMuted: false, isVisible: true)
+        HUDView(hudType: .volume, value: 0.75, isMuted: false, isVisible: true)
     }
 }
 

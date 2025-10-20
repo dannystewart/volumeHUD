@@ -157,8 +157,8 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
 
         var newVolume: Float = currentVolume
         if volumeStatus == noErr {
-            // Quantize volume to 16 steps to match the volume bars
-            let quantizedVolume = round(volume * 16.0) / 16.0
+            // Quantize volume to 64 steps to match the volume bars, including small adjustments
+            let quantizedVolume = round(volume * 64.0) / 64.0
             newVolume = quantizedVolume
         }
 
