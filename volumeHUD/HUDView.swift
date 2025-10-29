@@ -97,10 +97,28 @@ struct HUDView: View {
             return .white.opacity(0.2)
         }
 
-        let threshold = Float(index) / 16.0
-        if value > threshold {
+        // Each of the 16 bars represents 1/16th of the total range
+        // But we want to support 1/64th increments (4 sub-steps per bar)
+        let barStart = Float(index) / 16.0
+        let barEnd = Float(index + 1) / 16.0
+        
+        if value >= barEnd {
+            // Fully illuminate this bar
             return .white.opacity(0.8)
+        } else if value > barStart {
+            // Partially illuminate this bar based on position within the bar
+            // Each bar covers 1/16 (0.0625), divided into 4 quarters for 1/64 steps
+            let positionInBar = (value - barStart) / (barEnd - barStart)
+            
+            // Quantize to 1/4 steps (0.25, 0.5, 0.75, 1.0)
+            let quarterStep = round(positionInBar * 4.0) / 4.0
+            
+            // Map quarter steps to opacity levels between 0.2 (off) and 0.8 (on)
+            // 0.25 -> 0.35, 0.5 -> 0.5, 0.75 -> 0.65, 1.0 -> 0.8
+            let opacity = 0.2 + (quarterStep * 0.6)
+            return .white.opacity(Double(opacity))
         } else {
+            // Bar is below current value
             return .white.opacity(0.2)
         }
     }

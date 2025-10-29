@@ -38,6 +38,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
     private var muteListenerBlock: ((UInt32, UnsafePointer<AudioObjectPropertyAddress>) -> Void)?
     private var devicePollingTimer: Timer?
     private let isPreviewMode: Bool
+    private var isOptionShiftHeld: Bool = false
 
     // MARK: Lifecycle
 
@@ -157,8 +158,11 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
 
         var newVolume: Float = currentVolume
         if volumeStatus == noErr {
-            // Quantize volume to 16 steps to match the volume bars
-            let quantizedVolume = round(volume * 16.0) / 16.0
+            // Quantize volume based on modifier keys:
+            // - Normal: 16 steps (1/16th increments)
+            // - Option+Shift: 64 steps (1/64th increments)
+            let steps: Float = isOptionShiftHeld ? 64.0 : 16.0
+            let quantizedVolume = round(volume * steps) / steps
             newVolume = quantizedVolume
         }
 
@@ -245,6 +249,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             let keyFlags = data1 & 0x0000_FFFF
             let keyState = (keyFlags & 0xFF00) >> 8 // 0x0A = keyDown, 0x0B = keyUp
             let isKeyDown = keyState == 0x0A
+            let modifierFlags = event.modifierFlags
 
             Task { @MainActor [weak self] in
                 guard let self else { return }
@@ -253,6 +258,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
                     keyCode: keyCode,
                     keyPressed: (keyFlags & 0xFF00) >> 8,
                     isKeyDown: isKeyDown,
+                    modifierFlags: modifierFlags,
                 )
             }
         }
@@ -276,8 +282,11 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
     }
 
     @MainActor
-    private func handleSystemDefinedEventData(subtype: Int, keyCode: Int, keyPressed _: Int, isKeyDown: Bool) {
+    private func handleSystemDefinedEventData(subtype: Int, keyCode: Int, keyPressed _: Int, isKeyDown: Bool, modifierFlags: NSEvent.ModifierFlags = []) {
         let currentTime = Date().timeIntervalSince1970
+
+        // Check if Option+Shift is held for finer volume control (1/64 instead of 1/16)
+        isOptionShiftHeld = modifierFlags.contains(.option) && modifierFlags.contains(.shift)
 
         // Track Caps Lock events
         if subtype == 211 {
