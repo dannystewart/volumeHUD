@@ -273,7 +273,8 @@ class HUDController: ObservableObject {
         }
 
         // Configure window properties for overlay behavior
-        window.level = .statusBar + 1 // Above menu bar
+        // Use .statusBar level to appear above normal windows but not block Exposé/Show Desktop
+        window.level = .statusBar
         window.isOpaque = false
         window.backgroundColor = .clear
         window.hasShadow = false
