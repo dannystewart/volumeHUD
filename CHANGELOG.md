@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog], and this project adheres to [Semantic Versioning].
 
+## [Unreleased]
+
+## [2.2.0] (2025-10-29)
+
+### Added
+
+- Adds fine-grained brightness and volume control by holding Option+Shift to adjust with 64-step precision, matching prior macOS behavior. (Thanks to  SamusAranX and claire9318054 for requesting this!)
+- Adds a new app icon using Icon Composer, replacing the legacy asset catalog approach.
+
+### Changed
+
+- Adjusts HUD placement to ignore the Dock and menu bar for consistency, and repositions it to 140px from the bottom to match the prior macOS appearance. (Big thanks to SamusAranX for pointing out the inconsistencies here!)
+
+### Fixed
+
+- Fixes slight inconsistency in window dimensions between HUDController and HUDView. (No visual change.)
+- Fixes HUD window level to prevent blocking system features like Exposé and Show Desktop while maintaining proper display hierarchy. (Thanks to usagimaru for reporting this!)
+
 ## [2.1.0] (2025-10-17)
 
 ### Added
@@ -159,6 +177,8 @@ Initial release.
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
 <!-- Versions -->
+[unreleased]: https://github.com/dannystewart/volumeHUD/compare/v2.2.0...HEAD
+[2.2.0]: https://github.com/dannystewart/volumeHUD/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/dannystewart/volumeHUD/compare/v2.0.2...v2.1.0
 [2.0.2]: https://github.com/dannystewart/volumeHUD/compare/v2.0.1...v2.0.2
 [2.0.1]: https://github.com/dannystewart/volumeHUD/compare/v2.0.0...v2.0.1
