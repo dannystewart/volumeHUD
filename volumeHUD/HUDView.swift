@@ -58,7 +58,7 @@ struct HUDView: View {
                     .frame(height: 56)
                 Image(systemName: iconName)
                     .font(.system(size: iconSize, weight: .medium))
-                    .foregroundColor(.white.opacity(0.8))
+                    .foregroundColor(.white.opacity(0.7))
                     // SF Symbols has slight misalignment between speaker.slash.fill and speaker.fill
                     .offset(y: hudType == .volume && isMuted ? 2 : 0)
                 Spacer()
@@ -72,9 +72,7 @@ struct HUDView: View {
                     Spacer()
                         .frame(width: 20)
                     ForEach(0 ..< 16, id: \.self) { index in
-                        Rectangle()
-                            .fill(barColor(for: index))
-                            .frame(width: 7.5, height: 7.5)
+                        barView(for: index)
                     }
                     Spacer()
                         .frame(width: 20)
@@ -90,36 +88,54 @@ struct HUDView: View {
         )
     }
 
-    // MARK: Functions
+    // MARK: Content Methods
 
-    private func barColor(for index: Int) -> Color {
+    @ViewBuilder
+    private func barView(for index: Int) -> some View {
+        let barWidth: CGFloat = 7.5
+        let barHeight: CGFloat = 7.5
+
         if hudType == .volume, isMuted {
-            return .white.opacity(0.2)
-        }
-
-        // Each of the 16 bars represents 1/16th of the total range
-        // But we want to support 1/64th increments (4 sub-steps per bar)
-        let barStart = Float(index) / 16.0
-        let barEnd = Float(index + 1) / 16.0
-        
-        if value >= barEnd {
-            // Fully illuminate this bar
-            return .white.opacity(0.8)
-        } else if value > barStart {
-            // Partially illuminate this bar based on position within the bar
-            // Each bar covers 1/16 (0.0625), divided into 4 quarters for 1/64 steps
-            let positionInBar = (value - barStart) / (barEnd - barStart)
-            
-            // Quantize to 1/4 steps (0.25, 0.5, 0.75, 1.0)
-            let quarterStep = round(positionInBar * 4.0) / 4.0
-            
-            // Map quarter steps to opacity levels between 0.2 (off) and 0.8 (on)
-            // 0.25 -> 0.35, 0.5 -> 0.5, 0.75 -> 0.65, 1.0 -> 0.8
-            let opacity = 0.2 + (quarterStep * 0.6)
-            return .white.opacity(Double(opacity))
+            // Show all bars dimmed when muted
+            Rectangle()
+                .fill(.white.opacity(0.2))
+                .frame(width: barWidth, height: barHeight)
         } else {
-            // Bar is below current value
-            return .white.opacity(0.2)
+            // Each of the 16 bars represents 1/16th of the total range
+            // Support 1/64th increments by filling each bar horizontally in quarters
+            let barStart = Float(index) / 16.0
+            let barEnd = Float(index + 1) / 16.0
+
+            if value >= barEnd {
+                // Fully filled bar
+                Rectangle()
+                    .fill(.white.opacity(0.7))
+                    .frame(width: barWidth, height: barHeight)
+            } else if value > barStart {
+                // Partially filled bar - calculate fill percentage
+                let positionInBar = (value - barStart) / (barEnd - barStart)
+
+                // Quantize to 1/4 steps (0.25, 0.5, 0.75)
+                let quarterStep = round(positionInBar * 4.0) / 4.0
+                let fillWidth = barWidth * CGFloat(quarterStep)
+
+                // Show partial fill with overlay
+                ZStack(alignment: .leading) {
+                    Rectangle()
+                        .fill(.white.opacity(0.2))
+                        .frame(width: barWidth, height: barHeight)
+
+                    Rectangle()
+                        .fill(.white.opacity(0.7))
+                        .frame(width: fillWidth, height: barHeight)
+                }
+                .frame(width: barWidth, height: barHeight)
+            } else {
+                // Empty bar
+                Rectangle()
+                    .fill(.white.opacity(0.2))
+                    .frame(width: barWidth, height: barHeight)
+            }
         }
     }
 }
