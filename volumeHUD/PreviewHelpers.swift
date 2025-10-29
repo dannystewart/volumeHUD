@@ -40,4 +40,4 @@ extension HUDController {
         HUDController(isPreviewMode: true)
     }
 }
-#endif
+#endif // DEBUG

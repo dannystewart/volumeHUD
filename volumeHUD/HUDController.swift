@@ -292,6 +292,8 @@ class HUDController: ObservableObject {
         logger.debug("Created HUD window.")
     }
 
+    // MARK: Hide HUD
+
     @MainActor
     private func hideHUD() {
         hudWindow?.orderOut(nil)
