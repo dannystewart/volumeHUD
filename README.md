@@ -12,6 +12,12 @@ So I did what any sane person would do: I picked up Xcode and wrote my first eve
 
 <img src="volumeHUD-demo.gif" alt="volumeHUD Demo" height="300"></img>
 
+Please note that while this adds the previous UI, it does *not* hide the new UI. Considering I wrote this because I barely noticed the new UI in the first place, I don't find this too much of a problem. Hiding the system UI is likely possible but beyond my current skills. If someone wants to contribute or just point me in the right direction, I'm happy to add that.
+
+## Usage
+
+Just launch the app! You should see a notification that it started and you can begin enjoying your new (old) volume HUD right away. You can launch it a second time to open a window where you can set it to open at login, enable the brightness HUD (off by default—it's *volumeHUD* after all), see if an update is available, or quit.
+
 ## Installation
 
 You can download it from the repo, but I strongly recommend installing via Homebrew, as that will handle updates for you. It's my first Swift app, so I don't want you to be left with any lingering bugs.
@@ -20,9 +26,7 @@ You can download it from the repo, but I strongly recommend installing via Homeb
 brew install dannystewart/apps/volumehud
 ```
 
-## Usage
-
-Just launch the app! You should see a notification that it started and you can begin enjoying your new (old) volume HUD right away. You can launch it a second time to open a window where you can set it to open at login, enable the brightness HUD (off by default—it's *volumeHUD* after all), see if an update is available, or quit.
+You can uninstall with `brew uninstall volumehud`, which should remove all traces of the app, including preferences and login item. No permissions should be left behind either once the app is gone.
 
 ## Permissions
 
