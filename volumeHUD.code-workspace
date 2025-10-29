@@ -5,49 +5,39 @@
             "path": "."
         },
         {
-            "name": "polykit-swift",
-            "path": "../polykit-swift"
-        },
-        {
             "name": "homebrew-apps",
             "path": "../homebrew-apps"
         }
     ],
     "settings": {
-        "code-runner.executorMap": {
-            "swift": "cd $dir/.. && pkill -f 'volumeHUD' || true && sleep 0.5 && swift build && echo 'Starting volumeHUD...' && ./.build/arm64-apple-macosx/debug/volumeHUD &"
-        },
-        "code-runner.preserveFocus": false,
-        "code-runner.runInTerminal": true,
         "editor.detectIndentation": false,
         "editor.formatOnPaste": true,
         "editor.formatOnSave": true,
         "explorerExclude.backup": {},
         "files.exclude": {
-            "**/*.xcodeproj": true,
-            "**/.DS_Store": true,
-            "**/.git": true,
-            "**/.hg": false,
-            "**/.pytest_cache": true,
-            "**/.svn": false,
-            "**/.vscode": true,
-            "**/__pycache__": true,
-            "**/CVS": false,
-            "**/node_modules": true,
-            "**/Thumbs.db": true,
-            "*.code-workspace": true,
             ".build": true,
             ".cursor": true,
             ".cursorindexingignore": true,
             ".history": true,
             ".specstory": true,
             ".swiftpm": true,
+            "*.code-workspace": true,
+            "**/__pycache__": true,
+            "**/.DS_Store": true,
+            "**/.git": true,
+            "**/.hg": false,
+            "**/.pytest_cache": true,
+            "**/.svn": false,
+            "**/.vscode": true,
+            "**/*.xcodeproj": true,
+            "**/CVS": false,
+            "**/node_modules": true,
+            "**/Thumbs.db": true,
             "env*": true,
             "release": true,
             "venv": true
         },
         "swift.autoGenerateLaunchConfigurations": false,
         "swift.buildPath": "./.build",
-        "swift.sourcekit-lsp.serverPath": "/usr/bin/sourcekit-lsp"
     }
 }
