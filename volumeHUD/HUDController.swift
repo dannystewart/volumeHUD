@@ -119,7 +119,7 @@ class HUDController: ObservableObject {
     private func updateWindowPosition(for hudType: HUDType? = nil) {
         guard let window = hudWindow else { return }
 
-        let windowSize = NSSize(width: 210, height: 210)
+        let windowSize = NSSize(width: 200, height: 200)
 
         // Brightness HUD always shows on built-in display (since that's what it controls)
         // Volume HUD respects user preference for display location
@@ -136,11 +136,11 @@ class HUDController: ObservableObject {
             }
         }
 
-        // Calculate new position using visible frame to respect menu bar/dock areas
-        let screenFrame = targetScreen.visibleFrame
+        // Use full screen frame to ignore Dock positioning
+        let screenFrame = targetScreen.frame
         let newWindowRect = NSRect(
             x: screenFrame.origin.x + (screenFrame.width - windowSize.width) / 2,
-            y: screenFrame.origin.y + screenFrame.height * 0.17, // Distance from bottom of screen
+            y: screenFrame.origin.y + 140, // 140px from bottom of screen
             width: windowSize.width,
             height: windowSize.height,
         )
@@ -213,7 +213,7 @@ class HUDController: ObservableObject {
 
             // Always recreate hosting view to avoid SwiftUI state issues
             let newHostingView = NSHostingView(rootView: HUDView(hudType: hudType, value: value, isMuted: isMuted, isVisible: true))
-            newHostingView.frame = window.contentView?.bounds ?? NSRect(x: 0, y: 0, width: 210, height: 210)
+            newHostingView.frame = window.contentView?.bounds ?? NSRect(x: 0, y: 0, width: 200, height: 200)
 
             // Ensure hosting view background is clear for proper material rendering
             newHostingView.wantsLayer = true
@@ -261,7 +261,7 @@ class HUDController: ObservableObject {
     private func createHUDWindow() {
         // Create the window with special properties for overlay
         hudWindow = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 210, height: 210),
+            contentRect: NSRect(x: 0, y: 0, width: 200, height: 200),
             styleMask: [.borderless],
             backing: .buffered,
             defer: false,
