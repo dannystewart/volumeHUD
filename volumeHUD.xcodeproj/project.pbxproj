@@ -12,6 +12,7 @@
 		3045B1B12E8CB81A00C34F16 /* CHANGELOG.md in Resources */ = {isa = PBXBuildFile; fileRef = 3045B1AF2E8CB81A00C34F16 /* CHANGELOG.md */; };
 		3045B1B22E8CB81A00C34F16 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 3045B1B02E8CB81A00C34F16 /* README.md */; };
 		305AA9A92E997C50002F116A /* PolyKit in Frameworks */ = {isa = PBXBuildFile; productRef = 305AA9A82E997C50002F116A /* PolyKit */; };
+		30FF7CEF2EB20778000E1031 /* volumeHUD.icon in Resources */ = {isa = PBXBuildFile; fileRef = 30FF7CEE2EB20778000E1031 /* volumeHUD.icon */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -43,6 +44,7 @@
 		3045B1AF2E8CB81A00C34F16 /* CHANGELOG.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CHANGELOG.md; sourceTree = "<group>"; };
 		3045B1B02E8CB81A00C34F16 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		30C937682E806B79004B5AF5 /* volumeHUD.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = volumeHUD.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		30FF7CEE2EB20778000E1031 /* volumeHUD.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = volumeHUD.icon; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -106,6 +108,7 @@
 				302AB2E52E902CF100889BBF /* LoginHelper */,
 				30A48DC62E8B13B9005E1B15 /* Frameworks */,
 				30C937692E806B79004B5AF5 /* Products */,
+				30FF7CEE2EB20778000E1031 /* volumeHUD.icon */,
 			);
 			sourceTree = "<group>";
 		};
@@ -224,6 +227,7 @@
 				3045B1B12E8CB81A00C34F16 /* CHANGELOG.md in Resources */,
 				302AB2F52E902DA600889BBF /* LoginHelper.app in Resources */,
 				3045B1B22E8CB81A00C34F16 /* README.md in Resources */,
+				30FF7CEF2EB20778000E1031 /* volumeHUD.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -462,7 +466,7 @@
 		30C937742E806B7A004B5AF5 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = volumeHUD;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
@@ -502,7 +506,7 @@
 		30C937752E806B7A004B5AF5 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = volumeHUD;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";

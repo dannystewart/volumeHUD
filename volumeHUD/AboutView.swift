@@ -45,7 +45,7 @@ struct AboutView: View {
             VStack(spacing: 4) {
                 // MARK: - App Information
 
-                if let appIcon = NSImage(named: "AppIcon") {
+                if let appIcon = NSImage(named: "volumeHUD") {
                     Image(nsImage: appIcon)
                         .resizable()
                         .frame(width: 80, height: 80)
