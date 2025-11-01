@@ -30,6 +30,11 @@ struct AboutView: View {
     private let githubOwner = "dannystewart"
     private let githubRepo = "volumeHUD"
 
+    // Visual alignment
+    private let iconColumnWidth: CGFloat = 20
+    private let minSettingColumnWidth: CGFloat = 120
+    private let settingPadding: CGFloat = 24 // Higher for less padding
+
     /// Get the app version
     private var appVersion: String {
         if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
@@ -41,10 +46,10 @@ struct AboutView: View {
     // MARK: - About View
 
     var body: some View {
-        VStack(spacing: 8) {
-            VStack(spacing: 4) {
-                // MARK: - App Information
+        HStack(alignment: .top, spacing: 20) {
+            // MARK: - Left Column (App Info and Quit Button)
 
+            VStack(spacing: 8) {
                 if let appIcon = NSImage(named: "volumeHUD") {
                     Image(nsImage: appIcon)
                         .resizable()
@@ -55,11 +60,11 @@ struct AboutView: View {
                 Text("by Danny Stewart")
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
+
                 Text("Version \(appVersion)")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
 
-                // Show update notice for new versions
                 Button(action: openReleasesPage) {
                     Text("Update available!")
                         .font(.system(size: 11))
@@ -69,44 +74,63 @@ struct AboutView: View {
                 .buttonStyle(.plain)
                 .disabled(!isUpdateAvailable)
                 .opacity(isUpdateAvailable ? 1.0 : 0.0)
-            }
+                .padding(.bottom, 16)
 
-            Spacer()
+                Spacer(minLength: 0)
 
-            // MARK: - Open at Login Setting
-
-            VStack(spacing: 10) {
-                HStack {
-                    Image(systemName: "power.circle.fill")
-                        .foregroundStyle(loginItemManager.isEnabled ? .green : .gray)
-                        .font(.system(size: 14))
-                        .animation(.easeInOut(duration: 0.3), value: loginItemManager.isEnabled)
-
-                    Text("Open at Login")
-                        .font(.system(size: 12, weight: .medium))
-
-                    Spacer()
-
-                    Toggle("", isOn: Binding(
-                        get: { loginItemManager.isEnabled },
-                        set: { loginItemManager.setEnabled($0) },
-                    ))
-                    .toggleStyle(SwitchToggleStyle(tint: .accentColor))
-                    .scaleEffect(0.8)
+                Button(action: onQuit) {
+                    Text("Quit volumeHUD")
+                        .frame(maxWidth: .infinity)
                 }
-                .padding(.horizontal, 14)
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .keyboardShortcut(.defaultAction)
+            }
+            .frame(width: 160, alignment: .top)
+            .padding(.leading, 16)
+
+            // MARK: - Right Column (Settings)
+
+            VStack(alignment: .leading, spacing: 12) {
+                // MARK: - Open at Login Setting
+
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(alignment: .center, spacing: iconColumnWidth) {
+                        Image(systemName: "power.circle.fill")
+                            .foregroundStyle(loginItemManager.isEnabled ? .green : .gray)
+                            .font(.system(size: 14))
+                            .frame(width: 14, alignment: .leading)
+                            .animation(.easeInOut(duration: 0.3), value: loginItemManager.isEnabled)
+
+                        Text("Open at Login")
+                            .font(.system(size: 12, weight: .medium))
+                            .frame(width: minSettingColumnWidth, alignment: .leading)
+
+                        Spacer()
+
+                        Toggle("", isOn: Binding(
+                            get: { loginItemManager.isEnabled },
+                            set: { loginItemManager.setEnabled($0) },
+                        ))
+                        .toggleStyle(SwitchToggleStyle(tint: .accentColor))
+                        .scaleEffect(0.8)
+                    }
+                }
+                .padding(.leading, settingPadding)
 
                 // MARK: - Brightness HUD Toggle
 
-                VStack(spacing: 6) {
-                    HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(alignment: .center, spacing: iconColumnWidth) {
                         Image(systemName: "sun.max.fill")
                             .foregroundStyle(brightnessEnabled ? .orange : .gray)
                             .font(.system(size: 14))
+                            .frame(width: 14, alignment: .leading)
                             .animation(.easeInOut(duration: 0.3), value: brightnessEnabled)
 
                         Text("Brightness HUD")
                             .font(.system(size: 12, weight: .medium))
+                            .frame(width: minSettingColumnWidth, alignment: .leading)
 
                         Spacer()
 
@@ -118,28 +142,34 @@ struct AboutView: View {
                                 appDelegate?.startBrightnessMonitoringIfEnabled()
                             }
                     }
-                    .padding(.horizontal, 14)
 
-                    Text("Experimental, built-in display only")
-                        .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .opacity(0.8)
-                        .frame(height: 16, alignment: .init(horizontal: .center, vertical: .top))
+                    HStack(spacing: iconColumnWidth) {
+                        Spacer()
+                            .frame(width: 14)
+
+                        Text("Experimental, built-in display only")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.secondary)
+                            .opacity(0.8)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }
+                .padding(.leading, settingPadding)
                 .animation(.easeInOut(duration: 0.3), value: brightnessEnabled)
 
                 // MARK: - Volume HUD Display Location
 
-                VStack(spacing: 6) {
-                    HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(alignment: .center, spacing: iconColumnWidth) {
                         Image(systemName: volumeHUDFollowsMouse ? "cursorarrow.click.2" : "laptopcomputer")
                             .foregroundStyle(volumeHUDFollowsMouse ? .blue : .gray)
                             .font(.system(size: 14))
+                            .frame(width: 14, alignment: .leading)
                             .animation(.easeInOut(duration: 0.3), value: volumeHUDFollowsMouse)
 
                         Text("Follow Mouse")
                             .font(.system(size: 12, weight: .medium))
+                            .frame(width: minSettingColumnWidth, alignment: .leading)
 
                         Spacer()
 
@@ -150,31 +180,27 @@ struct AboutView: View {
                                 logger.debug("Volume HUD display setting changed from \(oldValue) to \(newValue).")
                             }
                     }
-                    .padding(.horizontal, 14)
 
-                    Text(volumeHUDFollowsMouse ? "Show volume on screen with cursor" : "Always show volume on main display")
-                        .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .opacity(0.8)
-                        .frame(height: 16, alignment: .init(horizontal: .center, vertical: .top))
+                    HStack(spacing: iconColumnWidth) {
+                        Spacer()
+                            .frame(width: 14)
+
+                        Text(volumeHUDFollowsMouse ? "Show on screen with mouse cursor" : "Always show on primary display")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.secondary)
+                            .opacity(0.8)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }
+                .padding(.leading, settingPadding)
                 .animation(.easeInOut(duration: 0.3), value: volumeHUDFollowsMouse)
-                Spacer()
-            }
 
-            // MARK: - View Footer
-
-            Button(action: onQuit) {
-                Text("Quit volumeHUD")
-                    .frame(maxWidth: .infinity)
+                Spacer(minLength: 0)
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .keyboardShortcut(.defaultAction)
+            .padding(.trailing, 6) // Right side window padding
         }
-        .padding(32)
-        .frame(width: 280, height: 460)
+        .padding(32) // Overall frame padding
+        .frame(width: 520, height: 300)
         .onAppear {
             Task {
                 try? await Task.sleep(nanoseconds: 200000000) // 0.2 second delay
