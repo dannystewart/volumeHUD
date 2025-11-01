@@ -19,6 +19,7 @@ struct AboutView: View {
     /// Settings for app preferences
     @AppStorage("brightnessEnabled") private var brightnessEnabled: Bool = false
     @AppStorage("volumeHUDFollowsMouse") private var volumeHUDFollowsMouse: Bool = false
+    @AppStorage("useRelativePositioning") private var useRelativePositioning: Bool = true
 
     /// State to track if an update is available
     @State private var isUpdateAvailable: Bool = false
@@ -32,8 +33,9 @@ struct AboutView: View {
 
     // Visual alignment
     private let iconColumnWidth: CGFloat = 20
-    private let minSettingColumnWidth: CGFloat = 120
+    private let minSettingColumnWidth: CGFloat = 140
     private let settingPadding: CGFloat = 24 // Higher for less padding
+    private let spaceBeforeSubtitle: CGFloat = -3
 
     /// Get the app version
     private var appVersion: String {
@@ -91,10 +93,10 @@ struct AboutView: View {
 
             // MARK: - Right Column (Settings)
 
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 15) {
                 // MARK: - Open at Login Setting
 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: spaceBeforeSubtitle) {
                     HStack(alignment: .center, spacing: iconColumnWidth) {
                         Image(systemName: "power.circle.fill")
                             .foregroundStyle(loginItemManager.isEnabled ? .green : .gray)
@@ -120,7 +122,7 @@ struct AboutView: View {
 
                 // MARK: - Brightness HUD Toggle
 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: spaceBeforeSubtitle) {
                     HStack(alignment: .center, spacing: iconColumnWidth) {
                         Image(systemName: "sun.max.fill")
                             .foregroundStyle(brightnessEnabled ? .orange : .gray)
@@ -157,9 +159,9 @@ struct AboutView: View {
                 .padding(.leading, settingPadding)
                 .animation(.easeInOut(duration: 0.3), value: brightnessEnabled)
 
-                // MARK: - Volume HUD Display Location
+                // MARK: - Display Toggle for HUD Placement
 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: spaceBeforeSubtitle) {
                     HStack(alignment: .center, spacing: iconColumnWidth) {
                         Image(systemName: volumeHUDFollowsMouse ? "cursorarrow.click.2" : "laptopcomputer")
                             .foregroundStyle(volumeHUDFollowsMouse ? .blue : .gray)
@@ -167,7 +169,7 @@ struct AboutView: View {
                             .frame(width: 14, alignment: .leading)
                             .animation(.easeInOut(duration: 0.3), value: volumeHUDFollowsMouse)
 
-                        Text("Follow Mouse")
+                        Text("HUD Follows Mouse")
                             .font(.system(size: 12, weight: .medium))
                             .frame(width: minSettingColumnWidth, alignment: .leading)
 
@@ -185,7 +187,7 @@ struct AboutView: View {
                         Spacer()
                             .frame(width: 14)
 
-                        Text(volumeHUDFollowsMouse ? "Show on screen with mouse cursor" : "Always show on primary display")
+                        Text(volumeHUDFollowsMouse ? "Show on screen with mouse cursor" : "Always show on the primary display")
                             .font(.system(size: 10))
                             .foregroundStyle(.secondary)
                             .opacity(0.8)
@@ -195,12 +197,50 @@ struct AboutView: View {
                 .padding(.leading, settingPadding)
                 .animation(.easeInOut(duration: 0.3), value: volumeHUDFollowsMouse)
 
+                // MARK: - Relative Positioning Toggle
+
+                VStack(alignment: .leading, spacing: spaceBeforeSubtitle) {
+                    HStack(alignment: .center, spacing: iconColumnWidth) {
+                        Image(systemName: useRelativePositioning ? "arrow.up.and.down.text.horizontal" : "arrow.down.to.line")
+                            .foregroundStyle(useRelativePositioning ? .cyan : .gray)
+                            .font(.system(size: 14))
+                            .frame(width: 14, alignment: .leading)
+                            .animation(.easeInOut(duration: 0.3), value: useRelativePositioning)
+
+                        Text("Relative HUD Position")
+                            .font(.system(size: 12, weight: .medium))
+                            .frame(width: minSettingColumnWidth, alignment: .leading)
+
+                        Spacer()
+
+                        Toggle("", isOn: $useRelativePositioning)
+                            .toggleStyle(SwitchToggleStyle(tint: .accentColor))
+                            .scaleEffect(0.8)
+                            .onChange(of: useRelativePositioning) { oldValue, newValue in
+                                logger.debug("Relative positioning setting changed from \(oldValue) to \(newValue).")
+                            }
+                    }
+
+                    HStack(spacing: iconColumnWidth) {
+                        Spacer()
+                            .frame(width: 14)
+
+                        Text(useRelativePositioning ? "Relative percentage from bottom" : "Absolute from bottom (Apple default)")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.secondary)
+                            .opacity(0.8)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+                .padding(.leading, settingPadding)
+                .animation(.easeInOut(duration: 0.3), value: useRelativePositioning)
+
                 Spacer(minLength: 0)
             }
             .padding(.trailing, 6) // Right side window padding
         }
         .padding(32) // Overall frame padding
-        .frame(width: 520, height: 300)
+        .frame(width: 540, height: 300)
         .onAppear {
             Task {
                 try? await Task.sleep(nanoseconds: 200000000) // 0.2 second delay
