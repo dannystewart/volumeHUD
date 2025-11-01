@@ -40,7 +40,6 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
     private let isPreviewMode: Bool
     private var isObservingDisplayChanges = false
     private var restartTask: Task<Void, Never>?
-    private var isOptionShiftHeld: Bool = false
 
     /// Cache DisplayServices function pointers
     private var displayServicesHandle: UnsafeMutableRawPointer?
@@ -137,30 +136,12 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
     }
 
     /// Check if a brightness delta matches user-initiated key press patterns
-    /// User key presses change brightness by:
-    /// - Normal: multiples of 1/16th (0.0625)
-    /// - Option+Shift: multiples of 1/64th (0.015625)
+    /// User key presses always change brightness by multiples of 1/16th (0.0625)
     private func isUserInitiatedBrightnessChange(_ delta: Float, rawBrightness: Float) -> Bool {
+        let baseStepSize: Float = 0.0625
         let tolerance: Float = 0.0001
         let absDelta = abs(delta)
 
-        // Check for 1/64th steps (Option+Shift held)
-        let fineStepSize: Float = 0.015625
-        for multiplier in 1 ... 4 {
-            let expectedDelta = fineStepSize * Float(multiplier)
-            if abs(absDelta - expectedDelta) < tolerance {
-                let rawStepPosition = rawBrightness * 64.0
-                let nearestStep = round(rawStepPosition)
-                let rawStepError = abs(rawStepPosition - nearestStep)
-
-                if rawStepError < 0.01 {
-                    return true
-                }
-            }
-        }
-
-        // Check for 1/16th steps (normal)
-        let baseStepSize: Float = 0.0625
         for multiplier in 1 ... 4 {
             let expectedDelta = baseStepSize * Float(multiplier)
             if abs(absDelta - expectedDelta) < tolerance {
@@ -236,7 +217,7 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
 
     private func updateBrightnessOnStartup() {
         if let brightness = getCurrentBrightness() {
-            // Always quantize to 16 steps on startup (no key press yet)
+            // Quantize brightness to 16 steps to match the brightness bars
             let quantizedBrightness = round(brightness * 16.0) / 16.0
             currentBrightness = quantizedBrightness
             previousBrightness = quantizedBrightness
@@ -313,11 +294,10 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
             let keyFlags = data1 & 0x0000_FFFF
             let keyState = (keyFlags & 0xFF00) >> 8
             let isKeyDown = keyState == 0x0A
-            let modifierFlags = event.modifierFlags
 
             Task { @MainActor [weak self] in
                 guard let self else { return }
-                handleSystemDefinedEventData(subtype: subtype, keyCode: keyCode, isKeyDown: isKeyDown, modifierFlags: modifierFlags)
+                handleSystemDefinedEventData(subtype: subtype, keyCode: keyCode, isKeyDown: isKeyDown)
             }
         }
 
@@ -374,9 +354,8 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
                     let keyState = (keyFlags & 0xFF00) >> 8
                     let isKeyDown = keyState == 0x0A
 
-                    let modifierFlags = nsEvent.modifierFlags
                     Task { @MainActor in
-                        monitor.handleSystemDefinedEventData(subtype: subtype, keyCode: keyCode, isKeyDown: isKeyDown, modifierFlags: modifierFlags)
+                        monitor.handleSystemDefinedEventData(subtype: subtype, keyCode: keyCode, isKeyDown: isKeyDown)
                     }
 
                     return Unmanaged.passUnretained(cgEvent)
@@ -435,9 +414,8 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
                     let keyState = (keyFlags & 0xFF00) >> 8
                     let isKeyDown = keyState == 0x0A
 
-                    let modifierFlags = nsEvent.modifierFlags
                     Task { @MainActor in
-                        monitor.handleSystemDefinedEventData(subtype: subtype, keyCode: keyCode, isKeyDown: isKeyDown, modifierFlags: modifierFlags)
+                        monitor.handleSystemDefinedEventData(subtype: subtype, keyCode: keyCode, isKeyDown: isKeyDown)
                     }
 
                     return Unmanaged.passUnretained(cgEvent)
@@ -556,26 +534,17 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
             hasLoggedNoDisplayDetected = false
         }
 
-        let currentTime = Date().timeIntervalSince1970
-        let timeSinceKeyPress = currentTime - lastBrightnessKeyTime
-
-        // Only use fine-grained 64-step quantization if Option+Shift was held during a recent key press
-        // For ambient light changes (no recent key press), always use normal 16-step quantization
-        let useFineLevelSteps = isOptionShiftHeld && timeSinceKeyPress < 1.0
-
-        // Quantize brightness based on modifier keys:
-        // - Normal: 16 steps (1/16th increments)
-        // - Option+Shift (with recent key press): 64 steps (1/64th increments)
-        let steps: Float = useFineLevelSteps ? 64.0 : 16.0
-        let quantizedBrightness = round(brightness * steps) / steps
+        // Quantize brightness to 16 steps to match the brightness bars
+        let quantizedBrightness = round(brightness * 16.0) / 16.0
         let brightnessChanged = abs(quantizedBrightness - previousBrightness) > 0.001
 
         if brightnessChanged {
             let delta = quantizedBrightness - previousBrightness
+            let currentTime = Date().timeIntervalSince1970
+            let timeSinceKeyPress = currentTime - lastBrightnessKeyTime
 
             let rawBrightness = brightness
-            let baseStepSize: Float = useFineLevelSteps ? 0.015625 : 0.0625
-            let stepCount = abs(delta) / baseStepSize
+            let stepCount = abs(delta) / 0.0625
             logger.debug("Brightness change: \(String(format: "%.4f", delta)) (steps: \(String(format: "%.2f", stepCount))) - Raw: \(String(format: "%.6f", rawBrightness)) -> Quantized: \(String(format: "%.4f", quantizedBrightness)) - Time since key: \(String(format: "%.1f", timeSinceKeyPress))s")
 
             let isUserChange = isUserInitiatedBrightnessChange(delta, rawBrightness: rawBrightness)
@@ -602,10 +571,7 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
     }
 
     @MainActor
-    private func handleSystemDefinedEventData(subtype: Int, keyCode: Int, isKeyDown: Bool, modifierFlags: NSEvent.ModifierFlags = []) {
-        // Check if Option+Shift is held for finer brightness control (1/64 instead of 1/16)
-        isOptionShiftHeld = modifierFlags.contains(.option) && modifierFlags.contains(.shift)
-
+    private func handleSystemDefinedEventData(subtype: Int, keyCode: Int, isKeyDown: Bool) {
         // Brightness keys generate NSSystemDefined events with subtype 8
         if subtype == 8 {
             guard isKeyDown else { return }
@@ -640,10 +606,7 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
     private func showHUDForBrightnessKeyPress() {
         // Get fresh brightness value for accurate boundary detection
         guard let brightness = getCurrentBrightness() else { return }
-
-        // Use fine-grained steps if Option+Shift is held, otherwise normal steps
-        let steps: Float = isOptionShiftHeld ? 64.0 : 16.0
-        let quantizedBrightness = round(brightness * steps) / steps
+        let quantizedBrightness = round(brightness * 16.0) / 16.0
 
         // Only show HUD on key presses if we're at brightness boundaries (0% or 100%)
         let atMinBrightness = quantizedBrightness <= 0.001
