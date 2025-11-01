@@ -140,26 +140,29 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
     /// User key presses change brightness by:
     /// - Normal: multiples of 1/16th (0.0625)
     /// - Option+Shift: multiples of 1/64th (0.015625)
-    private func isUserInitiatedBrightnessChange(_ delta: Float, rawBrightness: Float) -> Bool {
+    private func isUserInitiatedBrightnessChange(_ delta: Float, rawBrightness: Float, useFineLevelSteps: Bool) -> Bool {
         let tolerance: Float = 0.0001
         let absDelta = abs(delta)
 
-        // Check for 1/64th steps (Option+Shift held)
-        let fineStepSize: Float = 0.015625
-        for multiplier in 1 ... 4 {
-            let expectedDelta = fineStepSize * Float(multiplier)
-            if abs(absDelta - expectedDelta) < tolerance {
-                let rawStepPosition = rawBrightness * 64.0
-                let nearestStep = round(rawStepPosition)
-                let rawStepError = abs(rawStepPosition - nearestStep)
+        // Only check for 1/64th steps if we're actually in fine-level mode
+        if useFineLevelSteps {
+            let fineStepSize: Float = 0.015625
+            for multiplier in 1 ... 4 {
+                let expectedDelta = fineStepSize * Float(multiplier)
+                if abs(absDelta - expectedDelta) < tolerance {
+                    let rawStepPosition = rawBrightness * 64.0
+                    let nearestStep = round(rawStepPosition)
+                    let rawStepError = abs(rawStepPosition - nearestStep)
 
-                if rawStepError < 0.01 {
-                    return true
+                    if rawStepError < 0.01 {
+                        return true
+                    }
                 }
             }
+            return false
         }
 
-        // Check for 1/16th steps (normal)
+        // Check for 1/16th steps (normal mode only)
         let baseStepSize: Float = 0.0625
         for multiplier in 1 ... 4 {
             let expectedDelta = baseStepSize * Float(multiplier)
@@ -578,7 +581,7 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
             let stepCount = abs(delta) / baseStepSize
             logger.debug("Brightness change: \(String(format: "%.4f", delta)) (steps: \(String(format: "%.2f", stepCount))) - Raw: \(String(format: "%.6f", rawBrightness)) -> Quantized: \(String(format: "%.4f", quantizedBrightness)) - Time since key: \(String(format: "%.1f", timeSinceKeyPress))s")
 
-            let isUserChange = isUserInitiatedBrightnessChange(delta, rawBrightness: rawBrightness)
+            let isUserChange = isUserInitiatedBrightnessChange(delta, rawBrightness: rawBrightness, useFineLevelSteps: useFineLevelSteps)
 
             if isUserChange {
                 logger.debug("Showing HUD: \(Int(quantizedBrightness * 100))% (delta: \(delta))")
