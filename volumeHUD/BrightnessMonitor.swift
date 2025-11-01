@@ -41,15 +41,11 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
     private var isObservingDisplayChanges = false
     private var restartTask: Task<Void, Never>?
     private var isOptionShiftHeld: Bool = false
-    private var lastManualAdjustmentTime: TimeInterval = 0
-    private var manualAdjustmentCount: Int = 0
-    private var lastBrightnessApplicationTime: TimeInterval = 0
 
     /// Cache DisplayServices function pointers
     private var displayServicesHandle: UnsafeMutableRawPointer?
     private var canChangeBrightnessFunc: (@convention(c) (CGDirectDisplayID) -> Bool)?
     private var getBrightnessFunc: (@convention(c) (CGDirectDisplayID, UnsafeMutablePointer<Float>) -> kern_return_t)?
-    private var setBrightnessFunc: (@convention(c) (CGDirectDisplayID, Float) -> kern_return_t)?
 
     // MARK: Lifecycle
 
@@ -141,15 +137,15 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
     }
 
     /// Check if a brightness delta matches user-initiated key press patterns
-    /// User key presses change brightness by multiples of 1/16th (0.0625) normally
-    /// or 1/64th (0.015625) when Option+Shift is held
-    private func isUserInitiatedBrightnessChange(_ delta: Float, rawBrightness: Float, checkFineGrained: Bool) -> Bool {
+    /// User key presses change brightness by:
+    /// - Normal: multiples of 1/16th (0.0625)
+    /// - Option+Shift: multiples of 1/64th (0.015625)
+    private func isUserInitiatedBrightnessChange(_ delta: Float, rawBrightness: Float, useFineLevelSteps: Bool) -> Bool {
         let tolerance: Float = 0.0001
         let absDelta = abs(delta)
 
-        // If Option+Shift was recently held, check for 1/64th steps
-        // Ambient light will never change by perfect 1/64th increments
-        if checkFineGrained {
+        // Only check for 1/64th steps if we're actually in fine-level mode
+        if useFineLevelSteps {
             let fineStepSize: Float = 0.015625
             for multiplier in 1 ... 4 {
                 let expectedDelta = fineStepSize * Float(multiplier)
@@ -163,9 +159,10 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
                     }
                 }
             }
+            return false
         }
 
-        // Check for normal 1/16th steps
+        // Check for 1/16th steps (normal mode only)
         let baseStepSize: Float = 0.0625
         for multiplier in 1 ... 4 {
             let expectedDelta = baseStepSize * Float(multiplier)
@@ -199,8 +196,7 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
 
         guard
             let canChangeBrightnessPtr = dlsym(handle, "DisplayServicesCanChangeBrightness"),
-            let getBrightnessPtr = dlsym(handle, "DisplayServicesGetBrightness"),
-            let setBrightnessPtr = dlsym(handle, "DisplayServicesSetBrightness") else
+            let getBrightnessPtr = dlsym(handle, "DisplayServicesGetBrightness") else
         {
             dlclose(handle)
             if let error = dlerror() {
@@ -214,7 +210,6 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
         displayServicesHandle = handle
         canChangeBrightnessFunc = unsafeBitCast(canChangeBrightnessPtr, to: (@convention(c) (CGDirectDisplayID) -> Bool).self)
         getBrightnessFunc = unsafeBitCast(getBrightnessPtr, to: (@convention(c) (CGDirectDisplayID, UnsafeMutablePointer<Float>) -> kern_return_t).self)
-        setBrightnessFunc = unsafeBitCast(setBrightnessPtr, to: (@convention(c) (CGDirectDisplayID, Float) -> kern_return_t).self)
 
         logger.info("DisplayServices framework loaded successfully!")
     }
@@ -340,8 +335,7 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
     }
 
     private func startEventTap() {
-        // Install a CGEvent tap to reliably observe NX_SYSDEFINED events
-        // Use .defaultTap instead of .listenOnly to allow consuming events when brightness is disabled
+        // Install a CGEvent tap to reliably observe NX_SYSDEFINED events without capturing context
         let systemDefinedMask: CGEventMask = 1 << 14 // kCGEventSystemDefined = 14
         // Both session and HID taps share the same userInfo pointer to self
         // This is safe because self outlives both taps (stopped in stopEventTap)
@@ -350,7 +344,7 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
             let tap = CGEvent.tapCreate(
                 tap: .cgSessionEventTap,
                 place: .headInsertEventTap,
-                options: .defaultTap,
+                options: .listenOnly,
                 eventsOfInterest: systemDefinedMask,
                 callback: { _, type, cgEvent, opaqueInfo -> Unmanaged<CGEvent>? in
                     // If the tap is disabled (timeout or user input), re-enable both taps
@@ -384,19 +378,6 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
                     let isKeyDown = keyState == 0x0A
 
                     let modifierFlags = nsEvent.modifierFlags
-                    let isOptionShiftHeld = modifierFlags.contains(.option) && modifierFlags.contains(.shift)
-
-                    // Consume brightness key events when Option+Shift is held and brightness is disabled
-                    // This prevents macOS from processing the brightness change
-                    if subtype == 8, isKeyDown, keyCode == 2 || keyCode == 3, isOptionShiftHeld {
-                        let brightnessEnabled = UserDefaults.standard.bool(forKey: "brightnessEnabled")
-                        if !brightnessEnabled {
-                            // Consume the event to prevent macOS from changing brightness
-                            return nil
-                        }
-                    }
-
-                    // Only handle the event if we're not consuming it
                     Task { @MainActor in
                         monitor.handleSystemDefinedEventData(subtype: subtype, keyCode: keyCode, isKeyDown: isKeyDown, modifierFlags: modifierFlags)
                     }
@@ -421,12 +402,11 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
         }
 
         // Also install a HID-level tap as a backup; this may be more resilient to display configuration changes
-        // Use .defaultTap instead of .listenOnly to allow consuming events when brightness is disabled
         if
             let hidTap = CGEvent.tapCreate(
                 tap: .cghidEventTap,
                 place: .headInsertEventTap,
-                options: .defaultTap,
+                options: .listenOnly,
                 eventsOfInterest: systemDefinedMask,
                 callback: { _, type, cgEvent, opaqueInfo -> Unmanaged<CGEvent>? in
                     // If the tap is disabled, re-enable both taps
@@ -459,19 +439,6 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
                     let isKeyDown = keyState == 0x0A
 
                     let modifierFlags = nsEvent.modifierFlags
-                    let isOptionShiftHeld = modifierFlags.contains(.option) && modifierFlags.contains(.shift)
-
-                    // Consume brightness key events when Option+Shift is held and brightness is disabled
-                    // This prevents macOS from processing the brightness change
-                    if subtype == 8, isKeyDown, keyCode == 2 || keyCode == 3, isOptionShiftHeld {
-                        let brightnessEnabled = UserDefaults.standard.bool(forKey: "brightnessEnabled")
-                        if !brightnessEnabled {
-                            // Consume the event to prevent macOS from changing brightness
-                            return nil
-                        }
-                    }
-
-                    // Only handle the event if we're not consuming it
                     Task { @MainActor in
                         monitor.handleSystemDefinedEventData(subtype: subtype, keyCode: keyCode, isKeyDown: isKeyDown, modifierFlags: modifierFlags)
                     }
@@ -595,10 +562,14 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
         let currentTime = Date().timeIntervalSince1970
         let timeSinceKeyPress = currentTime - lastBrightnessKeyTime
 
-        // If Option+Shift was recently held, detect changes at 64-step resolution
-        // Otherwise, use 16-step resolution (original 2.0.2 behavior)
-        let checkFineGrained = isOptionShiftHeld && timeSinceKeyPress < 1.0
-        let steps: Float = checkFineGrained ? 64.0 : 16.0
+        // Only use fine-grained 64-step quantization if Option+Shift was held during a recent key press
+        // For ambient light changes (no recent key press), always use normal 16-step quantization
+        let useFineLevelSteps = isOptionShiftHeld && timeSinceKeyPress < 1.0
+
+        // Quantize brightness based on modifier keys:
+        // - Normal: 16 steps (1/16th increments)
+        // - Option+Shift (with recent key press): 64 steps (1/64th increments)
+        let steps: Float = useFineLevelSteps ? 64.0 : 16.0
         let quantizedBrightness = round(brightness * steps) / steps
         let brightnessChanged = abs(quantizedBrightness - previousBrightness) > 0.001
 
@@ -606,17 +577,28 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
             let delta = quantizedBrightness - previousBrightness
 
             let rawBrightness = brightness
-            let baseStepSize: Float = checkFineGrained ? 0.015625 : 0.0625
+            let baseStepSize: Float = useFineLevelSteps ? 0.015625 : 0.0625
             let stepCount = abs(delta) / baseStepSize
             logger.debug("Brightness change: \(String(format: "%.4f", delta)) (steps: \(String(format: "%.2f", stepCount))) - Raw: \(String(format: "%.6f", rawBrightness)) -> Quantized: \(String(format: "%.4f", quantizedBrightness)) - Time since key: \(String(format: "%.1f", timeSinceKeyPress))s")
 
-            // Step detection for logging/debugging purposes (distinguish user vs ambient changes)
-            let isUserChange = isUserInitiatedBrightnessChange(delta, rawBrightness: rawBrightness, checkFineGrained: checkFineGrained)
+            let isUserChange = isUserInitiatedBrightnessChange(delta, rawBrightness: rawBrightness, useFineLevelSteps: useFineLevelSteps)
 
-            // Always show HUD when brightness changes - it should reflect current brightness regardless of source
-            logger.debug("Showing HUD: \(Int(quantizedBrightness * 100))% (delta: \(delta), user: \(isUserChange))")
-            currentBrightness = quantizedBrightness
-            hudController?.showBrightnessHUD(brightness: quantizedBrightness)
+            if isUserChange {
+                logger.debug("Showing HUD: \(Int(quantizedBrightness * 100))% (delta: \(delta))")
+                currentBrightness = quantizedBrightness
+                hudController?.showBrightnessHUD(brightness: quantizedBrightness)
+            } else {
+                logger.debug("Ignoring ambient/system change: \(Int(quantizedBrightness * 100))% (delta: \(delta), HUD not shown).")
+                currentBrightness = quantizedBrightness
+            }
+
+            // If accessibility is enabled and we had a recent key press, show HUD even if step detection failed
+            if accessibilityEnabled, timeSinceKeyPress < 1.0 {
+                if !isUserChange {
+                    logger.debug("Showing HUD (accessibility override): \(Int(quantizedBrightness * 100))% (delta: \(delta))")
+                    hudController?.showBrightnessHUD(brightness: quantizedBrightness)
+                }
+            }
 
             previousBrightness = quantizedBrightness
         }
@@ -634,12 +616,6 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
             // NX key codes: 2 = brightness up, 3 = brightness down
             switch keyCode {
             case 2, 3:
-                // If Option+Shift is held and brightness is disabled, don't process at all
-                if isOptionShiftHeld, !UserDefaults.standard.bool(forKey: "brightnessEnabled") {
-                    logger.debug("Brightness key ignored: Option+Shift held but brightness is disabled")
-                    return
-                }
-
                 // Attempt to reduce duplicate logging: both session and HID taps fire for same keypress
                 // Due to @MainActor queuing, both may pass this check (race condition), which is fine
                 let now = Date().timeIntervalSince1970
@@ -650,106 +626,16 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
                 lastHandledKeyCode = keyCode
                 lastKeyHandleTime = now
 
-                logger.debug("Brightness key detected: keyCode=\(keyCode) (\(keyCode == 2 ? "up" : "down")), Option+Shift: \(isOptionShiftHeld)")
+                logger.debug("Brightness key detected: keyCode=\(keyCode) (\(keyCode == 2 ? "up" : "down"))")
                 // Track when a brightness key was pressed
                 lastBrightnessKeyTime = now
-
-                // If Option+Shift is held, manually adjust brightness by 1/64th
-                if isOptionShiftHeld {
-                    adjustBrightnessManually(isUp: keyCode == 2)
-                } else {
-                    // Normal behavior: show HUD at boundaries, let macOS handle the change
-                    showHUDForBrightnessKeyPress()
-                    // Trigger an immediate state check to avoid waiting for the 0.1s polling tick
-                    checkForBrightnessChange()
-                }
+                showHUDForBrightnessKeyPress()
+                // Trigger an immediate state check to avoid waiting for the 0.1s polling tick
+                checkForBrightnessChange()
 
             default:
                 break
             }
-        }
-    }
-
-    @MainActor
-    private func adjustBrightnessManually(isUp: Bool) {
-        // Gate brightness changes based on user preference
-        guard UserDefaults.standard.bool(forKey: "brightnessEnabled") else {
-            logger.debug("Brightness changes disabled; skipping manual adjustment.")
-            return
-        }
-
-        let now = Date().timeIntervalSince1970
-        let timeSinceLastAdjustment = now - lastManualAdjustmentTime
-
-        // Two-stage debounce system:
-        // 1. Initial delay: 400ms after first press before allowing repeats (detect "is user holding key?")
-        // 2. Repeat rate: 150ms between adjustments once repeating (slow enough to see each 1/64th step)
-        let initialDelay: TimeInterval = 0.6
-        let repeatRate: TimeInterval = 1.0
-        let resetThreshold: TimeInterval = 1.0 // Reset counter if >1s since last adjustment (key was released)
-
-        // Reset the counter if it's been a while (user released the key and is pressing again)
-        if timeSinceLastAdjustment > resetThreshold {
-            manualAdjustmentCount = 0
-        }
-
-        if manualAdjustmentCount > 0 {
-            // We've already made at least one adjustment
-            if manualAdjustmentCount == 1 {
-                // Waiting for initial delay before starting repeats
-                if timeSinceLastAdjustment < initialDelay {
-                    logger.debug("Skipping: waiting for initial delay (\(String(format: "%.3f", timeSinceLastAdjustment))s < \(initialDelay)s)")
-                    return
-                }
-                logger.debug("Initial delay passed, entering repeat mode")
-            } else {
-                // In repeat mode - use repeat rate
-                if timeSinceLastAdjustment < repeatRate {
-                    logger.debug("Skipping: in repeat mode (\(String(format: "%.3f", timeSinceLastAdjustment))s < \(repeatRate)s)")
-                    return
-                }
-            }
-        }
-
-        guard
-            let currentBrightness = getCurrentBrightness(),
-            let setBrightness = setBrightnessFunc,
-            let displayID = getBuiltinDisplayID() else
-        {
-            logger.error("Cannot manually adjust brightness: missing prerequisites")
-            return
-        }
-
-        // Rate limit applying brightness changes to prevent overly rapid updates
-        let minApplicationInterval: TimeInterval = 0.2 // Minimum between brightness applications
-        let timeSinceLastApplication = now - lastBrightnessApplicationTime
-        if timeSinceLastApplication < minApplicationInterval {
-            logger.debug("Rate limiting brightness application: \(String(format: "%.3f", timeSinceLastApplication))s < \(minApplicationInterval)s")
-            return
-        }
-
-        // Adjust by 1/64th increment
-        let step: Float = 1.0 / 64.0
-        var newBrightness = currentBrightness + (isUp ? step : -step)
-
-        // Clamp to valid range [0, 1]
-        newBrightness = max(0.0, min(1.0, newBrightness))
-
-        // Set the new brightness
-        let result = setBrightness(displayID, newBrightness)
-        if result == 0 {
-            lastManualAdjustmentTime = now
-            lastBrightnessApplicationTime = now
-            manualAdjustmentCount += 1
-            logger.debug("Manually set brightness to \(String(format: "%.4f", newBrightness)) (Option+Shift mode, adjustment #\(manualAdjustmentCount))")
-
-            // Update our tracking and show HUD immediately
-            let quantizedBrightness = round(newBrightness * 64.0) / 64.0
-            self.currentBrightness = quantizedBrightness
-            previousBrightness = round(quantizedBrightness * 16.0) / 16.0 // Store at 16-step for next comparison
-            hudController?.showBrightnessHUD(brightness: quantizedBrightness)
-        } else {
-            logger.error("Failed to set brightness: error code \(result)")
         }
     }
 
