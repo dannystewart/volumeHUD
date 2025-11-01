@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## [Unreleased]
 
+## [2.3.0] (2025-11-01)
+
+### Added
+
+- Adds relative HUD position setting, so people can choose between percentage-based distance from the bottom (the app's original behavior) and absolute pixel positioning (Apple's default behavior).
+
+### Changed
+
+- Replaces the About view layout with a new two-column design to make room for settings without feeling cramped.
+- Reverts the change to absolute positioning by default and now uses relative positioning again (the pre-2.2.0 behavior). Apple-style absolute positioning is now optional via Settings.
+
+### Fixed
+
+- Fixes an issue with Option+Shift for brightness control where the keypress state persisted after keys were released. This caused brightness to detect changes in 1/64th increments which significantly increased false positives from ambient light changes and other external factors.
+
 ## [2.2.0] (2025-10-29)
 
 ### Added
@@ -177,7 +192,8 @@ Initial release.
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
 <!-- Versions -->
-[unreleased]: https://github.com/dannystewart/volumeHUD/compare/v2.2.0...HEAD
+[unreleased]: https://github.com/dannystewart/volumeHUD/compare/v2.3.0...HEAD
+[2.3.0]: https://github.com/dannystewart/volumeHUD/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/dannystewart/volumeHUD/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/dannystewart/volumeHUD/compare/v2.0.2...v2.1.0
 [2.0.2]: https://github.com/dannystewart/volumeHUD/compare/v2.0.1...v2.0.2
