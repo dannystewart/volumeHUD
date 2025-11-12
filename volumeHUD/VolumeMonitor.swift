@@ -39,6 +39,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
     private var devicePollingTimer: Timer?
     private let isPreviewMode: Bool
     private var isOptionShiftHeld: Bool = false
+    private var useScalarVolumeProperty: Bool = false
 
     // MARK: Lifecycle
 
@@ -143,11 +144,12 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
     }
 
     private func getCurrentVolumeAndMuteState() -> (volume: Float, isMuted: Bool) {
-        // Get volume
+        // Get volume - try multiple properties for compatibility with external devices
         var volume: Float = 0.0
         var size = UInt32(MemoryLayout<Float>.size)
 
-        let volumeStatus = AudioObjectGetPropertyData(
+        // Try the VirtualMainVolume property first
+        var volumeStatus = AudioObjectGetPropertyData(
             deviceID,
             &audioObjectPropertyAddress,
             0,
@@ -155,6 +157,56 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             &size,
             &volume,
         )
+
+        // If VirtualMainVolume fails, try VolumeScalar property (for external devices)
+        if volumeStatus != noErr {
+            var scalarAddress = AudioObjectPropertyAddress(
+                mSelector: kAudioDevicePropertyVolumeScalar,
+                mScope: kAudioDevicePropertyScopeOutput,
+                mElement: kAudioObjectPropertyElementMain,
+            )
+
+            volumeStatus = AudioObjectGetPropertyData(
+                deviceID,
+                &scalarAddress,
+                0,
+                nil,
+                &size,
+                &volume,
+            )
+
+            if volumeStatus == noErr {
+                if !useScalarVolumeProperty {
+                    useScalarVolumeProperty = true
+                    logger.info("Using VolumeScalar property for device \(deviceID) (external device)")
+                }
+            } else {
+                // If both fail, try getting master volume from channel 0
+                var channelAddress = AudioObjectPropertyAddress(
+                    mSelector: kAudioDevicePropertyVolumeScalar,
+                    mScope: kAudioDevicePropertyScopeOutput,
+                    mElement: 0,
+                )
+
+                volumeStatus = AudioObjectGetPropertyData(
+                    deviceID,
+                    &channelAddress,
+                    0,
+                    nil,
+                    &size,
+                    &volume,
+                )
+
+                if volumeStatus == noErr {
+                    if !useScalarVolumeProperty {
+                        useScalarVolumeProperty = true
+                        logger.info("Using channel 0 VolumeScalar property for device \(deviceID)")
+                    }
+                } else {
+                    logger.warning("Failed to get volume from device \(deviceID): status=\(volumeStatus)")
+                }
+            }
+        }
 
         var newVolume: Float = currentVolume
         if volumeStatus == noErr {
@@ -422,6 +474,9 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         // Update device ID
         deviceID = newDeviceID
 
+        // Reset scalar volume property flag for new device
+        useScalarVolumeProperty = false
+
         // Add new listeners
         addVolumeListeners()
 
@@ -469,12 +524,57 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             }
         }
         if let block = volumeListenerBlock {
-            AudioObjectAddPropertyListenerBlock(
+            // Try to add listener for VirtualMainVolume
+            var status = AudioObjectAddPropertyListenerBlock(
                 deviceID,
                 &audioObjectPropertyAddress,
                 DispatchQueue.main,
                 block,
             )
+
+            // If VirtualMainVolume listener fails, try VolumeScalar (for external devices)
+            if status != noErr {
+                logger.info("VirtualMainVolume listener failed (status=\(status)), trying VolumeScalar for device \(deviceID)")
+
+                var scalarAddress = AudioObjectPropertyAddress(
+                    mSelector: kAudioDevicePropertyVolumeScalar,
+                    mScope: kAudioDevicePropertyScopeOutput,
+                    mElement: kAudioObjectPropertyElementMain,
+                )
+
+                status = AudioObjectAddPropertyListenerBlock(
+                    deviceID,
+                    &scalarAddress,
+                    DispatchQueue.main,
+                    block,
+                )
+
+                if status != noErr {
+                    // Try channel 0 as last resort
+                    var channelAddress = AudioObjectPropertyAddress(
+                        mSelector: kAudioDevicePropertyVolumeScalar,
+                        mScope: kAudioDevicePropertyScopeOutput,
+                        mElement: 0,
+                    )
+
+                    status = AudioObjectAddPropertyListenerBlock(
+                        deviceID,
+                        &channelAddress,
+                        DispatchQueue.main,
+                        block,
+                    )
+
+                    if status == noErr {
+                        logger.info("Added volume listener on channel 0 for device \(deviceID)")
+                    } else {
+                        logger.error("Failed to add volume listener for device \(deviceID): status=\(status)")
+                    }
+                } else {
+                    logger.info("Added VolumeScalar listener for device \(deviceID)")
+                }
+            } else {
+                logger.debug("Added VirtualMainVolume listener for device \(deviceID)")
+            }
         }
 
         // Also monitor mute state
