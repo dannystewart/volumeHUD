@@ -17,8 +17,6 @@ enum HUDType {
 // MARK: - HUDView
 
 struct HUDView: View {
-    // MARK: Properties
-
     let hudType: HUDType
     let value: Float
     let isMuted: Bool
@@ -26,8 +24,6 @@ struct HUDView: View {
 
     private let hudSize: CGFloat = 200
     private let iconSize: CGFloat = 80
-
-    // MARK: Computed Properties
 
     private var iconName: String {
         switch hudType {
@@ -48,8 +44,6 @@ struct HUDView: View {
             "sun.max"
         }
     }
-
-    // MARK: Content Properties
 
     var body: some View {
         VStack(spacing: 0) {
@@ -87,8 +81,6 @@ struct HUDView: View {
                 .environment(\.colorScheme, .dark),
         )
     }
-
-    // MARK: Content Methods
 
     @ViewBuilder
     private func barView(for index: Int) -> some View {

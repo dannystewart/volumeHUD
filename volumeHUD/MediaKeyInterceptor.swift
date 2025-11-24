@@ -22,8 +22,6 @@ import PolyKit
 /// interception for that type is automatically disabled and events pass through to the system.
 @MainActor
 final class MediaKeyInterceptor {
-    // MARK: Nested Types
-
     private enum NXKeyType: Int {
         case soundUp = 0
         case soundDown = 1
@@ -31,8 +29,6 @@ final class MediaKeyInterceptor {
         case brightnessDown = 3
         case mute = 7
     }
-
-    // MARK: Static Properties
 
     /// Static callback for CGEvent tap. Bridges to instance method.
     private static let eventTapCallback: CGEventTapCallBack = { _, type, cgEvent, userInfo in
@@ -59,8 +55,6 @@ final class MediaKeyInterceptor {
         // Process the event and determine if we should consume it
         return interceptor.handleEvent(cgEvent)
     }
-
-    // MARK: Properties
 
     weak var hudController: HUDController?
 
@@ -103,14 +97,10 @@ final class MediaKeyInterceptor {
     private var getBrightnessFunc: (@convention(c) (CGDirectDisplayID, UnsafeMutablePointer<Float>) -> kern_return_t)?
     private var setBrightnessFunc: (@convention(c) (CGDirectDisplayID, Float) -> kern_return_t)?
 
-    // MARK: Computed Properties
-
     /// Whether brightness HUD feature is enabled in settings
     private var brightnessHUDEnabled: Bool {
         UserDefaults.standard.bool(forKey: "brightnessEnabled")
     }
-
-    // MARK: Lifecycle
 
     init() {
         loadDisplayServices()
@@ -120,8 +110,6 @@ final class MediaKeyInterceptor {
         // Note: stop() must be called before deinit since we're @MainActor
         // DisplayServices handle is closed in stop()
     }
-
-    // MARK: Functions
 
     // MARK: Public Methods
 

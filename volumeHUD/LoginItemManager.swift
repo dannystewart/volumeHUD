@@ -13,8 +13,6 @@ import ServiceManagement
 /// Manages login item functionality using the modern SMAppService API.
 @MainActor
 class LoginItemManager: ObservableObject {
-    // MARK: Properties
-
     @Published var isEnabled: Bool = false
     @Published private(set) var lastError: String?
 
@@ -23,19 +21,13 @@ class LoginItemManager: ObservableObject {
 
     private var isUpdatingFromSystem = false
 
-    // MARK: Computed Properties
-
     private var service: SMAppService {
         SMAppService.loginItem(identifier: helperBundleIdentifier)
     }
 
-    // MARK: Lifecycle
-
     init() {
         updateStatus()
     }
-
-    // MARK: Functions
 
     /// Updates the current login item status from the system
     func updateStatus() {

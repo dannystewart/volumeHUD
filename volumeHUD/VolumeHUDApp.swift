@@ -16,12 +16,8 @@ import SwiftUI
 
 @MainActor
 class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotificationCenterDelegate {
-    // MARK: Static Properties
-
     /// Constants for process path info
     private nonisolated static let PROC_PIDPATHINFO_MAXSIZE = 4096
-
-    // MARK: Properties
 
     var volumeMonitor: VolumeMonitor!
     var brightnessMonitor: BrightnessMonitor!
@@ -32,20 +28,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
 
     let logger: PolyLog = .init()
 
-    // MARK: Computed Properties
-
     /// Check to see if brightness is enabled
     private var isBrightnessEnabled: Bool {
         UserDefaults.standard.bool(forKey: "brightnessEnabled")
     }
 
-    // MARK: Lifecycle
-
     deinit {
         DistributedNotificationCenter.default().removeObserver(self)
     }
-
-    // MARK: Functions
 
     // MARK: - On Finish Launching
 
@@ -497,11 +487,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
 @main
 @available(macOS 26.0, *)
 struct VolumeHUDApp: App {
-    // MARK: SwiftUI Properties
-
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-
-    // MARK: Computed Properties
 
     @available(macOS 26.0, *)
     var body: some Scene {

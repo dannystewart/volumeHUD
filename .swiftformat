@@ -53,7 +53,7 @@
 --line-after-marks true
 --line-between-guards false
 --linebreaks lf
---mark-categories true
+--mark-categories false
 --mark-class-threshold 0
 --mark-enum-threshold 0
 --mark-extension-threshold 0

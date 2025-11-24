@@ -14,8 +14,6 @@ import IOKit.pwr_mgt
 import PolyKit
 
 class BrightnessMonitor: ObservableObject, @unchecked Sendable {
-    // MARK: Properties
-
     @Published var currentBrightness: Float = 0.0
 
     weak var hudController: HUDController?
@@ -46,8 +44,6 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
     private var canChangeBrightnessFunc: (@convention(c) (CGDirectDisplayID) -> Bool)?
     private var getBrightnessFunc: (@convention(c) (CGDirectDisplayID, UnsafeMutablePointer<Float>) -> kern_return_t)?
 
-    // MARK: Lifecycle
-
     init(isPreviewMode: Bool = false) {
         self.isPreviewMode = isPreviewMode
 
@@ -69,8 +65,6 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
     }
 
     deinit {}
-
-    // MARK: Functions
 
     /// Update the accessibility status after permissions may have changed
     func updateAccessibilityStatus() {

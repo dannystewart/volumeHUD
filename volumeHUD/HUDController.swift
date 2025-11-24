@@ -14,8 +14,6 @@ import SwiftUI
 
 @MainActor
 class HUDController: ObservableObject {
-    // MARK: Properties
-
     @Published var isShowing = false
 
     weak var volumeMonitor: VolumeMonitor?
@@ -32,15 +30,11 @@ class HUDController: ObservableObject {
     private var isObservingDisplayChanges = false
     private let isPreviewMode: Bool
 
-    // MARK: Lifecycle
-
     init(isPreviewMode: Bool = false) {
         self.isPreviewMode = isPreviewMode
     }
 
     deinit {}
-
-    // MARK: Functions
 
     @MainActor
     func showVolumeHUD(volume: Float, isMuted: Bool) {

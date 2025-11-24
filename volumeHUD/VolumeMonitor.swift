@@ -15,8 +15,6 @@ import IOKit
 import PolyKit
 
 class VolumeMonitor: ObservableObject, @unchecked Sendable {
-    // MARK: Properties
-
     @Published var currentVolume: Float = 0.0
     @Published var isMuted: Bool = false
 
@@ -40,8 +38,6 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
     private let isPreviewMode: Bool
     private var isOptionShiftHeld: Bool = false
 
-    // MARK: Lifecycle
-
     init(isPreviewMode: Bool = false) {
         self.isPreviewMode = isPreviewMode
 
@@ -62,8 +58,6 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             accessibilityEnabled = AXIsProcessTrusted()
         }
     }
-
-    // MARK: Functions
 
     /// Update accessibility status (to be called when permissions change)
     func updateAccessibilityStatus() {
