@@ -20,6 +20,7 @@ struct AboutView: View {
     @AppStorage("brightnessEnabled") private var brightnessEnabled: Bool = false
     @AppStorage("volumeHUDFollowsMouse") private var volumeHUDFollowsMouse: Bool = false
     @AppStorage("useRelativePositioning") private var useRelativePositioning: Bool = true
+    @AppStorage("hideSystemVolumeHUD") private var hideSystemVolumeHUD: Bool = false
 
     /// State to track if an update is available
     @State private var isUpdateAvailable: Bool = false
@@ -119,6 +120,45 @@ struct AboutView: View {
                     }
                 }
                 .padding(.leading, settingPadding)
+
+                // MARK: - Hide System Volume HUD Toggle
+
+                VStack(alignment: .leading, spacing: spaceBeforeSubtitle) {
+                    HStack(alignment: .center, spacing: iconColumnWidth) {
+                        Image(systemName: "speaker.slash.fill")
+                            .foregroundStyle(hideSystemVolumeHUD ? .purple : .gray)
+                            .font(.system(size: 14))
+                            .frame(width: 14, alignment: .leading)
+                            .animation(.easeInOut(duration: 0.3), value: hideSystemVolumeHUD)
+
+                        Text("Hide System HUD")
+                            .font(.system(size: 12, weight: .medium))
+                            .frame(width: minSettingColumnWidth, alignment: .leading)
+
+                        Spacer()
+
+                        Toggle("", isOn: $hideSystemVolumeHUD)
+                            .toggleStyle(SwitchToggleStyle(tint: .accentColor))
+                            .scaleEffect(0.8)
+                            .onChange(of: hideSystemVolumeHUD) { oldValue, newValue in
+                                logger.debug("Hide system HUD setting changed from \(oldValue) to \(newValue).")
+                                appDelegate?.updateMediaKeyInterceptor()
+                            }
+                    }
+
+                    HStack(spacing: iconColumnWidth) {
+                        Spacer()
+                            .frame(width: 14)
+
+                        Text(hideSystemVolumeHUD ? "Intercept keys to hide macOS HUD" : "Show both volumeHUD and macOS HUD")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.secondary)
+                            .opacity(0.8)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+                .padding(.leading, settingPadding)
+                .animation(.easeInOut(duration: 0.3), value: hideSystemVolumeHUD)
 
                 // MARK: - Brightness HUD Toggle
 

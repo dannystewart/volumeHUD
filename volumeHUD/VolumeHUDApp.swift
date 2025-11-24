@@ -26,6 +26,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
     var volumeMonitor: VolumeMonitor!
     var brightnessMonitor: BrightnessMonitor!
     var hudController: HUDController!
+    var mediaKeyInterceptor: MediaKeyInterceptor?
     var aboutWindow: NSPanel?
     var loginItemManager: LoginItemManager!
 
@@ -36,6 +37,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
     /// Check to see if brightness is enabled
     private var isBrightnessEnabled: Bool {
         UserDefaults.standard.bool(forKey: "brightnessEnabled")
+    }
+
+    /// Check to see if hiding system HUD is enabled
+    private var isHideSystemVolumeHUDEnabled: Bool {
+        UserDefaults.standard.bool(forKey: "hideSystemVolumeHUD")
     }
 
     // MARK: Lifecycle
@@ -108,6 +114,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         // Start brightness monitoring only if enabled in settings
         startBrightnessMonitoringIfEnabled()
 
+        // Start media key interceptor if hide system HUD is enabled
+        updateMediaKeyInterceptor()
+
         // Start monitoring display configuration changes
         hudController.startDisplayChangeMonitoring()
     }
@@ -130,6 +139,29 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
             brightnessMonitor.startMonitoring()
         } else {
             logger.info("Brightness HUD disabled; skipping brightness monitoring.")
+        }
+    }
+
+    /// Update media key interceptor based on the hide system HUD setting.
+    @MainActor
+    func updateMediaKeyInterceptor() {
+        if isHideSystemVolumeHUDEnabled {
+            // Start the interceptor if not already running
+            if mediaKeyInterceptor == nil {
+                mediaKeyInterceptor = MediaKeyInterceptor()
+                mediaKeyInterceptor?.hudController = hudController
+            }
+
+            if mediaKeyInterceptor?.start() == true {
+                logger.info("Media key interceptor started; system volume HUD will be hidden.")
+            } else {
+                logger.warning("Failed to start media key interceptor. Accessibility permissions may be required.")
+            }
+        } else {
+            // Stop the interceptor
+            mediaKeyInterceptor?.stop()
+            mediaKeyInterceptor = nil
+            logger.info("Media key interceptor stopped; system volume HUD will be visible.")
         }
     }
 
@@ -463,6 +495,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         volumeMonitor?.stopMonitoring()
 
         if isBrightnessEnabled { brightnessMonitor?.stopMonitoring() }
+        mediaKeyInterceptor?.stop()
         hudController?.stopDisplayChangeMonitoring()
 
         // Terminate without activating the app
