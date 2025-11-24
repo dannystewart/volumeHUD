@@ -12,11 +12,11 @@ So I did what any sane person would do: I picked up Xcode and wrote my first eve
 
 <img src="volumeHUD-demo.gif" alt="volumeHUD Demo" height="300"></img>
 
-Please note that while this adds the previous UI, it does *not* hide the new UI. Considering I wrote this because I barely noticed the new UI in the first place, I don't find this too much of a problem. Hiding the system UI is likely possible but beyond my current skills. If someone wants to contribute or just point me in the right direction, I'm happy to add that.
-
 ## Usage
 
-Just launch the app! You should see a notification that it started and you can begin enjoying your new (old) volume HUD right away. You can launch it a second time to open a window where you can set it to open at login, enable the brightness HUD (off by default—it's *volumeHUD* after all), see if an update is available, or quit.
+Just launch the app! You should see a notification that it started and you can begin enjoying your new (old) volume HUD right away. You can launch it a second time to open a window where you can set it to open at login, enable the brightness HUD (off by default—it's *volumeHUD* after all), control HUD positioning, check for updates, and quit.
+
+As of version 3.0, volumeHUD now also hides the system HUD. It checks to make sure volume or brightness has actually changed after a key press is detected; if not, it stops intercepting those keys until it detects a device change or the app is restarted. This ensures you're not prevented from changing the volume or brightness if it doesn't work on your system.
 
 ## Installation
 
@@ -30,10 +30,15 @@ You can uninstall with `brew uninstall volumehud`, which should remove all trace
 
 ## Permissions
 
-I worked hard to ensure the app would function as well as possible without requiring any permissions. It will request two that are **completely optional:**
+I worked hard to ensure the app could function without requiring any permissions. It will request two that are **optional but recommended**.
 
-- **Accessibility:** The app works by detecting changes to volume and brightness levels, which means the HUD won't appear when you try to go below 0% or above 100% since the levels don't change. Input monitoring works around this by watching for key presses. That's the only thing you'll lose if you leave it off.
-- **Notifications:** Used only to confirm the app has started (and only when launched manually, not as a login item). Feel free to leave them disabled if you find them unnecessary.
+- **Notifications** are used only to confirm the app has started (and only when launched manually, not as a login item). Feel free to disable if you find them unnecessary.
+- **Accessibility** is needed for full functionality. The app will work without it, but you lose some features:
+  - The system HUD will still appear alongside volumeHUD.
+  - The HUD won't appear if you go below 0% or above 100% since it can't use key presses to determine if levels should have changed.
+  - Brightness checks may be less reliable since key timing can't be used to check whether a change is user-initiated.
+
+Apart from that, all other features should work.
 
 ## Troubleshooting
 

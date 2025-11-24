@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## [Unreleased]
 
+## [3.0.0] (2025-11-24)
+
+### Added
+
+- **volumeHUD now hides the system HUD!**
+- The app checks to make sure volume or brightness has actually changed after a key press is detected; if not, it stops intercepting those keys until it detects a device change or the app is restarted, to ensure you're not prevented from changing the volume or brightness if it doesn't work on your system.
+
+### Fixed
+
+- Made the startup check more robust to prevent "volumeHUD has started" notification from occurring on startup/login.
+
 ## [2.3.1] (2025-11-01)
 
 ### Removed
@@ -198,7 +209,8 @@ Initial release.
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
 <!-- Versions -->
-[unreleased]: https://github.com/dannystewart/volumeHUD/compare/v2.3.1...HEAD
+[unreleased]: https://github.com/dannystewart/volumeHUD/compare/v3.0.0...HEAD
+[3.0.0]: https://github.com/dannystewart/volumeHUD/compare/v2.3.1...v3.0.0
 [2.3.1]: https://github.com/dannystewart/volumeHUD/compare/v2.3.0...v2.3.1
 [2.3.0]: https://github.com/dannystewart/volumeHUD/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/dannystewart/volumeHUD/compare/v2.1.0...v2.2.0
