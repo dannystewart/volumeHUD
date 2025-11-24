@@ -71,15 +71,24 @@ final class MediaKeyInterceptor {
     private var audioPlayer: AVAudioPlayer?
     private var isRunning = false
 
-    /// Whether volume interception is currently working (resets on app restart).
+    /// Whether volume interception is currently working (resets on device change or app restart).
     /// Using nonisolated(unsafe) is acceptable here because:
-    /// - The flag only transitions from true to false (never back)
+    /// - The flag transitions are one-way per "session" (true→false on failure, reset on device change)
     /// - A race condition would only allow one extra event through, which is acceptable
     private nonisolated(unsafe) var volumeInterceptionWorking = true
 
-    /// Whether brightness interception is currently working (resets on app restart).
+    /// Whether brightness interception is currently working (resets on device change or app restart).
     /// Using nonisolated(unsafe) for the same reasons as volumeInterceptionWorking.
     private nonisolated(unsafe) var brightnessInterceptionWorking = true
+
+    /// Last known audio device ID for detecting device changes
+    private var lastKnownAudioDeviceID: AudioDeviceID = kAudioObjectUnknown
+
+    /// Timer for polling audio device changes
+    private var audioDevicePollingTimer: Timer?
+
+    /// Whether we're observing display configuration changes
+    private var isObservingDisplayChanges = false
 
     /// Standard step (1/16th, matching macOS default)
     private let standardStep: Float = 1.0 / 16.0
@@ -165,7 +174,11 @@ final class MediaKeyInterceptor {
             CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
             CGEvent.tapEnable(tap: tap, enable: true)
             isRunning = true
-            logger.info("MediaKeyInterceptor: Started intercepting media keys.")
+
+            // Start monitoring for device changes
+            startDeviceChangeMonitoring()
+
+            logger.debug("Started intercepting media keys.")
             return true
         } else {
             logger.error("MediaKeyInterceptor: Failed to create run loop source.")
@@ -177,6 +190,9 @@ final class MediaKeyInterceptor {
     /// Stop intercepting media key events.
     func stop() {
         guard isRunning else { return }
+
+        // Stop device change monitoring
+        stopDeviceChangeMonitoring()
 
         if let tap = eventTap {
             CGEvent.tapEnable(tap: tap, enable: false)
@@ -196,7 +212,7 @@ final class MediaKeyInterceptor {
             displayServicesHandle = nil
         }
 
-        logger.info("MediaKeyInterceptor: Stopped intercepting media keys.")
+        logger.debug("Stopped intercepting media keys.")
     }
 
     /// Handle a system-defined CGEvent. Returns nil to consume the event,
@@ -527,7 +543,7 @@ final class MediaKeyInterceptor {
                 RTLD_LAZY,
             ) else
         {
-            logger.debug("DisplayServices framework not available for brightness control.")
+            logger.warning("MediaKeyInterceptor: DisplayServices framework not available for brightness control.")
             return
         }
 
@@ -537,7 +553,7 @@ final class MediaKeyInterceptor {
             let setBrightnessPtr = dlsym(handle, "DisplayServicesSetBrightness") else
         {
             dlclose(handle)
-            logger.debug("DisplayServices brightness functions not available.")
+            logger.warning("MediaKeyInterceptor: DisplayServices brightness functions not available.")
             return
         }
 
@@ -555,7 +571,7 @@ final class MediaKeyInterceptor {
             to: (@convention(c) (CGDirectDisplayID, Float) -> kern_return_t).self,
         )
 
-        logger.debug("DisplayServices framework loaded for brightness control.")
+        logger.info("MediaKeyInterceptor: DisplayServices framework loaded for brightness control.")
     }
 
     /// Get the built-in display ID.
@@ -731,6 +747,78 @@ final class MediaKeyInterceptor {
             audioPlayer?.prepareToPlay()
         } catch {
             logger.warning("Failed to load volume feedback sound: \(error.localizedDescription)")
+        }
+    }
+
+    // MARK: Private - Device Change Monitoring
+
+    /// Start monitoring for audio and display device changes.
+    private func startDeviceChangeMonitoring() {
+        // Record initial audio device
+        lastKnownAudioDeviceID = getDefaultOutputDevice() ?? kAudioObjectUnknown
+
+        // Poll for audio device changes (similar to VolumeMonitor)
+        audioDevicePollingTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.checkForAudioDeviceChange()
+            }
+        }
+
+        // Observe display configuration changes
+        guard !isObservingDisplayChanges else { return }
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(displayConfigurationDidChange(_:)),
+            name: NSApplication.didChangeScreenParametersNotification,
+            object: nil,
+        )
+        isObservingDisplayChanges = true
+
+        logger.debug("Started monitoring for device changes.")
+    }
+
+    /// Stop monitoring for device changes.
+    private func stopDeviceChangeMonitoring() {
+        audioDevicePollingTimer?.invalidate()
+        audioDevicePollingTimer = nil
+
+        if isObservingDisplayChanges {
+            NotificationCenter.default.removeObserver(
+                self,
+                name: NSApplication.didChangeScreenParametersNotification,
+                object: nil,
+            )
+            isObservingDisplayChanges = false
+        }
+
+        logger.debug("Stopped monitoring for device changes.")
+    }
+
+    /// Check if the default audio device has changed.
+    private func checkForAudioDeviceChange() {
+        guard let currentDeviceID = getDefaultOutputDevice() else { return }
+
+        if currentDeviceID != lastKnownAudioDeviceID {
+            logger.info("MediaKeyInterceptor: Audio device changed: \(lastKnownAudioDeviceID) → \(currentDeviceID)")
+            lastKnownAudioDeviceID = currentDeviceID
+
+            // Reset volume interception state to re-test with new device
+            if !volumeInterceptionWorking {
+                volumeInterceptionWorking = true
+                logger.info("Volume interception re-enabled due to audio device change.")
+            }
+        }
+    }
+
+    /// Handle display configuration changes.
+    @objc
+    private func displayConfigurationDidChange(_: Notification) {
+        logger.info("MediaKeyInterceptor: Display configuration change detected.")
+
+        // Reset brightness interception state to re-test with new display configuration
+        if !brightnessInterceptionWorking {
+            brightnessInterceptionWorking = true
+            logger.info("Brightness interception re-enabled due to display configuration change.")
         }
     }
 }
