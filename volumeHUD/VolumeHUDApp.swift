@@ -19,6 +19,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
     /// Constants for process path info
     private nonisolated static let PROC_PIDPATHINFO_MAXSIZE = 4096
 
+    // MARK: - Launch Detection
+
+    /// Shared UserDefaults key for login helper launch marker (must match LoginHelper)
+    private nonisolated static let launchMarkerKey = "loginHelperLaunchTimestamp"
+
+    /// Maximum age of the launch marker to consider it valid (10 seconds)
+    private nonisolated static let launchMarkerMaxAge: TimeInterval = 10.0
+
+    /// Maximum system uptime to consider as "just logged in" (3 minutes)
+    private nonisolated static let loginUptimeThreshold: TimeInterval = 180.0
+
     var volumeMonitor: VolumeMonitor!
     var brightnessMonitor: BrightnessMonitor!
     var hudController: HUDController!
@@ -268,34 +279,43 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         return false
     }
 
-    // MARK: - Launch Detection
-
     /// Returns true if this was a manual launch (user double-clicked), false for automatic (login item).
     private nonisolated func isManualLaunch() -> Bool {
         if isRunningInDevEnvironment() { return false }
 
-        // Explicit marker from login helper
+        // Check 1: UserDefaults marker from LoginHelper (most reliable)
+        // LoginHelper writes a timestamp just before launching us
+        if let markerTimestamp = UserDefaults.standard.object(forKey: Self.launchMarkerKey) as? TimeInterval {
+            let markerAge = Date().timeIntervalSince1970 - markerTimestamp
+            // Clear the marker so it doesn't affect future launches
+            UserDefaults.standard.removeObject(forKey: Self.launchMarkerKey)
+            UserDefaults.standard.synchronize()
+
+            if markerAge < Self.launchMarkerMaxAge {
+                logger.debug("Launch detected via UserDefaults marker (age: \(String(format: "%.1f", markerAge))s)")
+                return false // Launched by login helper
+            }
+        }
+
+        // Check 2: System uptime heuristic
+        // If the system just booted (uptime < 3 minutes), likely a login item launch
+        let uptime = ProcessInfo.processInfo.systemUptime
+        if uptime < Self.loginUptimeThreshold {
+            logger.debug("Launch detected via system uptime heuristic (uptime: \(String(format: "%.0f", uptime))s)")
+            return false // Likely launched at login
+        }
+
+        // Check 3: Legacy checks for backwards compatibility
         if CommandLine.arguments.contains("--launchedByLoginItem") { return false }
         if ProcessInfo.processInfo.environment["VOLUMEHUD_LOGIN_HELPER"] == "1" { return false }
 
-        // Parent process checks
+        // Check 4: Parent process checks (less reliable but kept as fallback)
         let parentPID = getppid()
-
         if isParentEmbeddedLoginHelper(parentPID) { return false }
 
-        if let parentName = getProcessName(parentPID), parentName.contains("launchd") {
-            return false
-        }
-
         // Default to manual launch
+        logger.debug("Manual launch detected (uptime: \(String(format: "%.0f", uptime))s)")
         return true
-    }
-
-    /// Gets the process name for a given PID.
-    private nonisolated func getProcessName(_ pid: pid_t) -> String? {
-        var name = [CChar](repeating: 0, count: 1024)
-        guard proc_name(pid, &name, UInt32(name.count)) > 0 else { return nil }
-        return name.withUnsafeBufferPointer { String(cString: $0.baseAddress!) }
     }
 
     /// Checks if the parent PID is our embedded login helper in Contents/Library/LoginItems.
