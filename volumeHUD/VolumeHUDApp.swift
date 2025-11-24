@@ -39,11 +39,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         UserDefaults.standard.bool(forKey: "brightnessEnabled")
     }
 
-    /// Check to see if hiding system HUD is enabled
-    private var isHideSystemVolumeHUDEnabled: Bool {
-        UserDefaults.standard.bool(forKey: "hideSystemVolumeHUD")
-    }
-
     // MARK: Lifecycle
 
     deinit {
@@ -114,8 +109,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         // Start brightness monitoring only if enabled in settings
         startBrightnessMonitoringIfEnabled()
 
-        // Start media key interceptor if hide system HUD is enabled
-        updateMediaKeyInterceptor()
+        // Start media key interceptor to hide system HUDs
+        startMediaKeyInterceptor()
 
         // Start monitoring display configuration changes
         hudController.startDisplayChangeMonitoring()
@@ -142,26 +137,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         }
     }
 
-    /// Update media key interceptor based on the hide system HUD setting.
+    /// Start the media key interceptor to hide system HUDs.
+    /// The interceptor automatically falls back to system HUDs if interception fails.
     @MainActor
-    func updateMediaKeyInterceptor() {
-        if isHideSystemVolumeHUDEnabled {
-            // Start the interceptor if not already running
-            if mediaKeyInterceptor == nil {
-                mediaKeyInterceptor = MediaKeyInterceptor()
-                mediaKeyInterceptor?.hudController = hudController
-            }
+    func startMediaKeyInterceptor() {
+        // Create the interceptor if not already created
+        if mediaKeyInterceptor == nil {
+            mediaKeyInterceptor = MediaKeyInterceptor()
+            mediaKeyInterceptor?.hudController = hudController
+        }
 
-            if mediaKeyInterceptor?.start() == true {
-                logger.info("Media key interceptor started; system volume HUD will be hidden.")
-            } else {
-                logger.warning("Failed to start media key interceptor. Accessibility permissions may be required.")
-            }
+        if mediaKeyInterceptor?.start() == true {
+            logger.info("Media key interceptor started.")
         } else {
-            // Stop the interceptor
-            mediaKeyInterceptor?.stop()
-            mediaKeyInterceptor = nil
-            logger.info("Media key interceptor stopped; system volume HUD will be visible.")
+            logger.warning("Failed to start media key interceptor. Accessibility permissions may be required.")
         }
     }
 
