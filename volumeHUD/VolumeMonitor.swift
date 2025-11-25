@@ -15,10 +15,13 @@ import IOKit
 import PolyKit
 
 class VolumeMonitor: ObservableObject, @unchecked Sendable {
+    // MARK: Properties
+
     @Published var currentVolume: Float = 0.0
     @Published var isMuted: Bool = false
 
     weak var hudController: HUDController?
+    weak var mediaKeyInterceptor: MediaKeyInterceptor?
 
     let logger: PolyLog = .init()
 
@@ -210,11 +213,24 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         if volumeChanged || muteChanged {
             logger.debug("Volume updated: \(Int(newVolume * 100))%, Muted: \(newMuted)")
 
-            // Update @Published properties and show HUD
+            // Update @Published properties
             currentVolume = newVolume
             isMuted = newMuted
-            DispatchQueue.main.async {
-                self.hudController?.showVolumeHUD(volume: newVolume, isMuted: newMuted)
+
+            // Check if MediaKeyInterceptor recently handled this change
+            // If so, skip showing HUD (interceptor already showed it with proper quantization)
+            let shouldShowHUD: Bool
+            if let interceptor = mediaKeyInterceptor {
+                let timeSinceInterceptorChange = Date().timeIntervalSince1970 - interceptor.lastVolumeChangeTime
+                shouldShowHUD = timeSinceInterceptorChange > MediaKeyInterceptor.volumeChangeCooldown
+            } else {
+                shouldShowHUD = true
+            }
+
+            if shouldShowHUD {
+                DispatchQueue.main.async {
+                    self.hudController?.showVolumeHUD(volume: newVolume, isMuted: newMuted)
+                }
             }
 
             // Update previous values

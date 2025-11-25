@@ -30,6 +30,9 @@ final class MediaKeyInterceptor {
         case mute = 7
     }
 
+    /// How long to suppress VolumeMonitor HUD updates after an intercepted change
+    nonisolated static let volumeChangeCooldown: TimeInterval = 0.2
+
     /// Static callback for CGEvent tap. Bridges to instance method.
     private static let eventTapCallback: CGEventTapCallBack = { _, type, cgEvent, userInfo in
         guard let userInfo else {
@@ -59,6 +62,9 @@ final class MediaKeyInterceptor {
     weak var hudController: HUDController?
 
     let logger: PolyLog = .init()
+
+    /// Timestamp of last volume change by this interceptor (for coordinating with VolumeMonitor)
+    private(set) nonisolated(unsafe) var lastVolumeChangeTime: TimeInterval = 0
 
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
@@ -478,11 +484,15 @@ final class MediaKeyInterceptor {
             }
         }
 
-        // Show our HUD
-        let isMuted = getMuteState(deviceID: deviceID) ?? false
-        hudController?.showVolumeHUD(volume: actualVolume, isMuted: isMuted)
+        // Record the change time so VolumeMonitor knows to skip its HUD update
+        lastVolumeChangeTime = Date().timeIntervalSince1970
 
-        logger.debug("Volume adjusted: \(Int(actualVolume * 100))%")
+        // Show our HUD with the quantized expected value (not the actual read-back)
+        // This ensures clean 1/16 or 1/64 steps without partial bar flicker
+        let isMuted = getMuteState(deviceID: deviceID) ?? false
+        hudController?.showVolumeHUD(volume: expectedVolume, isMuted: isMuted)
+
+        logger.debug("Volume adjusted: \(Int(expectedVolume * 100))%")
     }
 
     /// Toggle mute state and show HUD.
@@ -508,8 +518,14 @@ final class MediaKeyInterceptor {
             return
         }
 
+        // Record the change time so VolumeMonitor knows to skip its HUD update
+        lastVolumeChangeTime = Date().timeIntervalSince1970
+
+        // Quantize the volume for display (use 16 steps for mute toggle)
+        let quantizedVolume = round(currentVolume * 16.0) / 16.0
+
         // Show our HUD
-        hudController?.showVolumeHUD(volume: currentVolume, isMuted: newMuteState)
+        hudController?.showVolumeHUD(volume: quantizedVolume, isMuted: newMuteState)
 
         logger.debug("Mute toggled: \(newMuteState)")
     }

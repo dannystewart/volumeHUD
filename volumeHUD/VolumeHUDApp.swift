@@ -146,6 +146,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         if mediaKeyInterceptor == nil {
             mediaKeyInterceptor = MediaKeyInterceptor()
             mediaKeyInterceptor?.hudController = hudController
+
+            // Connect VolumeMonitor to interceptor so it can skip HUD updates
+            // when the interceptor is handling volume changes
+            volumeMonitor.mediaKeyInterceptor = mediaKeyInterceptor
         }
 
         if mediaKeyInterceptor?.start() == true {
