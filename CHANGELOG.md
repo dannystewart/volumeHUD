@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## [Unreleased]
 
-## [3.0.0] (2025-11-24)
+## [3.0.0] (2025-11-26)
 
 ### Added
 
@@ -15,7 +15,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
-- Made the startup check more robust to prevent "volumeHUD has started" notification from occurring on startup/login.
+- Adds `.transient` to the window collection behavior to avoid blocking interaction with Exposé features like Show Desktop.
+- Makes the startup check more robust to prevent "volumeHUD has started" notification from occurring on startup/login.
 
 ## [2.3.1] (2025-11-01)
 
