@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## [Unreleased]
 
+## [3.0.2] (2025-11-26)
+
+### Fixed
+
+- Reduces HUD fade from 0.2s to 0.11s to more closely match the old pre-`NSAnimationContext` animation. Yes, I'm OCD enough to do a whole new point release for this. No, I'm not sorry.
+
 ## [3.0.1] (2025-11-26)
 
 ### Fixed
@@ -218,7 +224,8 @@ Initial release.
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
 <!-- Versions -->
-[unreleased]: https://github.com/dannystewart/volumeHUD/compare/v3.0.1...HEAD
+[unreleased]: https://github.com/dannystewart/volumeHUD/compare/v3.0.2...HEAD
+[3.0.2]: https://github.com/dannystewart/volumeHUD/compare/v3.0.1...v3.0.2
 [3.0.1]: https://github.com/dannystewart/volumeHUD/compare/v3.0.0...v3.0.1
 [3.0.0]: https://github.com/dannystewart/volumeHUD/compare/v2.3.1...v3.0.0
 [2.3.1]: https://github.com/dannystewart/volumeHUD/compare/v2.3.0...v2.3.1
