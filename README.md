@@ -58,6 +58,10 @@ If you're experiencing inconsistent behavior, the most likely cause is lack of A
 
 There was an issue with pre-2.0 versions where volumeHUD didn't request those permissions properly, so if you've been using the app since before then, they're very likely not configured correctly and should be reset.
 
+### Opening an Issue
+
+I test every feature as thoroughly as I can, and they work on the Macs I have access to. My ability to troubleshoot will be limited if I can't reproduce your issue, but as long as you're nice about it I'll do my best to help. ***Please* make sure you've checked your settings and attempted a clean reinstall before opening an issue.**
+
 ## License
 
 This project is open source under the [MIT License](./LICENSE). Feel free to do what you like with it, or contribute!
