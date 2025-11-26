@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## [Unreleased]
 
+## [3.0.1] (2025-11-26)
+
+### Fixed
+
+In the noble tradition of all software development, I discovered a bug five minutes after releasing 3.0.0. Adding `.transient` to the window collection behaviors broke the fade out animation when the HUD disappeared. This switches to `NSAnimationContext` to restore compatibility.
+
+P.S. volumeHUD hides the system HUD now. Pretend this is still 3.0.0.
+
 ## [3.0.0] (2025-11-26)
 
 ### Added
@@ -210,7 +218,8 @@ Initial release.
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
 <!-- Versions -->
-[unreleased]: https://github.com/dannystewart/volumeHUD/compare/v3.0.0...HEAD
+[unreleased]: https://github.com/dannystewart/volumeHUD/compare/v3.0.1...HEAD
+[3.0.1]: https://github.com/dannystewart/volumeHUD/compare/v3.0.0...v3.0.1
 [3.0.0]: https://github.com/dannystewart/volumeHUD/compare/v2.3.1...v3.0.0
 [2.3.1]: https://github.com/dannystewart/volumeHUD/compare/v2.3.0...v2.3.1
 [2.3.0]: https://github.com/dannystewart/volumeHUD/compare/v2.2.0...v2.3.0
