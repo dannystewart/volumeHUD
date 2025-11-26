@@ -280,7 +280,7 @@ class HUDController: ObservableObject {
         window.backgroundColor = .clear
         window.hasShadow = false
         window.ignoresMouseEvents = true
-        window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
+        window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle, .transient]
 
         // Make sure window appears on all spaces and can't be activated
         window.canHide = false
