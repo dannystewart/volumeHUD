@@ -302,7 +302,7 @@ class HUDController: ObservableObject {
 
         // Animate fade-out before hiding
         NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.2
+            context.duration = 0.11
             context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
             window.animator().alphaValue = 0.0
         } completionHandler: { [weak self] in
