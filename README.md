@@ -10,13 +10,17 @@ So I did what any sane person would do: I picked up Xcode and wrote my first eve
 
 ## What It Looks Like
 
-<img src="volumeHUD-demo.gif" alt="volumeHUD Demo" height="300"></img>
+<img src="Images/volumeHUD-demo.gif" alt="volumeHUD Demo" height="300"></img>
 
 ## Usage
 
-Just launch the app! You should see a notification that it started and you can begin enjoying your new (old) volume HUD right away. You can launch it a second time to open a window where you can set it to open at login, enable the brightness HUD (off by default—it's *volumeHUD* after all), control HUD positioning, check for updates, and quit.
+Just launch the app! You should see a notification that it started, and you can begin enjoying your new (old) volume HUD right away. If you launch the app a second time, you'll get a window where you can set it to open at login, configure HUD preferences, and quit. It will also show when an update is available.
 
-As of version 3.0, volumeHUD now also hides the system HUD. It checks to make sure volume or brightness has actually changed after a key press is detected; if not, it stops intercepting those keys until it detects a device change or the app is restarted. This ensures you're not prevented from changing the volume or brightness if it doesn't work on your system.
+<img src="Images/volumeHUD-settings.png" alt="volumeHUD Settings" height="300"></img>
+
+As of version 2.0, volumeHUD supports brightness. It is **off by default** (this is *volumeHUD*, after all), and it is **experimental and unsupported**. It will only work for built-in displays, and it may not be bulletproof for automatic changes like power source or ambient light, though it does mostly catch these.
+
+As of version 3.0, **volumeHUD hides the system HUD**. It does this by intercepting the volume/brightness keys and handling volume/brightness changes directly, instead of having the OS do it. There is a safety check to make sure the volume/brightness has actually changed after you press a key; if not, the app assumes key interception is not working and disables it until a device change or the app is restarted. This ensures you can still change volume or brightness even if this doesn't work on your system.
 
 ## Installation
 
@@ -42,9 +46,17 @@ Apart from that, all other features should work.
 
 ## Troubleshooting
 
-If you're experiencing inconsistent behavior and aren't using Accessibility permissions, try granting those first, if you're comfortable doing so. They're optional but enabling them should improve reliability.
+If you're experiencing inconsistent behavior, the most likely cause is lack of Accessibility permissions, and the first thing I would recommend is a full reset. The most thorough way to do this is to uninstall and reinstall:
 
-If you're unsure whether you've granted them or want to reset them, go to **System Settings** > **Privacy & Security** > **Accessibility**. Make sure volumeHUD is in the list and turned on, and if it's still not working, try removing it from the list entirely and then re-adding it.
+1. Completely quit volumeHUD by opening it a second time and clicking **Quit volumeHUD**.
+2. Open **System Settings** → **Privacy & Security** → **Accessibility**.
+3. Find **volumeHUD** in the list, select it, and click the minus (-) button at the bottom. Make sure it's removed from the list.
+4. Assuming you installed with Homebrew, run `brew uninstall volumehud` to remove the login item, the app, and any remaining files.
+5. Run `brew install dannystewart/apps/volumehud` to reinstall.
+6. Reopen **volumeHUD.app**. You should be prompted with "this application has been downloaded from the internet" first, followed by a request for Accessibility permissions.
+7. Open **System Settings** like it says to do, make sure **volumeHUD** is in the list now, and toggle it on. If it says you'll need to quit and reopen, do that and try again.
+
+There was an issue with pre-2.0 versions where volumeHUD didn't request those permissions properly, so if you've been using the app since before then, they're very likely not configured correctly and should be reset.
 
 ## License
 
