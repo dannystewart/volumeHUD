@@ -298,7 +298,19 @@ class HUDController: ObservableObject {
 
     @MainActor
     private func hideHUD() {
-        hudWindow?.orderOut(nil)
-        isShowing = false
+        guard let window = hudWindow else { return }
+
+        // Animate fade-out before hiding
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.2
+            context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            window.animator().alphaValue = 0.0
+        } completionHandler: { [weak self] in
+            Task { @MainActor [weak self] in
+                window.orderOut(nil)
+                window.alphaValue = 1.0 // Reset for next show
+                self?.isShowing = false
+            }
+        }
     }
 }
