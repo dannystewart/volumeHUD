@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## [Unreleased]
 
+## [3.0.3] (2025-12-05)
+
+### Changed
+
+- Changed the volume icon when at 0% to match the icon when muted (speaker with slash). Previously this was the speaker with no waves, meant to make a distinction between "turned down" and "muted," but since these are functionally the same, I think it's better to be clear.
+
 ## [3.0.2] (2025-11-26)
 
 ### Fixed
@@ -224,7 +230,8 @@ Initial release.
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
 <!-- Versions -->
-[unreleased]: https://github.com/dannystewart/volumeHUD/compare/v3.0.2...HEAD
+[unreleased]: https://github.com/dannystewart/volumeHUD/compare/v3.0.3...HEAD
+[3.0.3]: https://github.com/dannystewart/volumeHUD/compare/v3.0.2...v3.0.3
 [3.0.2]: https://github.com/dannystewart/volumeHUD/compare/v3.0.1...v3.0.2
 [3.0.1]: https://github.com/dannystewart/volumeHUD/compare/v3.0.0...v3.0.1
 [3.0.0]: https://github.com/dannystewart/volumeHUD/compare/v2.3.1...v3.0.0

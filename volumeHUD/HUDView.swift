@@ -28,7 +28,7 @@ struct HUDView: View {
     private var iconName: String {
         switch hudType {
         case .volume:
-            if isMuted {
+            if isMuted || value <= 0.001 {
                 "speaker.slash.fill"
             } else if value < 0.08 {
                 "speaker.fill"
@@ -54,7 +54,7 @@ struct HUDView: View {
                     .font(.system(size: iconSize, weight: .medium))
                     .foregroundColor(.white.opacity(0.7))
                     // SF Symbols has slight misalignment between speaker.slash.fill and speaker.fill
-                    .offset(y: hudType == .volume && isMuted ? 2 : 0)
+                    .offset(y: hudType == .volume && (isMuted || value <= 0.001) ? 2 : 0)
                 Spacer()
             }
             .frame(height: 100)
