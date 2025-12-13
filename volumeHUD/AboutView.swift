@@ -18,7 +18,7 @@ struct AboutView: View {
 
     /// Settings for app preferences
     @AppStorage("brightnessEnabled") private var brightnessEnabled: Bool = false
-    @AppStorage("volumeHUDFollowsMouse") private var volumeHUDFollowsMouse: Bool = false
+    @AppStorage("volumeHUDFollowsMouse") private var volumeHUDFollowsMouse: Bool = true
     @AppStorage("useRelativePositioning") private var useRelativePositioning: Bool = true
 
     /// State to track if an update is available
@@ -42,7 +42,7 @@ struct AboutView: View {
         if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
             return version
         }
-        return "2.0.0"
+        return "3.0.0"
     }
 
     // MARK: - About View
