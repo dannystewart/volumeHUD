@@ -25,6 +25,7 @@ extension VolumeMonitor {
     }
 }
 
+#if !SANDBOX
 extension BrightnessMonitor {
     /// Create a mock brightness monitor for previews with sample data
     static func previewMock(brightness: Float = 0.75) -> BrightnessMonitor {
@@ -33,6 +34,7 @@ extension BrightnessMonitor {
         return monitor
     }
 }
+#endif
 
 extension HUDController {
     /// Create a mock HUD controller for previews

@@ -15,13 +15,13 @@ import IOKit
 import PolyKit
 
 class VolumeMonitor: ObservableObject, @unchecked Sendable {
-    // MARK: Properties
-
     @Published var currentVolume: Float = 0.0
     @Published var isMuted: Bool = false
 
     weak var hudController: HUDController?
+    #if !SANDBOX
     weak var mediaKeyInterceptor: MediaKeyInterceptor?
+    #endif
 
     let logger: PolyLog = .init()
 
@@ -31,10 +31,12 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
     private var deviceID: AudioDeviceID = kAudioObjectUnknown
     private var previousVolume: Float = 0.0
     private var previousMuteState: Bool = false
+    #if !SANDBOX
     private var systemEventMonitor: Any?
     private var keyEventMonitor: Any?
     private var lastCapsLockTime: TimeInterval = 0
     private var lastVolumeKeyLogTime: TimeInterval = 0
+    #endif
     private var volumeListenerBlock: ((UInt32, UnsafePointer<AudioObjectPropertyAddress>) -> Void)?
     private var muteListenerBlock: ((UInt32, UnsafePointer<AudioObjectPropertyAddress>) -> Void)?
     private var devicePollingTimer: Timer?
@@ -113,8 +115,10 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         // Register for volume change notifications
         addVolumeListeners()
 
+        #if !SANDBOX
         // Start monitoring system-defined events for volume key presses
         startSystemEventMonitoring()
+        #endif
 
         // Monitor for default device changes
         startDefaultDeviceMonitoring()
@@ -129,8 +133,10 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         // Remove volume listeners
         removeVolumeListeners()
 
+        #if !SANDBOX
         // Stop system event monitoring
         stopSystemEventMonitoring()
+        #endif
 
         // Stop default device monitoring
         stopDefaultDeviceMonitoring()
@@ -220,12 +226,16 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             // Check if MediaKeyInterceptor recently handled this change
             // If so, skip showing HUD (interceptor already showed it with proper quantization)
             let shouldShowHUD: Bool
+            #if !SANDBOX
             if let interceptor = mediaKeyInterceptor {
                 let timeSinceInterceptorChange = Date().timeIntervalSince1970 - interceptor.lastVolumeChangeTime
                 shouldShowHUD = timeSinceInterceptorChange > MediaKeyInterceptor.volumeChangeCooldown
             } else {
                 shouldShowHUD = true
             }
+            #else
+            shouldShowHUD = true
+            #endif
 
             if shouldShowHUD {
                 DispatchQueue.main.async {
@@ -238,6 +248,8 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             previousMuteState = newMuted
         }
     }
+
+    #if !SANDBOX
 
     // MARK: Key Press Monitoring
 
@@ -354,6 +366,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
 
         logger.debug("Showing HUD for volume \(isVolumeUp ? "up" : "down") key press at boundary, current volume: \(Int(currentVol * 100))%, muted: \(currentMuted)")
     }
+    #endif
 
     // MARK: Device Change Monitoring
 

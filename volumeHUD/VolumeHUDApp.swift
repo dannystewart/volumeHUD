@@ -31,18 +31,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
     private nonisolated static let loginUptimeThreshold: TimeInterval = 180.0
 
     var volumeMonitor: VolumeMonitor!
+    #if !SANDBOX
     var brightnessMonitor: BrightnessMonitor!
-    var hudController: HUDController!
     var mediaKeyInterceptor: MediaKeyInterceptor?
+    #endif
+    var hudController: HUDController!
     var aboutWindow: NSPanel?
     var loginItemManager: LoginItemManager!
 
     let logger: PolyLog = .init()
 
+    #if !SANDBOX
     /// Check to see if brightness is enabled
     private var isBrightnessEnabled: Bool {
         UserDefaults.standard.bool(forKey: "brightnessEnabled")
     }
+    #endif
 
     deinit {
         DistributedNotificationCenter.default().removeObserver(self)
@@ -74,17 +78,25 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         // Initialize login item manager, monitors, and HUD controller
         loginItemManager = LoginItemManager()
         volumeMonitor = VolumeMonitor(isPreviewMode: false)
+        #if !SANDBOX
         brightnessMonitor = BrightnessMonitor(isPreviewMode: false)
+        #endif
         hudController = HUDController(isPreviewMode: false)
 
         // Set up bidirectional references
         hudController.volumeMonitor = volumeMonitor
+        #if !SANDBOX
         hudController.brightnessMonitor = brightnessMonitor
+        #endif
         volumeMonitor.hudController = hudController
+        #if !SANDBOX
         brightnessMonitor.hudController = hudController
+        #endif
 
+        #if !SANDBOX
         // Request accessibility permissions if needed
         requestAccessibilityPermissionsIfNeeded()
+        #endif
 
         // Request notification permission and post "started" notification (only if manually launched)
         requestNotificationAuthorizationIfNeeded { [weak self] granted in
@@ -107,11 +119,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         // Start monitoring volume changes
         volumeMonitor.startMonitoring()
 
+        #if !SANDBOX
         // Start brightness monitoring only if enabled in settings
         startBrightnessMonitoringIfEnabled()
 
         // Start media key interceptor to hide system HUDs
         startMediaKeyInterceptor()
+        #endif
 
         // Start monitoring display configuration changes
         hudController.startDisplayChangeMonitoring()
@@ -128,6 +142,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         return false
     }
 
+    #if !SANDBOX
     @MainActor
     func startBrightnessMonitoringIfEnabled() {
         if isBrightnessEnabled {
@@ -158,6 +173,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
             logger.warning("Failed to start media key interceptor. Accessibility permissions may be required.")
         }
     }
+    #endif
 
     // MARK: - Notification Center Delegate
 
@@ -405,6 +421,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         panel.makeKeyAndOrderFront(nil)
     }
 
+    #if !SANDBOX
+
     // MARK: - Accessibility Permissions
 
     private nonisolated func requestAccessibilityPermissionsIfNeeded() {
@@ -446,6 +464,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         brightnessMonitor.updateAccessibilityStatus()
         volumeMonitor.updateAccessibilityStatus()
     }
+    #endif
 
     // MARK: - Notification Permissions
 
@@ -497,8 +516,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         logger.debug("Stopping monitoring and quitting.")
         volumeMonitor?.stopMonitoring()
 
+        #if !SANDBOX
         if isBrightnessEnabled { brightnessMonitor?.stopMonitoring() }
         mediaKeyInterceptor?.stop()
+        #endif
         hudController?.stopDisplayChangeMonitoring()
 
         // Terminate without activating the app

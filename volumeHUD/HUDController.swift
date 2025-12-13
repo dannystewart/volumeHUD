@@ -17,7 +17,9 @@ class HUDController: ObservableObject {
     @Published var isShowing = false
 
     weak var volumeMonitor: VolumeMonitor?
+    #if !SANDBOX
     weak var brightnessMonitor: BrightnessMonitor?
+    #endif
     let logger: PolyLog = .init()
 
     private var hudWindow: NSWindow?
@@ -41,6 +43,7 @@ class HUDController: ObservableObject {
         displayHUD(hudType: .volume, value: volume, isMuted: isMuted)
     }
 
+    #if !SANDBOX
     @MainActor
     func showBrightnessHUD(brightness: Float) {
         // Only show brightness HUD if the feature is enabled
@@ -50,6 +53,7 @@ class HUDController: ObservableObject {
         }
         displayHUD(hudType: .brightness, value: brightness, isMuted: false)
     }
+    #endif
 
     @MainActor
     func startDisplayChangeMonitoring() {
@@ -118,6 +122,7 @@ class HUDController: ObservableObject {
         // Brightness HUD always shows on built-in display (since that's what it controls)
         // Volume HUD respects user preference for display location
         let targetScreen: NSScreen
+        #if !SANDBOX
         if hudType == .brightness {
             targetScreen = getBuiltinScreen() ?? NSScreen.main ?? NSScreen.screens.first!
         } else {
@@ -129,6 +134,15 @@ class HUDController: ObservableObject {
                 targetScreen = getBuiltinScreen() ?? NSScreen.main ?? NSScreen.screens.first!
             }
         }
+        #else
+        /// Check user preference for volume HUD location
+        let followMouse = UserDefaults.standard.bool(forKey: "volumeHUDFollowsMouse")
+        if followMouse {
+            targetScreen = getScreenWithMouse() ?? NSScreen.main ?? NSScreen.screens.first!
+        } else {
+            targetScreen = getBuiltinScreen() ?? NSScreen.main ?? NSScreen.screens.first!
+        }
+        #endif
 
         // Use full screen frame to ignore Dock positioning
         let screenFrame = targetScreen.frame

@@ -16,20 +16,24 @@ struct AboutView: View {
 
     let logger: PolyLog = .init()
 
-    /// Settings for app preferences
+    // Settings for app preferences
+    #if !SANDBOX
     @AppStorage("brightnessEnabled") private var brightnessEnabled: Bool = false
+    #endif
     @AppStorage("volumeHUDFollowsMouse") private var volumeHUDFollowsMouse: Bool = true
     @AppStorage("useRelativePositioning") private var useRelativePositioning: Bool = true
 
+    #if !SANDBOX
     /// State to track if an update is available
     @State private var isUpdateAvailable: Bool = false
-
-    /// Login item manager
-    @ObservedObject var loginItemManager: LoginItemManager
 
     // GitHub repository info
     private let githubOwner = "dannystewart"
     private let githubRepo = "volumeHUD"
+    #endif
+
+    /// Login item manager
+    @ObservedObject var loginItemManager: LoginItemManager
 
     // Visual alignment
     private let iconColumnWidth: CGFloat = 20
@@ -67,6 +71,7 @@ struct AboutView: View {
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
 
+                #if !SANDBOX
                 Button(action: openReleasesPage) {
                     Text("Update available!")
                         .font(.system(size: 11))
@@ -77,6 +82,7 @@ struct AboutView: View {
                 .disabled(!isUpdateAvailable)
                 .opacity(isUpdateAvailable ? 1.0 : 0.0)
                 .padding(.bottom, 16)
+                #endif
 
                 Spacer(minLength: 0)
 
@@ -120,6 +126,8 @@ struct AboutView: View {
                 }
                 .padding(.leading, settingPadding)
 
+                #if !SANDBOX
+
                 // MARK: - Brightness HUD Toggle
 
                 VStack(alignment: .leading, spacing: spaceBeforeSubtitle) {
@@ -158,6 +166,7 @@ struct AboutView: View {
                 }
                 .padding(.leading, settingPadding)
                 .animation(.easeInOut(duration: 0.3), value: brightnessEnabled)
+                #endif
 
                 // MARK: - Display Toggle for HUD Placement
 
@@ -241,13 +250,17 @@ struct AboutView: View {
         }
         .padding(32) // Overall frame padding
         .frame(width: 540, height: 300)
-        .onAppear {
-            Task {
-                try? await Task.sleep(nanoseconds: 200000000) // 0.2 second delay
-                checkForUpdates()
+        #if !SANDBOX
+            .onAppear {
+                Task {
+                    try? await Task.sleep(nanoseconds: 200000000) // 0.2 second delay
+                    checkForUpdates()
+                }
             }
-        }
+        #endif
     }
+
+    #if !SANDBOX
 
     // MARK: - Update Check
 
@@ -323,6 +336,7 @@ struct AboutView: View {
             NSWorkspace.shared.open(url)
         }
     }
+    #endif
 }
 
 #Preview {
