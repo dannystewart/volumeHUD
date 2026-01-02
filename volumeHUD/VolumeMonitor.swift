@@ -260,8 +260,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         }
 
         // Monitor system-defined events for volume key presses
-        systemEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: .systemDefined) {
-            [weak self] event in
+        systemEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: .systemDefined) { [weak self] event in
             guard let self else { return }
             // Extract only primitive fields on the monitoring thread to avoid
             // crossing threads with non-Sendable NSEvent

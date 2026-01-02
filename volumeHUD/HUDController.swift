@@ -170,10 +170,8 @@ class HUDController: ObservableObject {
     private func getScreenWithMouse() -> NSScreen? {
         let mouseLocation = NSEvent.mouseLocation
 
-        for screen in NSScreen.screens {
-            if screen.frame.contains(mouseLocation) {
-                return screen
-            }
+        for screen in NSScreen.screens where screen.frame.contains(mouseLocation) {
+            return screen
         }
 
         return nil

@@ -200,10 +200,8 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
             return nil
         }
 
-        for display in activeDisplays.prefix(Int(displayCount)) {
-            if CGDisplayIsBuiltin(display) != 0 {
-                return display
-            }
+        for display in activeDisplays.prefix(Int(displayCount)) where CGDisplayIsBuiltin(display) != 0 {
+            return display
         }
 
         return nil
