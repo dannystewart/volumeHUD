@@ -1,11 +1,20 @@
 disabled_rules:
-  - file_length # We try, but we can't be perfect
-  - line_length # Line length should not be a warning, come on
-  - trailing_comma # This fights with other formatters
-  - type_body_length # We might re-enable this as we get better
+  - line_length
+  - identifier_name
+  - file_length
+  - type_body_length
+  - function_body_length
+  - cyclomatic_complexity
+  #
+  # conflicts with swiftformat
+  - opening_brace
+  - closing_brace
+  - leading_whitespace
+  - trailing_whitespace
+  - trailing_comma
 
-excluded:
-  - .build # Way too much random crap ends up in here to lint
-  - Packages # We can't trust others to meet our exacting standards
+included:
+  - volumeHUD
 
+strict: true
 check_for_updates: true

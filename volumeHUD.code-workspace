@@ -1,43 +1,44 @@
 {
-    "folders": [
-        {
-            "name": "volumeHUD",
-            "path": "."
-        },
-        {
-            "name": "homebrew-apps",
-            "path": "../homebrew-apps"
-        }
-    ],
-    "settings": {
-        "editor.detectIndentation": false,
-        "editor.formatOnPaste": true,
-        "editor.formatOnSave": true,
-        "explorerExclude.backup": {},
-        "files.exclude": {
-            ".build": true,
-            ".cursor": true,
-            ".cursorindexingignore": true,
-            ".history": true,
-            ".specstory": true,
-            ".swiftpm": true,
-            "*.code-workspace": true,
-            "**/__pycache__": true,
-            "**/.DS_Store": true,
-            "**/.git": true,
-            "**/.hg": false,
-            "**/.pytest_cache": true,
-            "**/.svn": false,
-            "**/.vscode": true,
-            "**/*.xcodeproj": true,
-            "**/CVS": false,
-            "**/node_modules": true,
-            "**/Thumbs.db": true,
-            "env*": true,
-            "release": true,
-            "venv": true
-        },
-        "swift.autoGenerateLaunchConfigurations": false,
-        "swift.buildPath": "./.build",
+  "folders": [
+    {
+      "name": "volumeHUD",
+      "path": "."
+    },
+    {
+      "name": "homebrew-apps",
+      "path": "../homebrew-apps"
     }
+  ],
+  "settings": {
+    "editor.detectIndentation": false,
+    "editor.formatOnPaste": true,
+    "editor.formatOnSave": true,
+    "explorerExclude.backup": {},
+    "files.exclude": {
+      ".build": true,
+      ".cursor": true,
+      ".cursorindexingignore": true,
+      ".history": true,
+      ".specstory": true,
+      ".swiftpm": true,
+      "*.code-workspace": true,
+      "**/__pycache__": true,
+      "**/.DS_Store": true,
+      "**/.git": true,
+      "**/.hg": false,
+      "**/.pytest_cache": true,
+      "**/.svn": false,
+      "**/.vscode": true,
+      "**/*.xcodeproj": true,
+      "**/CVS": false,
+      "**/node_modules": true,
+      "**/Thumbs.db": true,
+      "Build": true,
+      "env*": true,
+      "release": true,
+      "venv": true
+    },
+    "swift.autoGenerateLaunchConfigurations": false,
+    "swift.buildPath": "./.build"
+  }
 }
