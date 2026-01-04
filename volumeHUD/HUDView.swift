@@ -52,7 +52,7 @@ struct HUDView: View {
                     .frame(height: 56)
                 Image(systemName: iconName)
                     .font(.system(size: iconSize, weight: .medium))
-                    .foregroundColor(.white.opacity(0.7))
+                    .foregroundStyle(.primary.opacity(0.7))
                     // SF Symbols has slight misalignment between speaker.slash.fill and speaker.fill
                     .offset(y: hudType == .volume && (isMuted || value <= 0.001) ? 2 : 0)
                 Spacer()
@@ -77,8 +77,7 @@ struct HUDView: View {
         .frame(width: hudSize, height: hudSize)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(.regularMaterial)
-                .environment(\.colorScheme, .dark),
+                .fill(.regularMaterial),
         )
     }
 
@@ -90,7 +89,7 @@ struct HUDView: View {
         if hudType == .volume, isMuted {
             // Show all bars dimmed when muted
             Rectangle()
-                .fill(.white.opacity(0.2))
+                .fill(.primary.opacity(0.2))
                 .frame(width: barWidth, height: barHeight)
         } else {
             // Each of the 16 bars represents 1/16th of the total range
@@ -101,7 +100,7 @@ struct HUDView: View {
             if value >= barEnd {
                 // Fully filled bar
                 Rectangle()
-                    .fill(.white.opacity(0.7))
+                    .fill(.primary.opacity(0.7))
                     .frame(width: barWidth, height: barHeight)
             } else if value > barStart {
                 // Partially filled bar - calculate fill percentage
@@ -114,18 +113,18 @@ struct HUDView: View {
                 // Show partial fill with overlay
                 ZStack(alignment: .leading) {
                     Rectangle()
-                        .fill(.white.opacity(0.2))
+                        .fill(.primary.opacity(0.2))
                         .frame(width: barWidth, height: barHeight)
 
                     Rectangle()
-                        .fill(.white.opacity(0.7))
+                        .fill(.primary.opacity(0.7))
                         .frame(width: fillWidth, height: barHeight)
                 }
                 .frame(width: barWidth, height: barHeight)
             } else {
                 // Empty bar
                 Rectangle()
-                    .fill(.white.opacity(0.2))
+                    .fill(.primary.opacity(0.2))
                     .frame(width: barWidth, height: barHeight)
             }
         }
