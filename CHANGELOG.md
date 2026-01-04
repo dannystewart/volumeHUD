@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## [Unreleased]
 
+## [3.1.1] (2026-01-04)
+
+### Fixed
+
+- Adds another fix for HUD window interaction with Mission Control and Show Desktop by removing `.stationary` window behavior.
+
 ## [3.1.0] (2026-01-04)
 
 ### Added
@@ -236,7 +242,8 @@ Initial release.
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
 <!-- Versions -->
-[unreleased]: https://github.com/dannystewart/volumeHUD/compare/v3.1.0...HEAD
+[unreleased]: https://github.com/dannystewart/volumeHUD/compare/v3.1.1...HEAD
+[3.1.1]: https://github.com/dannystewart/volumeHUD/compare/v3.1.0...v3.1.1
 [3.1.0]: https://github.com/dannystewart/volumeHUD/compare/v3.0.3...v3.1.0
 [3.0.3]: https://github.com/dannystewart/volumeHUD/compare/v3.0.2...v3.0.3
 [3.0.2]: https://github.com/dannystewart/volumeHUD/compare/v3.0.1...v3.0.2
