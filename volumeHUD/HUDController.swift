@@ -292,10 +292,9 @@ class HUDController: ObservableObject {
         window.backgroundColor = .clear
         window.hasShadow = false
         window.ignoresMouseEvents = true
-        window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle, .transient]
-
-        // Make sure window appears on all spaces and can't be activated
-        window.canHide = false
+        // Avoid .stationary: it can interact badly with Mission Control / Show Desktop.
+        // `canJoinAllSpaces` is sufficient for cross-space visibility.
+        window.collectionBehavior = [.canJoinAllSpaces, .ignoresCycle, .transient]
 
         // Set the initial position
         updateWindowPosition()
