@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## [3.1.1] (2026-01-04)
 
+### Changed
+
+- Adds build number to the About window, accessible by clicking the version number text to alternate between version and build.
+
 ### Fixed
 
 - Adds another fix for HUD window interaction with Mission Control and Show Desktop by removing `.stationary` window behavior.
