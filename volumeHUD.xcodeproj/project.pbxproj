@@ -12,6 +12,8 @@
 		3045B1B12E8CB81A00C34F16 /* CHANGELOG.md in Resources */ = {isa = PBXBuildFile; fileRef = 3045B1AF2E8CB81A00C34F16 /* CHANGELOG.md */; };
 		3045B1B22E8CB81A00C34F16 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 3045B1B02E8CB81A00C34F16 /* README.md */; };
 		305AA9A92E997C50002F116A /* PolyKit in Frameworks */ = {isa = PBXBuildFile; productRef = 305AA9A82E997C50002F116A /* PolyKit */; };
+		30C963FE2F0AB58100DDF7AF /* AppIntents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 30C963FD2F0AB58100DDF7AF /* AppIntents.framework */; };
+		30C963FF2F0AB58600DDF7AF /* AppIntents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 30C963FD2F0AB58100DDF7AF /* AppIntents.framework */; };
 		30DAC6D22EEE1F73004F96CE /* PolyKit in Frameworks */ = {isa = PBXBuildFile; productRef = 30DAC6CE2EEE1F73004F96CE /* PolyKit */; };
 		30DAC6D42EEE1F73004F96CE /* CHANGELOG.md in Resources */ = {isa = PBXBuildFile; fileRef = 3045B1AF2E8CB81A00C34F16 /* CHANGELOG.md */; };
 		30DAC6D52EEE1F73004F96CE /* LoginHelper.app in Resources */ = {isa = PBXBuildFile; fileRef = 302AB2E42E902CF100889BBF /* LoginHelper.app */; };
@@ -68,6 +70,8 @@
 		3045B1AF2E8CB81A00C34F16 /* CHANGELOG.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CHANGELOG.md; sourceTree = "<group>"; };
 		3045B1B02E8CB81A00C34F16 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		30C937682E806B79004B5AF5 /* volumeHUD.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = volumeHUD.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		30C963FD2F0AB58100DDF7AF /* AppIntents.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppIntents.framework; path = System/Library/Frameworks/AppIntents.framework; sourceTree = SDKROOT; };
+		30C964002F0AB64600DDF7AF /* BuildNumber.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = BuildNumber.xcconfig; sourceTree = "<group>"; };
 		30DAC6DD2EEE1F73004F96CE /* volumeHUD.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = volumeHUD.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		30FF7CEE2EB20778000E1031 /* volumeHUD.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = volumeHUD.icon; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -133,6 +137,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				30C963FE2F0AB58100DDF7AF /* AppIntents.framework in Frameworks */,
 				305AA9A92E997C50002F116A /* PolyKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -141,6 +146,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				30C963FF2F0AB58600DDF7AF /* AppIntents.framework in Frameworks */,
 				30DAC6D22EEE1F73004F96CE /* PolyKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -151,6 +157,7 @@
 		30A48DC62E8B13B9005E1B15 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				30C963FD2F0AB58100DDF7AF /* AppIntents.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -165,6 +172,7 @@
 				30A48DC62E8B13B9005E1B15 /* Frameworks */,
 				30C937692E806B79004B5AF5 /* Products */,
 				30FF7CEE2EB20778000E1031 /* volumeHUD.icon */,
+				30C964002F0AB64600DDF7AF /* BuildNumber.xcconfig */,
 			);
 			sourceTree = "<group>";
 		};
@@ -261,7 +269,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2610;
-				LastUpgradeCheck = 2610;
+				LastUpgradeCheck = 2620;
 				TargetAttributes = {
 					302AB2E32E902CF100889BBF = {
 						CreatedOnToolsVersion = 26.0;
@@ -372,7 +380,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3.0.4;
+				CURRENT_PROJECT_VERSION = "$(CURRENT_PROJECT_VERSION)";
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = PL2FTGT24W;
 				ENABLE_APP_SANDBOX = YES;
@@ -409,7 +417,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3.0.4;
+				CURRENT_PROJECT_VERSION = "$(CURRENT_PROJECT_VERSION)";
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = PL2FTGT24W;
 				ENABLE_APP_SANDBOX = YES;
@@ -441,6 +449,7 @@
 		};
 		30C937712E806B7A004B5AF5 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 30C964002F0AB64600DDF7AF /* BuildNumber.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -473,6 +482,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = "$(CURRENT_PROJECT_VERSION)";
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = PL2FTGT24W;
@@ -510,6 +520,7 @@
 		};
 		30C937722E806B7A004B5AF5 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 30C964002F0AB64600DDF7AF /* BuildNumber.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -542,6 +553,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = "$(CURRENT_PROJECT_VERSION)";
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = PL2FTGT24W;
@@ -571,6 +583,7 @@
 		};
 		30C937742E806B7A004B5AF5 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 30C964002F0AB64600DDF7AF /* BuildNumber.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = volumeHUD;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -578,7 +591,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3.0.4;
+				CURRENT_PROJECT_VERSION = "$(CURRENT_PROJECT_VERSION)";
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = PL2FTGT24W;
 				ENABLE_APP_SANDBOX = NO;
@@ -611,6 +624,7 @@
 		};
 		30C937752E806B7A004B5AF5 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 30C964002F0AB64600DDF7AF /* BuildNumber.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = volumeHUD;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -618,7 +632,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3.0.4;
+				CURRENT_PROJECT_VERSION = "$(CURRENT_PROJECT_VERSION)";
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = PL2FTGT24W;
 				ENABLE_APP_SANDBOX = NO;
@@ -651,6 +665,7 @@
 		};
 		30DAC6DB2EEE1F73004F96CE /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 30C964002F0AB64600DDF7AF /* BuildNumber.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = volumeHUD;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -658,7 +673,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = "$(CURRENT_PROJECT_VERSION)";
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = PL2FTGT24W;
 				ENABLE_APP_SANDBOX = YES;
@@ -692,6 +707,7 @@
 		};
 		30DAC6DC2EEE1F73004F96CE /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 30C964002F0AB64600DDF7AF /* BuildNumber.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = volumeHUD;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -699,7 +715,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = "$(CURRENT_PROJECT_VERSION)";
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = PL2FTGT24W;
 				ENABLE_APP_SANDBOX = YES;

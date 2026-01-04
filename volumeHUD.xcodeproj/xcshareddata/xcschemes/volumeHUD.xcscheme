@@ -1,11 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "2610"
+   LastUpgradeVersion = "2620"
    version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
       buildImplicitDependencies = "YES"
       buildArchitectures = "Automatic">
+      <PreActions>
+         <ExecutionAction
+            ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
+            <ActionContent
+               title = "Run Script"
+               scriptText = "#!/bin/sh&#10;set -e&#10;&#10;# Manual offset in case commit count decreases&#10;OFFSET=0&#10;&#10;# 1. Figure out paths&#10;BUILD_CONFIG=&quot;${PROJECT_DIR}/BuildNumber.xcconfig&quot;&#10;&#10;# 2. Generate build number from commit count + offset&#10;COMMIT_COUNT=$(git -C &quot;$PROJECT_DIR&quot; rev-list --count HEAD 2&gt;/dev/null || echo 1)&#10;BUILD_NUMBER=$((COMMIT_COUNT + OFFSET))&#10;&#10;# 3. Write the new value back to BuildNumber.xcconfig&#10;cat &gt; &quot;$BUILD_CONFIG&quot; &lt;&lt;EOF&#10;// Auto-generated. Do not edit by hand.&#10;&#10;CURRENT_PROJECT_VERSION = $BUILD_NUMBER&#10;EOF&#10;&#10;echo &quot;Updated $BUILD_CONFIG to build $BUILD_NUMBER&quot;&#10;">
+               <EnvironmentBuildable>
+                  <BuildableReference
+                     BuildableIdentifier = "primary"
+                     BlueprintIdentifier = "30C937672E806B79004B5AF5"
+                     BuildableName = "volumeHUD.app"
+                     BlueprintName = "volumeHUD"
+                     ReferencedContainer = "container:volumeHUD.xcodeproj">
+                  </BuildableReference>
+               </EnvironmentBuildable>
+            </ActionContent>
+         </ExecutionAction>
+      </PreActions>
       <BuildActionEntries>
          <BuildActionEntry
             buildForTesting = "YES"

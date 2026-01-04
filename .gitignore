@@ -51,4 +51,5 @@ Packages/
 *.tmp
 releases/
 scripts/
+BuildNumber.xcconfig
 Secrets.swift
