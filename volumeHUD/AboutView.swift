@@ -16,6 +16,8 @@ struct AboutView: View {
 
     let logger: PolyLog = .init()
 
+    @State private var isShowingBuildNumber: Bool = false
+
     // Settings for app preferences
     #if !SANDBOX
     @AppStorage("brightnessEnabled") private var brightnessEnabled: Bool = false
@@ -49,6 +51,22 @@ struct AboutView: View {
         return "3.0.0"
     }
 
+    /// Get the app build number
+    private var appBuildNumber: String {
+        if let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String {
+            return buildNumber
+        }
+        return "0"
+    }
+
+    private var aboutVersionLabelText: String {
+        if isShowingBuildNumber {
+            "Build \(appBuildNumber)"
+        } else {
+            "Version \(appVersion)"
+        }
+    }
+
     // MARK: - About View
 
     var body: some View {
@@ -67,9 +85,17 @@ struct AboutView: View {
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
 
-                Text("Version \(appVersion)")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+                Button {
+                    isShowingBuildNumber.toggle()
+                } label: {
+                    Text(aboutVersionLabelText)
+                }
+                .buttonStyle(.plain)
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .accessibilityLabel("Version information")
+                .accessibilityValue(aboutVersionLabelText)
+                .accessibilityHint("Activate to toggle between app version and build number")
 
                 #if !SANDBOX
                 Button(action: openReleasesPage) {
