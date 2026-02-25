@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## [Unreleased]
 
+## [3.1.2] (2026-02-25)
+
+### Fixed
+
+- Fixes hidden window blocking clicks for Show Desktop in Mission Control / Exposé by setting explicit zero-size frame constraint. Thanks to [@usagimaru](https://github.com/usagimaru) for the fix and [@jg22](https://github.com/jg22) for his patience before it was finally found.
+
 ## [3.1.1] (2026-01-04)
 
 ### Changed
@@ -246,7 +252,8 @@ Initial release.
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
 <!-- Versions -->
-[unreleased]: https://github.com/dannystewart/volumeHUD/compare/v3.1.1...HEAD
+[unreleased]: https://github.com/dannystewart/volumeHUD/compare/v3.1.2...HEAD
+[3.1.2]: https://github.com/dannystewart/volumeHUD/compare/v3.1.1...v3.1.2
 [3.1.1]: https://github.com/dannystewart/volumeHUD/compare/v3.1.0...v3.1.1
 [3.1.0]: https://github.com/dannystewart/volumeHUD/compare/v3.0.3...v3.1.0
 [3.0.3]: https://github.com/dannystewart/volumeHUD/compare/v3.0.2...v3.0.3
