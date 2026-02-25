@@ -445,6 +445,7 @@ struct VolumeHUDApp: App {
     var body: some Scene {
         WindowGroup {
             EmptyView()
+                .frame(width: 0, height: 0)
         }
         .windowStyle(.hiddenTitleBar)
         .defaultSize(width: 0, height: 0)
