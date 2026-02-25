@@ -7,7 +7,7 @@
       "location" : "https://github.com/dannystewart/polykit-swift",
       "state" : {
         "branch" : "main",
-        "revision" : "8374007063f0710c1e39072b2ce06c3692f8ee31"
+        "revision" : "466f11e2217bd164375acb89b53e81c99fce5c4b"
       }
     },
     {
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/supabase/supabase-swift.git",
       "state" : {
-        "revision" : "f633f1ce9ff6dac9f33a1717d191a6c3985148fa",
-        "version" : "2.39.0"
+        "revision" : "0f8bf83b55709e5530cd842a0185b9abba7a3c6c",
+        "version" : "2.41.1"
       }
     },
     {
@@ -69,8 +69,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/xctest-dynamic-overlay",
       "state" : {
-        "revision" : "31073495cae9caf243c440eac94b3ab067e3d7bc",
-        "version" : "1.8.0"
+        "revision" : "dfd70507def84cb5fb821278448a262c6ff2bbad",
+        "version" : "1.9.0"
       }
     }
   ],
