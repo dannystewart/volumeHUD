@@ -57,9 +57,4 @@ class LoginItemManager: ObservableObject {
             lastError = error.localizedDescription
         }
     }
-
-    /// Toggles the login item on or off
-    func toggle() {
-        setEnabled(!isEnabled)
-    }
 }

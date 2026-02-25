@@ -81,10 +81,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         hudController = HUDController(isPreviewMode: false)
 
         // Set up bidirectional references
-        hudController.volumeMonitor = volumeMonitor
-        #if !SANDBOX
-        hudController.brightnessMonitor = brightnessMonitor
-        #endif
         volumeMonitor.hudController = hudController
         #if !SANDBOX
         brightnessMonitor.hudController = hudController

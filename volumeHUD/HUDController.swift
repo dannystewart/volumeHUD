@@ -16,10 +16,6 @@ import SwiftUI
 class HUDController: ObservableObject {
     @Published var isShowing = false
 
-    weak var volumeMonitor: VolumeMonitor?
-    #if !SANDBOX
-    weak var brightnessMonitor: BrightnessMonitor?
-    #endif
     let logger: PolyLog = .init()
 
     private var hudWindow: NSWindow?
@@ -135,7 +131,7 @@ class HUDController: ObservableObject {
             }
         }
         #else
-        /// Check user preference for volume HUD location
+        // Check user preference for volume HUD location
         let followMouse = UserDefaults.standard.bool(forKey: "volumeHUDFollowsMouse")
         if followMouse {
             targetScreen = getScreenWithMouse() ?? NSScreen.main ?? NSScreen.screens.first!
@@ -225,7 +221,7 @@ class HUDController: ObservableObject {
             }
 
             // Always recreate hosting view to avoid SwiftUI state issues
-            let newHostingView = NSHostingView(rootView: HUDView(hudType: hudType, value: value, isMuted: isMuted, isVisible: true))
+            let newHostingView = NSHostingView(rootView: HUDView(hudType: hudType, value: value, isMuted: isMuted))
             newHostingView.frame = window.contentView?.bounds ?? NSRect(x: 0, y: 0, width: 200, height: 200)
 
             // Ensure hosting view background is clear for proper material rendering

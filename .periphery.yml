@@ -1,0 +1,4 @@
+project: volumeHUD.xcodeproj
+schemes:
+- LoginHelper
+- volumeHUD

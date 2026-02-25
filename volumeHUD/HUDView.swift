@@ -20,7 +20,6 @@ struct HUDView: View {
     let hudType: HUDType
     let value: Float
     let isMuted: Bool
-    let isVisible: Bool
 
     private let hudSize: CGFloat = 200
     private let iconSize: CGFloat = 80
@@ -134,20 +133,20 @@ struct HUDView: View {
 #Preview("Volume") {
     ZStack {
         Color.black.frame(width: 360, height: 380).ignoresSafeArea()
-        HUDView(hudType: .volume, value: 0.7, isMuted: false, isVisible: true)
+        HUDView(hudType: .volume, value: 0.7, isMuted: false)
     }
 }
 
 #Preview("Mute") {
     ZStack {
         Color.black.frame(width: 360, height: 380).ignoresSafeArea()
-        HUDView(hudType: .volume, value: 0.0, isMuted: true, isVisible: true)
+        HUDView(hudType: .volume, value: 0.0, isMuted: true)
     }
 }
 
 #Preview("Brightness") {
     ZStack {
         Color.black.frame(width: 360, height: 380).ignoresSafeArea()
-        HUDView(hudType: .brightness, value: 0.5, isMuted: false, isVisible: true)
+        HUDView(hudType: .brightness, value: 0.5, isMuted: false)
     }
 }
