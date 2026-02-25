@@ -38,6 +38,7 @@
       "release": true,
       "venv": true
     },
+    "sweetpad.build.xcodeWorkspacePath": "volumeHUD.xcodeproj/project.xcworkspace",
     "swift.autoGenerateLaunchConfigurations": false,
     "swift.buildPath": "./.build"
   }
