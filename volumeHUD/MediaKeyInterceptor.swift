@@ -68,7 +68,8 @@ final class MediaKeyInterceptor {
 
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
-    private var audioPlayer: AVAudioPlayer?
+    private var feedbackSoundData: Data?
+    private var activeFeedbackPlayers: [AVAudioPlayer] = []
     private var isRunning = false
 
     /// Whether volume interception is currently working (resets on device change or app restart).
@@ -238,13 +239,24 @@ final class MediaKeyInterceptor {
 
         // Extract modifier flags for fine control detection
         let modifierFlags = nsEvent.modifierFlags
-        let optionHeld = modifierFlags.contains(.option)
-        let shiftHeld = modifierFlags.contains(.shift)
+        let eventFlags = cgEvent.flags
+        let sessionFlags = CGEventSource.flagsState(.combinedSessionState)
+        let optionHeldFromNSEvent = modifierFlags.contains(.option)
+        let shiftHeldFromNSEvent = modifierFlags.contains(.shift)
+        let optionHeldFromCGEvent = eventFlags.contains(.maskAlternate)
+        let shiftHeldFromCGEvent = eventFlags.contains(.maskShift)
+        let optionHeldFromSession = sessionFlags.contains(CGEventFlags.maskAlternate)
+        let shiftHeldFromSession = sessionFlags.contains(CGEventFlags.maskShift)
+        let optionHeld = optionHeldFromNSEvent || optionHeldFromCGEvent || optionHeldFromSession
+        let shiftHeld = shiftHeldFromNSEvent || shiftHeldFromCGEvent || shiftHeldFromSession
         let useFineStep = optionHeld && shiftHeld
 
         // Check if this is a key we want to intercept
         switch keyType {
         case .soundUp, .soundDown, .mute:
+            logger.debug(
+                "Volume key modifiers: shift=\(shiftHeld), option=\(optionHeld), nsShift=\(shiftHeldFromNSEvent), nsOption=\(optionHeldFromNSEvent), cgShift=\(shiftHeldFromCGEvent), cgOption=\(optionHeldFromCGEvent), sessionShift=\(shiftHeldFromSession), sessionOption=\(optionHeldFromSession), cgFlags=\(eventFlags.rawValue), sessionFlags=\(sessionFlags.rawValue)",
+            )
             // Check if volume interception is still working
             guard volumeInterceptionWorking else {
                 return Unmanaged.passRetained(cgEvent) // Pass through to system
@@ -252,7 +264,12 @@ final class MediaKeyInterceptor {
 
             // Handle the key press on the main actor
             Task { @MainActor [weak self] in
-                self?.handleVolumeKey(keyType: keyType, useFineStep: useFineStep)
+                self?.handleVolumeKey(
+                    keyType: keyType,
+                    useFineStep: useFineStep,
+                    shiftHeld: shiftHeld,
+                    optionHeld: optionHeld,
+                )
             }
 
             // Consume the event
@@ -278,17 +295,26 @@ final class MediaKeyInterceptor {
     // MARK: Private - Key Handlers
 
     /// Handle a volume key press by adjusting volume and showing our HUD.
-    private func handleVolumeKey(keyType: NXKeyType, useFineStep: Bool) {
+    private func handleVolumeKey(keyType: NXKeyType, useFineStep: Bool, shiftHeld: Bool, optionHeld: Bool) {
         let step = useFineStep ? fineStep : standardStep
+        let shouldPlayFeedback = shouldPlayVolumeFeedback(shiftHeld: shiftHeld, optionHeld: optionHeld)
 
         switch keyType {
         case .soundUp:
             adjustVolume(delta: step)
-            playFeedbackSoundIfEnabled()
+            if shouldPlayFeedback {
+                playFeedbackSound()
+            } else {
+                logger.debug("Volume feedback skipped for this key press based on current preference and modifiers.")
+            }
 
         case .soundDown:
             adjustVolume(delta: -step)
-            playFeedbackSoundIfEnabled()
+            if shouldPlayFeedback {
+                playFeedbackSound()
+            } else {
+                logger.debug("Volume feedback skipped for this key press based on current preference and modifiers.")
+            }
 
         case .mute:
             toggleMute()
@@ -709,31 +735,88 @@ final class MediaKeyInterceptor {
 
     // MARK: Private - Feedback Sound
 
-    /// Play the volume feedback sound if the user has it enabled in system preferences.
-    private func playFeedbackSoundIfEnabled() {
-        // Check if the user has feedback sounds enabled
-        guard
-            let globalDomain = UserDefaults.standard.persistentDomain(forName: "NSGlobalDomain"),
-            let feedbackEnabled = globalDomain["com.apple.sound.beep.feedback"] as? Int,
-            feedbackEnabled == 1 else
-        {
+    /// Determine whether feedback should play for this key press.
+    /// Default follows the macOS preference. Shift alone inverts the preference.
+    /// Option+Shift remains silent, matching macOS behavior.
+    private func shouldPlayVolumeFeedback(shiftHeld: Bool, optionHeld: Bool) -> Bool {
+        guard let globalDomain = UserDefaults.standard.persistentDomain(forName: "NSGlobalDomain") else {
+            logger.debug("Volume feedback preference unavailable. Defaulting to no feedback.")
+            return false
+        }
+
+        let feedbackSetting = globalDomain["com.apple.sound.beep.feedback"]
+        let feedbackPreferenceEnabled: Bool = switch feedbackSetting {
+        case let value as Int:
+            value == 1
+        case let value as Bool:
+            value
+        case let value as NSNumber:
+            value.intValue == 1
+        default:
+            false
+        }
+
+        if optionHeld, shiftHeld {
+            logger.debug("Volume feedback suppressed for Option+Shift fine-step volume change.")
+            return false
+        }
+
+        if shiftHeld {
+            let shouldPlayWhenShiftHeld = !feedbackPreferenceEnabled
+            logger.debug("Volume feedback decision with Shift held: preferenceEnabled=\(feedbackPreferenceEnabled), willPlay=\(shouldPlayWhenShiftHeld)")
+            return shouldPlayWhenShiftHeld
+        }
+
+        logger.debug("Volume feedback decision without Shift: preferenceEnabled=\(feedbackPreferenceEnabled), willPlay=\(feedbackPreferenceEnabled)")
+        return feedbackPreferenceEnabled
+    }
+
+    /// Play the configured volume feedback sound.
+    private func playFeedbackSound() {
+        prepareFeedbackSoundDataIfNeeded()
+        pruneCompletedFeedbackPlayers()
+
+        guard let feedbackSoundData else {
+            logger.warning("Volume feedback skipped: sound data unavailable.")
             return
         }
 
-        prepareAudioPlayerIfNeeded()
+        do {
+            let player = try AVAudioPlayer(data: feedbackSoundData)
+            player.volume = 1.0
+            player.numberOfLoops = 0
+            player.prepareToPlay()
 
-        guard let player = audioPlayer else { return }
-
-        if player.isPlaying {
-            player.stop()
-            player.currentTime = 0
+            let didPlay = player.play()
+            if didPlay {
+                activeFeedbackPlayers.append(player)
+                if activeFeedbackPlayers.count > 12 {
+                    activeFeedbackPlayers.removeFirst(activeFeedbackPlayers.count - 12)
+                }
+            } else {
+                logger.warning("Volume feedback player failed to start playback.")
+            }
+        } catch {
+            logger.warning("Failed to create volume feedback player: \(error.localizedDescription)")
         }
-        player.play()
     }
 
-    /// Prepare the audio player with the system volume sound.
-    private func prepareAudioPlayerIfNeeded() {
-        guard audioPlayer == nil else { return }
+    /// Drop finished players so only active overlap instances are retained.
+    private func pruneCompletedFeedbackPlayers() {
+        activeFeedbackPlayers.removeAll { !$0.isPlaying }
+    }
+
+    /// Prepare reusable feedback sound data from app asset with system-path fallback.
+    private func prepareFeedbackSoundDataIfNeeded() {
+        guard feedbackSoundData == nil else { return }
+
+        if let volumeDataAsset = NSDataAsset(name: "volume") {
+            feedbackSoundData = volumeDataAsset.data
+            logger.debug("Loaded volume feedback sound from app data asset.")
+            return
+        } else {
+            logger.warning("Bundled volume feedback data asset Volume is unavailable.")
+        }
 
         let soundPath = "/System/Library/LoginPlugins/BezelServices.loginPlugin/Contents/Resources/volume.aiff"
 
@@ -743,10 +826,8 @@ final class MediaKeyInterceptor {
         }
 
         do {
-            audioPlayer = try AVAudioPlayer(contentsOf: URL(fileURLWithPath: soundPath))
-            audioPlayer?.volume = 1.0
-            audioPlayer?.numberOfLoops = 0
-            audioPlayer?.prepareToPlay()
+            feedbackSoundData = try Data(contentsOf: URL(fileURLWithPath: soundPath))
+            logger.debug("Loaded volume feedback sound from system path fallback.")
         } catch {
             logger.warning("Failed to load volume feedback sound: \(error.localizedDescription)")
         }
@@ -759,7 +840,7 @@ final class MediaKeyInterceptor {
         // Record initial audio device
         lastKnownAudioDeviceID = getDefaultOutputDevice() ?? kAudioObjectUnknown
 
-        // Poll for audio device changes (similar to VolumeMonitor)
+        // Poll for audio device changes
         audioDevicePollingTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.checkForAudioDeviceChange()
