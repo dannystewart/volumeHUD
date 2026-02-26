@@ -6,7 +6,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## [Unreleased]
 
-## [3.1.2] (2026-02-25)
+## [3.2.0] (2026-02-25)
+
+### Added
+
+- Adds audible feedback sound when changing volume with Shift key modifier. It matches system behavior and respects the system preference for "Play feedback when volume is changed." If that preference is disabled, holding Shift plays the audible feedback, and if it's enabled, holding Shift silences it.
 
 ### Fixed
 
@@ -252,8 +256,8 @@ Initial release.
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
 <!-- Versions -->
-[unreleased]: https://github.com/dannystewart/volumeHUD/compare/v3.1.2...HEAD
-[3.1.2]: https://github.com/dannystewart/volumeHUD/compare/v3.1.1...v3.1.2
+[unreleased]: https://github.com/dannystewart/volumeHUD/compare/v3.2.0...HEAD
+[3.2.0]: https://github.com/dannystewart/volumeHUD/compare/v3.1.1...v3.2.0
 [3.1.1]: https://github.com/dannystewart/volumeHUD/compare/v3.1.0...v3.1.1
 [3.1.0]: https://github.com/dannystewart/volumeHUD/compare/v3.0.3...v3.1.0
 [3.0.3]: https://github.com/dannystewart/volumeHUD/compare/v3.0.2...v3.0.3
