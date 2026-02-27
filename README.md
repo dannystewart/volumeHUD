@@ -58,12 +58,16 @@ If you're experiencing inconsistent behavior, the most likely cause is lack of A
 
 There was an issue with pre-2.0 versions where volumeHUD didn't request those permissions properly, so if you've been using the app since before then, they're very likely not configured correctly and should be reset.
 
-### Opening an Issue
+## Bug Reports
 
-I test every feature as thoroughly as I can, and they work on the Macs I have access to. My ability to troubleshoot will be limited if I can't reproduce your issue, but as long as you're nice about it I'll do my best to help. ***Please* make sure you've checked your settings and attempted a clean reinstall before opening an issue.**
+This is a personal project that I built for myself, and I'm very glad to share it but I am not accepting feature requests or PRs. volumeHUD does what I want it to do and I consider it essentially complete.
+
+If you run into a genuine bug, I'd be happy to hear about it. **Note that I cannot provide support for specific hardware configurations or interactions with other apps.**
+
+Before opening an issue, please look to see if there's already an existing one, and make sure you've checked your settings and attempted a clean reinstall first (see **Troubleshooting** above).
 
 ## License
 
-This project is open source under the [MIT License](./LICENSE). Feel free to do what you like with it, or contribute!
+This project is open source under the [MIT License](./LICENSE). You're free to fork it and do whatever you want with the code.
 
 <a href="https://www.buymeacoffee.com/dannystewart" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-blue.png" alt="Buy Me A Coffee" height="41" width="174"></a>
