@@ -486,19 +486,37 @@ final class MediaKeyInterceptor {
         var expectedVolume = currentVolume + delta
         expectedVolume = round(expectedVolume * steps) / steps
         expectedVolume = max(0.0, min(1.0, expectedVolume))
+        let nearZeroThreshold: Float = 0.001
+        let nearOneThreshold: Float = 0.999
+        let shouldBeMutedAfterChange = expectedVolume <= nearZeroThreshold
 
         // Check if we're at a boundary (where change isn't expected)
-        let atBoundary = (currentVolume <= 0.001 && delta < 0) || (currentVolume >= 0.999 && delta > 0)
+        let atBoundary = (currentVolume <= nearZeroThreshold && delta < 0) || (currentVolume >= nearOneThreshold && delta > 0)
 
-        // If muted and adjusting volume, unmute first
-        if let isMuted = getMuteState(deviceID: deviceID), isMuted, delta != 0 {
-            _ = setMuteState(false, deviceID: deviceID)
+        // If muted and adjusting volume to an audible level, unmute first
+        if let isMuted = getMuteState(deviceID: deviceID), isMuted {
+            if shouldBeMutedAfterChange {
+                logger.debug("Keeping mute enabled because volume adjustment targets 0%.")
+            } else {
+                logger.debug("Auto-unmuting due to volume adjustment to \(Int(expectedVolume * 100))%.")
+                _ = setMuteState(false, deviceID: deviceID)
+            }
         }
 
         // Set the volume and get the actual result
         guard let actualVolume = setVolume(expectedVolume, deviceID: deviceID) else {
             disableVolumeInterception(reason: "cannot set volume")
             return
+        }
+
+        // If the new volume is zero, explicitly set mute (matching macOS behavior)
+        if shouldBeMutedAfterChange {
+            if let isMuted = getMuteState(deviceID: deviceID), isMuted {
+                logger.debug("Auto-mute skipped at 0% (already muted).")
+            } else {
+                let didMute = setMuteState(true, deviceID: deviceID)
+                logger.debug("Auto-muting at 0% after volume adjustment (success=\(didMute)).")
+            }
         }
 
         // Verify the change worked (if not at a boundary)
@@ -518,7 +536,7 @@ final class MediaKeyInterceptor {
         let isMuted = getMuteState(deviceID: deviceID) ?? false
         hudController?.showVolumeHUD(volume: expectedVolume, isMuted: isMuted)
 
-        logger.debug("Volume adjusted: \(Int(expectedVolume * 100))%")
+        logger.debug("Volume adjusted: \(Int(expectedVolume * 100))%, muted: \(isMuted)")
     }
 
     /// Toggle mute state and show HUD.
