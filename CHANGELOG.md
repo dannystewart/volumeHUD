@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Fixed
 
+- Fixes mute behavior to match native macOS handling, automatically enabling system-level mute when volume reaches zero and unmuting when it goes above.
 - Fixes display selection on multi-monitor setups to use the primary display (menu bar display) instead of being hardcoded to always use the built-in display when "HUD Follows Mouse" is not enabled.
 
 ## [3.2.0] (2026-02-25)
