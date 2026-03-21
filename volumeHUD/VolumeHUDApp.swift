@@ -8,7 +8,6 @@
 import AppKit
 import Darwin
 import Foundation
-import PolyKit
 import SwiftUI
 @preconcurrency import UserNotifications
 
@@ -27,6 +26,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
     /// Maximum system uptime to consider as "just logged in" (3 minutes)
     private nonisolated static let loginUptimeThreshold: TimeInterval = 180.0
 
+    // MARK: - Instance Conflict Detection
+
+    private nonisolated static let procPidPathInfoMaxSize = 4096
+
     var volumeMonitor: VolumeMonitor!
     #if !SANDBOX
         var brightnessMonitor: BrightnessMonitor!
@@ -36,7 +39,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
     var aboutWindow: NSPanel?
     var loginItemManager: LoginItemManager!
 
-    let logger: PolyLog = .init()
+    let logger: Logger = .init()
 
     #if !SANDBOX
         /// Check to see if brightness is enabled
@@ -49,6 +52,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         DistributedNotificationCenter.default().removeObserver(self)
     }
 
+    /// Returns the .app bundle path for the given PID, or nil if it can't be determined.
+    private nonisolated static func getBundlePath(for pid: pid_t) -> String? {
+        var pathBuffer = [CChar](repeating: 0, count: procPidPathInfoMaxSize)
+        let result = proc_pidpath(pid, &pathBuffer, UInt32(procPidPathInfoMaxSize))
+        guard result > 0 else { return nil }
+
+        let pathLength = pathBuffer.firstIndex(of: 0) ?? pathBuffer.count
+        let utf8Bytes = pathBuffer[..<pathLength].map { UInt8(bitPattern: $0) }
+        guard let executablePath = String(bytes: utf8Bytes, encoding: .utf8) else { return nil }
+
+        if let appRange = executablePath.range(of: ".app/") {
+            return String(executablePath[..<appRange.upperBound].dropLast(1))
+        }
+        return nil
+    }
+
     // MARK: - On Finish Launching
 
     func applicationDidFinishLaunching(_: Notification) {
@@ -57,8 +76,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         if isDevEnvironment { return }
 
         // Check for other instances running from different bundle paths
-        if let otherInstancePath = PolyProcess.checkForConflictingInstance(logger: logger) {
-            PolyProcess.showConflictAlert(otherPath: otherInstancePath) {
+        if let otherInstancePath = checkForConflictingInstance() {
+            showConflictAlert(otherPath: otherInstancePath) {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     NSApp.terminate(nil)
                 }
@@ -247,7 +266,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
 
     /// Checks if the parent PID is our embedded login helper in Contents/Library/LoginItems.
     private nonisolated func isParentEmbeddedLoginHelper(_ parentPID: pid_t) -> Bool {
-        guard let parentBundlePath = PolyProcess.getBundlePath(for: parentPID) else { return false }
+        guard let parentBundlePath = Self.getBundlePath(for: parentPID) else { return false }
 
         let loginItemsURL = Bundle.main
             .bundleURL
@@ -271,6 +290,78 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         }
 
         return contents.contains { $0.pathExtension == "app" && $0.path == parentBundlePath }
+    }
+
+    /// Checks for another instance of this app running from a different bundle path.
+    /// Returns the conflicting bundle path if found, nil otherwise.
+    private func checkForConflictingInstance() -> String? {
+        let currentPID = ProcessInfo.processInfo.processIdentifier
+        let currentBundlePath = Bundle.main.bundlePath
+
+        guard let executableName = Bundle.main.object(forInfoDictionaryKey: "CFBundleExecutable") as? String else {
+            logger.warning("Could not determine executable name for conflict detection")
+            return nil
+        }
+
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
+        task.arguments = ["-f", executableName]
+
+        let pipe = Pipe()
+        task.standardOutput = pipe
+        task.standardError = Pipe()
+
+        do {
+            try task.run()
+            task.waitUntilExit()
+
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            let output = String(data: data, encoding: .utf8) ?? ""
+            let pids = output.split(separator: "\n").compactMap { Int32($0.trimmingCharacters(in: .whitespaces)) }
+
+            for pid in pids {
+                if pid == currentPID { continue }
+                if let bundlePath = Self.getBundlePath(for: pid), bundlePath != currentBundlePath {
+                    return bundlePath
+                }
+            }
+        } catch {
+            logger.warning("Failed to check for other instances: \(error)")
+        }
+
+        return nil
+    }
+
+    /// Shows a warning alert when another instance is detected running from a different location.
+    @MainActor
+    private func showConflictAlert(otherPath: String, onDismiss: (() -> Void)? = nil) {
+        let appName = (Bundle.main.object(forInfoDictionaryKey: "CFBundleExecutable") as? String) ?? "This Application"
+
+        let alert = NSAlert()
+        alert.messageText = "Another \(appName) Instance Detected"
+        alert.informativeText = """
+        Another copy of \(appName) is already running from a different location:
+
+        \(otherPath)
+
+        This instance will now exit. Please quit the other instance first if you want to run this version instead.
+
+        Tip: Use 'pkill -f \(appName)' in Terminal to stop all instances.
+        """
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "OK")
+
+        let previousPolicy = NSApplication.shared.activationPolicy()
+        NSApplication.shared.setActivationPolicy(.regular)
+        NSApp.activate(ignoringOtherApps: true)
+
+        alert.runModal()
+
+        if previousPolicy != .regular {
+            NSApplication.shared.setActivationPolicy(previousPolicy)
+        }
+
+        onDismiss?()
     }
 
     // MARK: - Show About Window

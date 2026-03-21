@@ -12,7 +12,6 @@ import CoreAudio
 import CoreGraphics
 import Foundation
 import IOKit
-import PolyKit
 
 /// Intercepts media key events at the HID level to suppress the system HUDs.
 /// When active, this class consumes volume/brightness key events before macOS sees them,
@@ -61,7 +60,7 @@ final class MediaKeyInterceptor {
 
     weak var hudController: HUDController?
 
-    let logger: PolyLog = .init()
+    let logger: Logger = .init()
 
     /// Timestamp of last volume change by this interceptor (for coordinating with VolumeMonitor)
     private(set) nonisolated(unsafe) var lastVolumeChangeTime: TimeInterval = 0

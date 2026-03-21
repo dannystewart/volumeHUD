@@ -11,7 +11,6 @@
 		302AB2F92E902DE000889BBF /* LoginHelper.app in Copy Files */ = {isa = PBXBuildFile; fileRef = 302AB2E42E902CF100889BBF /* LoginHelper.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		3045B1B12E8CB81A00C34F16 /* CHANGELOG.md in Resources */ = {isa = PBXBuildFile; fileRef = 3045B1AF2E8CB81A00C34F16 /* CHANGELOG.md */; };
 		3045B1B22E8CB81A00C34F16 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 3045B1B02E8CB81A00C34F16 /* README.md */; };
-		305AA9A92E997C50002F116A /* PolyKit in Frameworks */ = {isa = PBXBuildFile; productRef = 305AA9A82E997C50002F116A /* PolyKit */; };
 		30C963FE2F0AB58100DDF7AF /* AppIntents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 30C963FD2F0AB58100DDF7AF /* AppIntents.framework */; };
 		30C963FF2F0AB58600DDF7AF /* AppIntents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 30C963FD2F0AB58100DDF7AF /* AppIntents.framework */; };
 		30DAC6D22EEE1F73004F96CE /* PolyKit in Frameworks */ = {isa = PBXBuildFile; productRef = 30DAC6CE2EEE1F73004F96CE /* PolyKit */; };
@@ -138,7 +137,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				30C963FE2F0AB58100DDF7AF /* AppIntents.framework in Frameworks */,
-				305AA9A92E997C50002F116A /* PolyKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -230,7 +228,6 @@
 			);
 			name = volumeHUD;
 			packageProductDependencies = (
-				305AA9A82E997C50002F116A /* PolyKit */,
 			);
 			productName = volumeHUD;
 			productReference = 30C937682E806B79004B5AF5 /* volumeHUD.app */;
@@ -289,7 +286,6 @@
 			mainGroup = 30C9375F2E806B79004B5AF5;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				305AA9A72E997C50002F116A /* XCRemoteSwiftPackageReference "polykit-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 30C937692E806B79004B5AF5 /* Products */;
@@ -789,14 +785,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		305AA9A72E997C50002F116A /* XCRemoteSwiftPackageReference "polykit-swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/dannystewart/polykit-swift";
-			requirement = {
-				branch = main;
-				kind = branch;
-			};
-		};
 		30DAC6CF2EEE1F73004F96CE /* XCRemoteSwiftPackageReference "polykit-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/dannystewart/polykit-swift";
@@ -808,11 +796,6 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		305AA9A82E997C50002F116A /* PolyKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 305AA9A72E997C50002F116A /* XCRemoteSwiftPackageReference "polykit-swift" */;
-			productName = PolyKit;
-		};
 		30DAC6CE2EEE1F73004F96CE /* PolyKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 30DAC6CF2EEE1F73004F96CE /* XCRemoteSwiftPackageReference "polykit-swift" */;

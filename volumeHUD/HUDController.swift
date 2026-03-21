@@ -9,14 +9,13 @@ import AppKit
 import Combine
 import CoreGraphics
 import Foundation
-import PolyKit
 import SwiftUI
 
 @MainActor
 class HUDController: ObservableObject {
     @Published var isShowing = false
 
-    let logger: PolyLog = .init()
+    let logger: Logger = .init()
 
     private var hudWindow: NSWindow?
     private var hostingView: NSHostingView<HUDView>?

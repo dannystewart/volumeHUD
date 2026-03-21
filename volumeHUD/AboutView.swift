@@ -5,7 +5,6 @@
 //  https://github.com/dannystewart/volumeHUD
 //
 
-import PolyKit
 import SwiftUI
 
 // MARK: - AboutView
@@ -35,7 +34,7 @@ struct AboutView: View {
     /// Login item manager
     @ObservedObject var loginItemManager: LoginItemManager
 
-    let logger: PolyLog = .init()
+    let logger: Logger = .init()
 
     // Visual alignment
     private let iconColumnWidth: CGFloat = 20

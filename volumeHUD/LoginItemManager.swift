@@ -7,7 +7,6 @@
 
 import Combine
 import Foundation
-import PolyKit
 import ServiceManagement
 
 /// Manages login item functionality using the modern SMAppService API.
@@ -16,7 +15,7 @@ class LoginItemManager: ObservableObject {
     @Published var isEnabled: Bool = false
     @Published private(set) var lastError: String?
 
-    private let logger: PolyLog = .init()
+    private let logger: Logger = .init()
     private let helperBundleIdentifier = "com.dannystewart.volumehud.loginhelper"
 
     private var isUpdatingFromSystem = false

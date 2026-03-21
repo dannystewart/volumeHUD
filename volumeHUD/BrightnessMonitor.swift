@@ -11,14 +11,13 @@ import CoreGraphics
 import Foundation
 import IOKit
 import IOKit.pwr_mgt
-import PolyKit
 
 class BrightnessMonitor: ObservableObject, @unchecked Sendable {
     @Published var currentBrightness: Float = 0.0
 
     weak var hudController: HUDController?
 
-    let logger: PolyLog = .init()
+    let logger: Logger = .init()
 
     private var accessibilityEnabled: Bool
     private var isMonitoring = false

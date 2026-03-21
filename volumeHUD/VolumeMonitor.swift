@@ -12,7 +12,6 @@ import Combine
 import CoreAudio
 import Foundation
 import IOKit
-import PolyKit
 
 class VolumeMonitor: ObservableObject, @unchecked Sendable {
     @Published var currentVolume: Float = 0.0
@@ -23,7 +22,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         weak var mediaKeyInterceptor: MediaKeyInterceptor?
     #endif
 
-    let logger: PolyLog = .init()
+    let logger: Logger = .init()
 
     private var audioObjectPropertyAddress: AudioObjectPropertyAddress
     private var isMonitoring = false
