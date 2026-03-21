@@ -2,6 +2,10 @@
 
 A simple macOS app that brings back the classic volume and brightness HUDs.
 
+## Note
+
+volumeHUD is a personal project that I built for myself. I'm glad to share it, but **I consider it complete and I am not accepting feature requests or PRs**. Any issues that are not for actual bugs will be closed as not planned.
+
 ## Why This Exists
 
 With macOS Tahoe, Apple revamped Control Center and replaced the classic volume and brightness indicators of 25 years with tiny popovers in the corner of the screen, even smaller than notifications. They're hard to see, especially against light backgrounds, and they disappear before I remember where to look. Even after months on the Tahoe beta I haven't gotten used to them. It's bad UI.
@@ -58,13 +62,7 @@ If you're experiencing inconsistent behavior, the most likely cause is lack of A
 
 There was an issue with pre-2.0 versions where volumeHUD didn't request those permissions properly, so if you've been using the app since before then, they're very likely not configured correctly and should be reset.
 
-## Bug Reports
-
-This is a personal project that I built for myself, and I'm very glad to share it but I am not accepting feature requests or PRs. volumeHUD does what I want it to do and I consider it essentially complete.
-
-If you run into a genuine bug, I'd be happy to hear about it. **Note that I cannot provide support for specific hardware configurations or interactions with other apps.**
-
-Before opening an issue, please look to see if there's already an existing one, and make sure you've checked your settings and attempted a clean reinstall first (see **Troubleshooting** above).
+**I cannot provide support for specific hardware configurations or interactions with other apps.** Make sure you've checked your settings and attempted a clean reinstall first before opening an issue.
 
 ## License
 
