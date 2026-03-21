@@ -486,7 +486,7 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
         // Lid close/open can trigger 3-4 notifications over ~1 second
         restartTask = Task { @MainActor in
             do {
-                try await Task.sleep(nanoseconds: 500000000) // 500ms
+                try await Task.sleep(nanoseconds: 500_000_000) // 500ms
                 logger.info("Display configuration stabilized, restarting brightness event monitoring.")
                 self.restartEventMonitoring()
             } catch {

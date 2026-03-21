@@ -40,15 +40,15 @@ class HUDController: ObservableObject {
     }
 
     #if !SANDBOX
-    @MainActor
-    func showBrightnessHUD(brightness: Float) {
-        // Only show brightness HUD if the feature is enabled
-        guard UserDefaults.standard.bool(forKey: "brightnessEnabled") else {
-            logger.debug("Brightness HUD disabled; skipping display.")
-            return
+        @MainActor
+        func showBrightnessHUD(brightness: Float) {
+            // Only show brightness HUD if the feature is enabled
+            guard UserDefaults.standard.bool(forKey: "brightnessEnabled") else {
+                logger.debug("Brightness HUD disabled; skipping display.")
+                return
+            }
+            displayHUD(hudType: .brightness, value: brightness, isMuted: false)
         }
-        displayHUD(hudType: .brightness, value: brightness, isMuted: false)
-    }
     #endif
 
     @MainActor
@@ -120,18 +120,45 @@ class HUDController: ObservableObject {
         let targetScreen: NSScreen
         let selectionReason: String
         #if !SANDBOX
-        if hudType == .brightness {
-            if let builtin = getBuiltinScreen() {
-                targetScreen = builtin
-                selectionReason = "brightness builtin"
-            } else if let main = NSScreen.main {
-                targetScreen = main
-                selectionReason = "brightness builtin-missing fallback NSScreen.main"
+            if hudType == .brightness {
+                if let builtin = getBuiltinScreen() {
+                    targetScreen = builtin
+                    selectionReason = "brightness builtin"
+                } else if let main = NSScreen.main {
+                    targetScreen = main
+                    selectionReason = "brightness builtin-missing fallback NSScreen.main"
+                } else {
+                    targetScreen = NSScreen.screens.first!
+                    selectionReason = "brightness builtin-missing fallback firstScreen"
+                }
             } else {
-                targetScreen = NSScreen.screens.first!
-                selectionReason = "brightness builtin-missing fallback firstScreen"
+                // Check user preference for volume HUD location
+                let followMouse = UserDefaults.standard.bool(forKey: "volumeHUDFollowsMouse")
+                if followMouse {
+                    if let mouse = getScreenWithMouse() {
+                        targetScreen = mouse
+                        selectionReason = "volume followsMouse"
+                    } else if let main = NSScreen.main {
+                        targetScreen = main
+                        selectionReason = "volume followsMouse missing-mouse fallback NSScreen.main"
+                    } else {
+                        targetScreen = NSScreen.screens.first!
+                        selectionReason = "volume followsMouse missing-mouse fallback firstScreen"
+                    }
+                } else {
+                    if let primary = getPrimaryScreen() {
+                        targetScreen = primary
+                        selectionReason = "volume primaryDisplay"
+                    } else if let main = NSScreen.main {
+                        targetScreen = main
+                        selectionReason = "volume primaryDisplay missing-primary fallback NSScreen.main"
+                    } else {
+                        targetScreen = NSScreen.screens.first!
+                        selectionReason = "volume primaryDisplay missing-primary fallback firstScreen"
+                    }
+                }
             }
-        } else {
+        #else
             // Check user preference for volume HUD location
             let followMouse = UserDefaults.standard.bool(forKey: "volumeHUDFollowsMouse")
             if followMouse {
@@ -157,33 +184,6 @@ class HUDController: ObservableObject {
                     selectionReason = "volume primaryDisplay missing-primary fallback firstScreen"
                 }
             }
-        }
-        #else
-        // Check user preference for volume HUD location
-        let followMouse = UserDefaults.standard.bool(forKey: "volumeHUDFollowsMouse")
-        if followMouse {
-            if let mouse = getScreenWithMouse() {
-                targetScreen = mouse
-                selectionReason = "volume followsMouse"
-            } else if let main = NSScreen.main {
-                targetScreen = main
-                selectionReason = "volume followsMouse missing-mouse fallback NSScreen.main"
-            } else {
-                targetScreen = NSScreen.screens.first!
-                selectionReason = "volume followsMouse missing-mouse fallback firstScreen"
-            }
-        } else {
-            if let primary = getPrimaryScreen() {
-                targetScreen = primary
-                selectionReason = "volume primaryDisplay"
-            } else if let main = NSScreen.main {
-                targetScreen = main
-                selectionReason = "volume primaryDisplay missing-primary fallback NSScreen.main"
-            } else {
-                targetScreen = NSScreen.screens.first!
-                selectionReason = "volume primaryDisplay missing-primary fallback firstScreen"
-            }
-        }
         #endif
 
         let selectedDisplayID: CGDirectDisplayID? = {

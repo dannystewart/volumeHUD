@@ -29,8 +29,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
 
     var volumeMonitor: VolumeMonitor!
     #if !SANDBOX
-    var brightnessMonitor: BrightnessMonitor!
-    var mediaKeyInterceptor: MediaKeyInterceptor?
+        var brightnessMonitor: BrightnessMonitor!
+        var mediaKeyInterceptor: MediaKeyInterceptor?
     #endif
     var hudController: HUDController!
     var aboutWindow: NSPanel?
@@ -39,10 +39,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
     let logger: PolyLog = .init()
 
     #if !SANDBOX
-    /// Check to see if brightness is enabled
-    private var isBrightnessEnabled: Bool {
-        UserDefaults.standard.bool(forKey: "brightnessEnabled")
-    }
+        /// Check to see if brightness is enabled
+        private var isBrightnessEnabled: Bool {
+            UserDefaults.standard.bool(forKey: "brightnessEnabled")
+        }
     #endif
 
     deinit {
@@ -76,19 +76,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         loginItemManager = LoginItemManager()
         volumeMonitor = VolumeMonitor(isPreviewMode: false)
         #if !SANDBOX
-        brightnessMonitor = BrightnessMonitor(isPreviewMode: false)
+            brightnessMonitor = BrightnessMonitor(isPreviewMode: false)
         #endif
         hudController = HUDController(isPreviewMode: false)
 
         // Set up bidirectional references
         volumeMonitor.hudController = hudController
         #if !SANDBOX
-        brightnessMonitor.hudController = hudController
+            brightnessMonitor.hudController = hudController
         #endif
 
         #if !SANDBOX
-        // Request accessibility permissions if needed
-        requestAccessibilityPermissionsIfNeeded()
+            // Request accessibility permissions if needed
+            requestAccessibilityPermissionsIfNeeded()
         #endif
 
         // Request notification permission and post "started" notification (only if manually launched)
@@ -113,11 +113,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         volumeMonitor.startMonitoring()
 
         #if !SANDBOX
-        // Start brightness monitoring only if enabled in settings
-        startBrightnessMonitoringIfEnabled()
+            // Start brightness monitoring only if enabled in settings
+            startBrightnessMonitoringIfEnabled()
 
-        // Start media key interceptor to hide system HUDs
-        startMediaKeyInterceptor()
+            // Start media key interceptor to hide system HUDs
+            startMediaKeyInterceptor()
         #endif
 
         // Start monitoring display configuration changes
@@ -136,36 +136,36 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
     }
 
     #if !SANDBOX
-    @MainActor
-    func startBrightnessMonitoringIfEnabled() {
-        if isBrightnessEnabled {
-            logger.info("Brightness HUD enabled; starting brightness monitoring.")
-            brightnessMonitor.startMonitoring()
-        } else {
-            logger.info("Brightness HUD disabled; skipping brightness monitoring.")
-        }
-    }
-
-    /// Start the media key interceptor to hide system HUDs.
-    /// The interceptor automatically falls back to system HUDs if interception fails.
-    @MainActor
-    func startMediaKeyInterceptor() {
-        // Create the interceptor if not already created
-        if mediaKeyInterceptor == nil {
-            mediaKeyInterceptor = MediaKeyInterceptor()
-            mediaKeyInterceptor?.hudController = hudController
-
-            // Connect VolumeMonitor to interceptor so it can skip HUD updates
-            // when the interceptor is handling volume changes
-            volumeMonitor.mediaKeyInterceptor = mediaKeyInterceptor
+        @MainActor
+        func startBrightnessMonitoringIfEnabled() {
+            if isBrightnessEnabled {
+                logger.info("Brightness HUD enabled; starting brightness monitoring.")
+                brightnessMonitor.startMonitoring()
+            } else {
+                logger.info("Brightness HUD disabled; skipping brightness monitoring.")
+            }
         }
 
-        if mediaKeyInterceptor?.start() == true {
-            logger.info("Media key interceptor started.")
-        } else {
-            logger.warning("Failed to start media key interceptor. Accessibility permissions may be required.")
+        /// Start the media key interceptor to hide system HUDs.
+        /// The interceptor automatically falls back to system HUDs if interception fails.
+        @MainActor
+        func startMediaKeyInterceptor() {
+            // Create the interceptor if not already created
+            if mediaKeyInterceptor == nil {
+                mediaKeyInterceptor = MediaKeyInterceptor()
+                mediaKeyInterceptor?.hudController = hudController
+
+                // Connect VolumeMonitor to interceptor so it can skip HUD updates
+                // when the interceptor is handling volume changes
+                volumeMonitor.mediaKeyInterceptor = mediaKeyInterceptor
+            }
+
+            if mediaKeyInterceptor?.start() == true {
+                logger.info("Media key interceptor started.")
+            } else {
+                logger.warning("Failed to start media key interceptor. Accessibility permissions may be required.")
+            }
         }
-    }
     #endif
 
     // MARK: - Notification Center Delegate
@@ -249,7 +249,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
     private nonisolated func isParentEmbeddedLoginHelper(_ parentPID: pid_t) -> Bool {
         guard let parentBundlePath = PolyProcess.getBundlePath(for: parentPID) else { return false }
 
-        let loginItemsURL = Bundle.main.bundleURL
+        let loginItemsURL = Bundle.main
+            .bundleURL
             .appendingPathComponent("Contents/Library/LoginItems", isDirectory: true)
 
         var isDir: ObjCBool = false
@@ -330,47 +331,47 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
 
     #if !SANDBOX
 
-    // MARK: - Accessibility Permissions
+        // MARK: - Accessibility Permissions
 
-    private nonisolated func requestAccessibilityPermissionsIfNeeded() {
-        // Check current permission status
-        let isCurrentlyTrusted = AXIsProcessTrusted()
+        private nonisolated func requestAccessibilityPermissionsIfNeeded() {
+            // Check current permission status
+            let isCurrentlyTrusted = AXIsProcessTrusted()
 
-        // If already trusted, no need to prompt
-        if isCurrentlyTrusted {
-            logger.info("Accessibility permissions already granted.")
-            return
-        }
+            // If already trusted, no need to prompt
+            if isCurrentlyTrusted {
+                logger.info("Accessibility permissions already granted.")
+                return
+            }
 
-        // If not trusted, request with prompt.
-        logger.info("Prompting/checking for accessibility permissions.")
+            // If not trusted, request with prompt.
+            logger.info("Prompting/checking for accessibility permissions.")
 
-        let promptKey = "AXTrustedCheckOptionPrompt"
-        let options = [promptKey: true] as [String: Bool] as CFDictionary
-        _ = AXIsProcessTrustedWithOptions(options)
+            let promptKey = "AXTrustedCheckOptionPrompt"
+            let options = [promptKey: true] as [String: Bool] as CFDictionary
+            _ = AXIsProcessTrustedWithOptions(options)
 
-        // Update accessibility status after the request
-        Task { @MainActor [weak self] in
-            guard let self else { return }
-            try? await Task.sleep(nanoseconds: 500000000) // 0.5 second delay
-            let newStatus = AXIsProcessTrusted()
-            updateAccessibilityStatus()
+            // Update accessibility status after the request
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 second delay
+                let newStatus = AXIsProcessTrusted()
+                updateAccessibilityStatus()
 
-            if newStatus {
-                logger.info("Accessibility permissions granted! Key press monitoring will be more reliable.")
-            } else {
-                logger.info("Accessibility permissions not yet enabled. Key press monitoring will be limited.")
-                logger.info("To enable: System Settings → Privacy & Security → Accessibility")
+                if newStatus {
+                    logger.info("Accessibility permissions granted! Key press monitoring will be more reliable.")
+                } else {
+                    logger.info("Accessibility permissions not yet enabled. Key press monitoring will be limited.")
+                    logger.info("To enable: System Settings → Privacy & Security → Accessibility")
+                }
             }
         }
-    }
 
-    @MainActor
-    private func updateAccessibilityStatus() {
-        // Update both monitors' accessibility status centrally
-        brightnessMonitor.updateAccessibilityStatus()
-        volumeMonitor.updateAccessibilityStatus()
-    }
+        @MainActor
+        private func updateAccessibilityStatus() {
+            // Update both monitors' accessibility status centrally
+            brightnessMonitor.updateAccessibilityStatus()
+            volumeMonitor.updateAccessibilityStatus()
+        }
     #endif
 
     // MARK: - Notification Permissions
@@ -424,8 +425,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         volumeMonitor?.stopMonitoring()
 
         #if !SANDBOX
-        if isBrightnessEnabled { brightnessMonitor?.stopMonitoring() }
-        mediaKeyInterceptor?.stop()
+            if isBrightnessEnabled { brightnessMonitor?.stopMonitoring() }
+            mediaKeyInterceptor?.stop()
         #endif
         hudController?.stopDisplayChangeMonitoring()
 

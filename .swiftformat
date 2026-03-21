@@ -1,4 +1,4 @@
---acronyms ID,URL,UUID
+--acronyms ID,UID,URL,UUID
 --allman false
 --allow-partial-wrapping false
 --anonymous-for-each convert
@@ -10,14 +10,14 @@
 --call-site-paren balanced
 --category-mark "MARK: %c"
 --class-threshold 0
---closing-paren same-line
+--closing-paren balanced
 --closure-void remove
 --complex-attributes preserve
 --computed-var-attributes preserve
 --conditional-assignment after-property
 --conflict-markers reject
 --date-format system
---decimal-grouping none
+--decimal-grouping 3,6
 --default-test-suite-attributes
 --doc-comments before-declarations
 --else-position same-line
@@ -41,12 +41,12 @@
 --header \n {file}\n by Danny Stewart ({created.year})\n MIT License\n https://github.com/dannystewart/volumeHUD\n
 --hex-grouping 4,8
 --hex-literal-case uppercase
---ifdef no-indent
+--ifdef indent
 --import-grouping alpha
 --indent 4
 --indent-case false
 --indent-strings false
---inferred-types exclude-cond-exprs
+--inferred-types always
 --init-coder-nil false
 --language-mode 0
 --lifecycle
@@ -57,9 +57,9 @@
 --mark-class-threshold 0
 --mark-enum-threshold 0
 --mark-extension-threshold 0
---mark-extensions always
+--mark-extensions if-not-empty
 --mark-struct-threshold 0
---mark-types always
+--mark-types if-not-empty
 --markdown-files ignore
 --max-width none
 --modifier-order
@@ -73,6 +73,7 @@
 --organization-mode type
 --organize-types actor,class,enum,struct
 --pattern-let hoist
+--prefer-synthesized-init-for-internal-structs View,ViewModifier
 --preserve-acronyms
 --preserve-decls
 --preserved-property-types Package
@@ -92,7 +93,7 @@
 --stored-var-attributes preserve
 --strip-unused-args always
 --struct-threshold 0
---swift-version 6.2
+--swift-version 6.3
 --tab-width unspecified
 --throw-capturing
 --timezone system
@@ -110,7 +111,7 @@
 --visibility-marks
 --visibility-order
 --void-type Void
---wrap-arguments before-first
+--wrap-arguments default
 --wrap-collections before-first
 --wrap-conditions before-first
 --wrap-effects if-multiline
@@ -123,4 +124,5 @@
 --xcode-indentation disabled
 --xctest-symbols
 --yoda-swap always
---enable blankLineAfterSwitchCase,blankLinesBetweenImports,blockComments,docComments,emptyExtensions,environmentEntry,markTypes,organizeDeclarations,privateStateVariables,propertyTypes,redundantAsync,redundantMemberwiseInit,redundantProperty,redundantThrows,singlePropertyPerLine,unusedPrivateDeclarations,wrapEnumCases
+--disable wrapFunctionBodies,wrapPropertyBodies
+--enable blankLineAfterSwitchCase,blockComments,markTypes,organizeDeclarations,preferSwiftTesting,privateStateVariables,propertyTypes,singlePropertyPerLine,unusedPrivateDeclarations,wrapEnumCases,wrapMultilineFunctionChains

@@ -20,7 +20,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
 
     weak var hudController: HUDController?
     #if !SANDBOX
-    weak var mediaKeyInterceptor: MediaKeyInterceptor?
+        weak var mediaKeyInterceptor: MediaKeyInterceptor?
     #endif
 
     let logger: PolyLog = .init()
@@ -32,10 +32,10 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
     private var previousVolume: Float = 0.0
     private var previousMuteState: Bool = false
     #if !SANDBOX
-    private var systemEventMonitor: Any?
-    private var keyEventMonitor: Any?
-    private var lastCapsLockTime: TimeInterval = 0
-    private var lastVolumeKeyLogTime: TimeInterval = 0
+        private var systemEventMonitor: Any?
+        private var keyEventMonitor: Any?
+        private var lastCapsLockTime: TimeInterval = 0
+        private var lastVolumeKeyLogTime: TimeInterval = 0
     #endif
     private var volumeListenerBlock: ((UInt32, UnsafePointer<AudioObjectPropertyAddress>) -> Void)?
     private var muteListenerBlock: ((UInt32, UnsafePointer<AudioObjectPropertyAddress>) -> Void)?
@@ -116,8 +116,8 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         addVolumeListeners()
 
         #if !SANDBOX
-        // Start monitoring system-defined events for volume key presses
-        startSystemEventMonitoring()
+            // Start monitoring system-defined events for volume key presses
+            startSystemEventMonitoring()
         #endif
 
         // Monitor for default device changes
@@ -134,8 +134,8 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         removeVolumeListeners()
 
         #if !SANDBOX
-        // Stop system event monitoring
-        stopSystemEventMonitoring()
+            // Stop system event monitoring
+            stopSystemEventMonitoring()
         #endif
 
         // Stop default device monitoring
@@ -227,14 +227,14 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             // If so, skip showing HUD (interceptor already showed it with proper quantization)
             let shouldShowHUD: Bool
             #if !SANDBOX
-            if let interceptor = mediaKeyInterceptor {
-                let timeSinceInterceptorChange = Date().timeIntervalSince1970 - interceptor.lastVolumeChangeTime
-                shouldShowHUD = timeSinceInterceptorChange > MediaKeyInterceptor.volumeChangeCooldown
-            } else {
-                shouldShowHUD = true
-            }
+                if let interceptor = mediaKeyInterceptor {
+                    let timeSinceInterceptorChange = Date().timeIntervalSince1970 - interceptor.lastVolumeChangeTime
+                    shouldShowHUD = timeSinceInterceptorChange > MediaKeyInterceptor.volumeChangeCooldown
+                } else {
+                    shouldShowHUD = true
+                }
             #else
-            shouldShowHUD = true
+                shouldShowHUD = true
             #endif
 
             if shouldShowHUD {
@@ -251,120 +251,120 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
 
     #if !SANDBOX
 
-    // MARK: Key Press Monitoring
+        // MARK: Key Press Monitoring
 
-    private func startSystemEventMonitoring() {
-        if !accessibilityEnabled {
-            logger.info("Accessibility permissions not granted, so volume keys cannot be detected.")
-            return
-        }
-
-        // Monitor system-defined events for volume key presses
-        systemEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: .systemDefined) { [weak self] event in
-            guard let self else { return }
-            // Extract only primitive fields on the monitoring thread to avoid
-            // crossing threads with non-Sendable NSEvent
-            let subtype = Int(event.subtype.rawValue)
-            let data1 = Int(event.data1)
-            let keyCode = (data1 & 0xFFFF_0000) >> 16
-            let keyFlags = data1 & 0x0000_FFFF
-            let keyState = (keyFlags & 0xFF00) >> 8 // 0x0A = keyDown, 0x0B = keyUp
-            let isKeyDown = keyState == 0x0A
-            let modifierFlags = event.modifierFlags
-
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                handleSystemDefinedEventData(
-                    subtype: subtype,
-                    keyCode: keyCode,
-                    keyPressed: (keyFlags & 0xFF00) >> 8,
-                    isKeyDown: isKeyDown,
-                    modifierFlags: modifierFlags,
-                )
-            }
-        }
-
-        // Also monitor key events to catch volume keys that might not generate system-defined events
-        keyEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.keyDown, .keyUp]) { _ in }
-
-        logger.debug("Started monitoring system-defined events for volume keys.")
-    }
-
-    private func stopSystemEventMonitoring() {
-        if let monitor = systemEventMonitor {
-            NSEvent.removeMonitor(monitor)
-            systemEventMonitor = nil
-            logger.debug("Stopped monitoring system-defined events.")
-        }
-        if let keyMonitor = keyEventMonitor {
-            NSEvent.removeMonitor(keyMonitor)
-            keyEventMonitor = nil
-        }
-    }
-
-    @MainActor
-    private func handleSystemDefinedEventData(subtype: Int, keyCode: Int, keyPressed _: Int, isKeyDown: Bool, modifierFlags: NSEvent.ModifierFlags = []) {
-        let currentTime = Date().timeIntervalSince1970
-
-        // Check if Option+Shift is held for finer volume control (1/64 instead of 1/16)
-        isOptionShiftHeld = modifierFlags.contains(.option) && modifierFlags.contains(.shift)
-
-        // Track Caps Lock events
-        if subtype == 211 {
-            lastCapsLockTime = currentTime
-            logger.debug("Caps Lock event detected, ignoring volume events for 0.5 seconds.")
-            return
-        }
-
-        // Volume keys generate NSSystemDefined events with subtype 8
-        if subtype == 8 {
-            // Ignore volume events that happen within 0.5 seconds of Caps Lock
-            if currentTime - lastCapsLockTime < 0.5 {
-                logger.debug("Ignoring volume event, too close to Caps Lock.")
+        private func startSystemEventMonitoring() {
+            if !accessibilityEnabled {
+                logger.info("Accessibility permissions not granted, so volume keys cannot be detected.")
                 return
             }
 
-            guard isKeyDown else { return }
+            // Monitor system-defined events for volume key presses
+            systemEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: .systemDefined) { [weak self] event in
+                guard let self else { return }
+                // Extract only primitive fields on the monitoring thread to avoid
+                // crossing threads with non-Sendable NSEvent
+                let subtype = Int(event.subtype.rawValue)
+                let data1 = Int(event.data1)
+                let keyCode = (data1 & 0xFFFF_0000) >> 16
+                let keyFlags = data1 & 0x0000_FFFF
+                let keyState = (keyFlags & 0xFF00) >> 8 // 0x0A = keyDown, 0x0B = keyUp
+                let isKeyDown = keyState == 0x0A
+                let modifierFlags = event.modifierFlags
 
-            // NX key codes: 0 = vol up, 1 = vol down, 7 = mute
-            switch keyCode {
-            case 1: // Volume down
-                showHUDForVolumeKeyPress(isVolumeUp: false)
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    handleSystemDefinedEventData(
+                        subtype: subtype,
+                        keyCode: keyCode,
+                        keyPressed: (keyFlags & 0xFF00) >> 8,
+                        isKeyDown: isKeyDown,
+                        modifierFlags: modifierFlags,
+                    )
+                }
+            }
 
-            case 0: // Volume up
-                showHUDForVolumeKeyPress(isVolumeUp: true)
+            // Also monitor key events to catch volume keys that might not generate system-defined events
+            keyEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.keyDown, .keyUp]) { _ in }
 
-            default:
-                break
+            logger.debug("Started monitoring system-defined events for volume keys.")
+        }
+
+        private func stopSystemEventMonitoring() {
+            if let monitor = systemEventMonitor {
+                NSEvent.removeMonitor(monitor)
+                systemEventMonitor = nil
+                logger.debug("Stopped monitoring system-defined events.")
+            }
+            if let keyMonitor = keyEventMonitor {
+                NSEvent.removeMonitor(keyMonitor)
+                keyEventMonitor = nil
             }
         }
-    }
 
-    @MainActor
-    private func showHUDForVolumeKeyPress(isVolumeUp: Bool) {
-        // Avoid CoreAudio calls during key event; use cached state
-        let currentVol = currentVolume
-        let currentMuted = isMuted
-
-        // Only show HUD on key presses if we're at volume boundaries (0% or 100%)
-        // This prevents media keys from triggering the HUD when volume is between 1-99%
-        let atMinVolume = currentVol <= 0.001
-        let atMaxVolume = currentVol >= 0.999
-
-        if !atMinVolume, !atMaxVolume {
+        @MainActor
+        private func handleSystemDefinedEventData(subtype: Int, keyCode: Int, keyPressed _: Int, isKeyDown: Bool, modifierFlags: NSEvent.ModifierFlags = []) {
             let currentTime = Date().timeIntervalSince1970
-            // Debounce log messages as macOS seems to fire key events twice
-            if currentTime - lastVolumeKeyLogTime > 0.1 {
-                lastVolumeKeyLogTime = currentTime
+
+            // Check if Option+Shift is held for finer volume control (1/64 instead of 1/16)
+            isOptionShiftHeld = modifierFlags.contains(.option) && modifierFlags.contains(.shift)
+
+            // Track Caps Lock events
+            if subtype == 211 {
+                lastCapsLockTime = currentTime
+                logger.debug("Caps Lock event detected, ignoring volume events for 0.5 seconds.")
+                return
             }
-            return
+
+            // Volume keys generate NSSystemDefined events with subtype 8
+            if subtype == 8 {
+                // Ignore volume events that happen within 0.5 seconds of Caps Lock
+                if currentTime - lastCapsLockTime < 0.5 {
+                    logger.debug("Ignoring volume event, too close to Caps Lock.")
+                    return
+                }
+
+                guard isKeyDown else { return }
+
+                // NX key codes: 0 = vol up, 1 = vol down, 7 = mute
+                switch keyCode {
+                case 1: // Volume down
+                    showHUDForVolumeKeyPress(isVolumeUp: false)
+
+                case 0: // Volume up
+                    showHUDForVolumeKeyPress(isVolumeUp: true)
+
+                default:
+                    break
+                }
+            }
         }
 
-        // Show HUD with current state
-        hudController?.showVolumeHUD(volume: currentVol, isMuted: currentMuted)
+        @MainActor
+        private func showHUDForVolumeKeyPress(isVolumeUp: Bool) {
+            // Avoid CoreAudio calls during key event; use cached state
+            let currentVol = currentVolume
+            let currentMuted = isMuted
 
-        logger.debug("Showing HUD for volume \(isVolumeUp ? "up" : "down") key press at boundary, current volume: \(Int(currentVol * 100))%, muted: \(currentMuted)")
-    }
+            // Only show HUD on key presses if we're at volume boundaries (0% or 100%)
+            // This prevents media keys from triggering the HUD when volume is between 1-99%
+            let atMinVolume = currentVol <= 0.001
+            let atMaxVolume = currentVol >= 0.999
+
+            if !atMinVolume, !atMaxVolume {
+                let currentTime = Date().timeIntervalSince1970
+                // Debounce log messages as macOS seems to fire key events twice
+                if currentTime - lastVolumeKeyLogTime > 0.1 {
+                    lastVolumeKeyLogTime = currentTime
+                }
+                return
+            }
+
+            // Show HUD with current state
+            hudController?.showVolumeHUD(volume: currentVol, isMuted: currentMuted)
+
+            logger.debug("Showing HUD for volume \(isVolumeUp ? "up" : "down") key press at boundary, current volume: \(Int(currentVol * 100))%, muted: \(currentMuted)")
+        }
     #endif
 
     // MARK: Device Change Monitoring

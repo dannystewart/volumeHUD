@@ -11,31 +11,31 @@ import SwiftUI
 // MARK: - AboutView
 
 struct AboutView: View {
-    let onQuit: () -> Void
-    weak var appDelegate: AppDelegate?
-
-    let logger: PolyLog = .init()
-
     @State private var isShowingBuildNumber: Bool = false
 
     // Settings for app preferences
     #if !SANDBOX
-    @AppStorage("brightnessEnabled") private var brightnessEnabled: Bool = false
+        @AppStorage("brightnessEnabled") private var brightnessEnabled: Bool = false
     #endif
     @AppStorage("volumeHUDFollowsMouse") private var volumeHUDFollowsMouse: Bool = true
     @AppStorage("useRelativePositioning") private var useRelativePositioning: Bool = true
 
     #if !SANDBOX
-    /// State to track if an update is available
-    @State private var isUpdateAvailable: Bool = false
+        /// State to track if an update is available
+        @State private var isUpdateAvailable: Bool = false
 
-    // GitHub repository info
-    private let githubOwner = "dannystewart"
-    private let githubRepo = "volumeHUD"
+        // GitHub repository info
+        private let githubOwner = "dannystewart"
+        private let githubRepo = "volumeHUD"
     #endif
+
+    let onQuit: () -> Void
+    weak var appDelegate: AppDelegate?
 
     /// Login item manager
     @ObservedObject var loginItemManager: LoginItemManager
+
+    let logger: PolyLog = .init()
 
     // Visual alignment
     private let iconColumnWidth: CGFloat = 20
@@ -98,16 +98,16 @@ struct AboutView: View {
                 .accessibilityHint("Activate to toggle between app version and build number")
 
                 #if !SANDBOX
-                Button(action: openReleasesPage) {
-                    Text("Update available!")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.blue)
-                        .underline()
-                }
-                .buttonStyle(.plain)
-                .disabled(!isUpdateAvailable)
-                .opacity(isUpdateAvailable ? 1.0 : 0.0)
-                .padding(.bottom, 16)
+                    Button(action: openReleasesPage) {
+                        Text("Update available!")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.blue)
+                            .underline()
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!isUpdateAvailable)
+                    .opacity(isUpdateAvailable ? 1.0 : 0.0)
+                    .padding(.bottom, 16)
                 #endif
 
                 Spacer(minLength: 0)
@@ -154,44 +154,44 @@ struct AboutView: View {
 
                 #if !SANDBOX
 
-                // MARK: - Brightness HUD Toggle
+                    // MARK: - Brightness HUD Toggle
 
-                VStack(alignment: .leading, spacing: spaceBeforeSubtitle) {
-                    HStack(alignment: .center, spacing: iconColumnWidth) {
-                        Image(systemName: "sun.max.fill")
-                            .foregroundStyle(brightnessEnabled ? .orange : .gray)
-                            .font(.system(size: 14))
-                            .frame(width: 14, alignment: .leading)
-                            .animation(.easeInOut(duration: 0.3), value: brightnessEnabled)
+                    VStack(alignment: .leading, spacing: spaceBeforeSubtitle) {
+                        HStack(alignment: .center, spacing: iconColumnWidth) {
+                            Image(systemName: "sun.max.fill")
+                                .foregroundStyle(brightnessEnabled ? .orange : .gray)
+                                .font(.system(size: 14))
+                                .frame(width: 14, alignment: .leading)
+                                .animation(.easeInOut(duration: 0.3), value: brightnessEnabled)
 
-                        Text("Brightness HUD")
-                            .font(.system(size: 12, weight: .medium))
-                            .frame(width: minSettingColumnWidth, alignment: .leading)
+                            Text("Brightness HUD")
+                                .font(.system(size: 12, weight: .medium))
+                                .frame(width: minSettingColumnWidth, alignment: .leading)
 
-                        Spacer()
+                            Spacer()
 
-                        Toggle("", isOn: $brightnessEnabled)
-                            .toggleStyle(SwitchToggleStyle(tint: .accentColor))
-                            .scaleEffect(0.8)
-                            .onChange(of: brightnessEnabled) { oldValue, newValue in
-                                logger.debug("Brightness setting changed from \(oldValue) to \(newValue).")
-                                appDelegate?.startBrightnessMonitoringIfEnabled()
-                            }
+                            Toggle("", isOn: $brightnessEnabled)
+                                .toggleStyle(SwitchToggleStyle(tint: .accentColor))
+                                .scaleEffect(0.8)
+                                .onChange(of: brightnessEnabled) { oldValue, newValue in
+                                    logger.debug("Brightness setting changed from \(oldValue) to \(newValue).")
+                                    appDelegate?.startBrightnessMonitoringIfEnabled()
+                                }
+                        }
+
+                        HStack(spacing: iconColumnWidth) {
+                            Spacer()
+                                .frame(width: 14)
+
+                            Text("Experimental, built-in display only")
+                                .font(.system(size: 10))
+                                .foregroundStyle(.secondary)
+                                .opacity(0.8)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
                     }
-
-                    HStack(spacing: iconColumnWidth) {
-                        Spacer()
-                            .frame(width: 14)
-
-                        Text("Experimental, built-in display only")
-                            .font(.system(size: 10))
-                            .foregroundStyle(.secondary)
-                            .opacity(0.8)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                }
-                .padding(.leading, settingPadding)
-                .animation(.easeInOut(duration: 0.3), value: brightnessEnabled)
+                    .padding(.leading, settingPadding)
+                    .animation(.easeInOut(duration: 0.3), value: brightnessEnabled)
                 #endif
 
                 // MARK: - Display Toggle for HUD Placement
@@ -279,7 +279,7 @@ struct AboutView: View {
         #if !SANDBOX
             .onAppear {
                 Task {
-                    try? await Task.sleep(nanoseconds: 200000000) // 0.2 second delay
+                    try? await Task.sleep(nanoseconds: 200_000_000) // 0.2 second delay
                     checkForUpdates()
                 }
             }
@@ -288,80 +288,80 @@ struct AboutView: View {
 
     #if !SANDBOX
 
-    // MARK: - Update Check
+        // MARK: - Update Check
 
-    private func checkForUpdates() {
-        Task {
-            do {
-                let latestRelease = try await fetchLatestRelease()
+        private func checkForUpdates() {
+            Task {
+                do {
+                    let latestRelease = try await fetchLatestRelease()
 
-                // Compare versions
-                if isNewerVersion(latestRelease, than: appVersion) {
-                    await MainActor.run {
-                        isUpdateAvailable = true
+                    // Compare versions
+                    if isNewerVersion(latestRelease, than: appVersion) {
+                        await MainActor.run {
+                            isUpdateAvailable = true
+                        }
                     }
+                } catch { // Silently fail if the update check fails
+                    logger.error("Update check failed: \(error)")
                 }
-            } catch { // Silently fail if the update check fails
-                logger.error("Update check failed: \(error)")
-            }
-        }
-    }
-
-    private func fetchLatestRelease() async throws -> String {
-        let urlString = "https://api.github.com/repos/\(githubOwner)/\(githubRepo)/releases/latest"
-        guard let url = URL(string: urlString) else {
-            throw URLError(.badURL)
-        }
-
-        var request = URLRequest(url: url)
-        request.setValue("application/vnd.github.v3+json", forHTTPHeaderField: "Accept")
-
-        let (data, response) = try await URLSession.shared.data(for: request)
-
-        guard
-            let httpResponse = response as? HTTPURLResponse,
-            httpResponse.statusCode == 200 else
-        {
-            throw URLError(.badServerResponse)
-        }
-
-        // Parse JSON response
-        guard
-            let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-            let tagName = json["tag_name"] as? String else
-        {
-            throw URLError(.cannotParseResponse)
-        }
-
-        // Remove 'v' prefix
-        return tagName.hasPrefix("v") ? String(tagName.dropFirst()) : tagName
-    }
-
-    private func isNewerVersion(_ latest: String, than current: String) -> Bool {
-        let latestComponents = latest.split(separator: ".").compactMap { Int($0) }
-        let currentComponents = current.split(separator: ".").compactMap { Int($0) }
-
-        // Compare version components (major.minor.patch)
-        for i in 0 ..< max(latestComponents.count, currentComponents.count) {
-            let latestPart = i < latestComponents.count ? latestComponents[i] : 0
-            let currentPart = i < currentComponents.count ? currentComponents[i] : 0
-
-            if latestPart > currentPart {
-                return true
-            } else if latestPart < currentPart {
-                return false
             }
         }
 
-        return false // Versions are equal
-    }
+        private func fetchLatestRelease() async throws -> String {
+            let urlString = "https://api.github.com/repos/\(githubOwner)/\(githubRepo)/releases/latest"
+            guard let url = URL(string: urlString) else {
+                throw URLError(.badURL)
+            }
 
-    private func openReleasesPage() {
-        let urlString = "https://github.com/\(githubOwner)/\(githubRepo)/releases/latest"
-        if let url = URL(string: urlString) {
-            NSWorkspace.shared.open(url)
+            var request = URLRequest(url: url)
+            request.setValue("application/vnd.github.v3+json", forHTTPHeaderField: "Accept")
+
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            guard
+                let httpResponse = response as? HTTPURLResponse,
+                httpResponse.statusCode == 200 else
+            {
+                throw URLError(.badServerResponse)
+            }
+
+            // Parse JSON response
+            guard
+                let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                let tagName = json["tag_name"] as? String else
+            {
+                throw URLError(.cannotParseResponse)
+            }
+
+            // Remove 'v' prefix
+            return tagName.hasPrefix("v") ? String(tagName.dropFirst()) : tagName
         }
-    }
+
+        private func isNewerVersion(_ latest: String, than current: String) -> Bool {
+            let latestComponents = latest.split(separator: ".").compactMap { Int($0) }
+            let currentComponents = current.split(separator: ".").compactMap { Int($0) }
+
+            // Compare version components (major.minor.patch)
+            for i in 0 ..< max(latestComponents.count, currentComponents.count) {
+                let latestPart = i < latestComponents.count ? latestComponents[i] : 0
+                let currentPart = i < currentComponents.count ? currentComponents[i] : 0
+
+                if latestPart > currentPart {
+                    return true
+                } else if latestPart < currentPart {
+                    return false
+                }
+            }
+
+            return false // Versions are equal
+        }
+
+        private func openReleasesPage() {
+            let urlString = "https://github.com/\(githubOwner)/\(githubRepo)/releases/latest"
+            if let url = URL(string: urlString) {
+                NSWorkspace.shared.open(url)
+            }
+        }
     #endif
 }
 
