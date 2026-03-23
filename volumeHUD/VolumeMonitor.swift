@@ -14,6 +14,12 @@ import Foundation
 import IOKit
 
 class VolumeMonitor: ObservableObject, @unchecked Sendable {
+    private struct VolumeSnapshot {
+        let rawVolume: Float
+        let displayVolume: Float
+        let isMuted: Bool
+    }
+
     @Published var currentVolume: Float = 0.0
     @Published var isMuted: Bool = false
 
@@ -28,12 +34,21 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
     private var isMonitoring = false
     private var accessibilityEnabled: Bool
     private var deviceID: AudioDeviceID = kAudioObjectUnknown
+    private var lastVolumeKeyTime: TimeInterval = 0
+    private var lastMuteKeyTime: TimeInterval = 0
+    private var previousRawVolume: Float = 0.0
     private var previousVolume: Float = 0.0
     private var previousMuteState: Bool = false
     #if !SANDBOX
         private var systemEventMonitor: Any?
         private var keyEventMonitor: Any?
+        private var eventTap: CFMachPort?
+        private var eventTapRunLoopSource: CFRunLoopSource?
+        private var hidEventTap: CFMachPort?
+        private var hidEventTapRunLoopSource: CFRunLoopSource?
         private var lastCapsLockTime: TimeInterval = 0
+        private var lastHandledKeyCode: Int = -1
+        private var lastKeyHandleTime: TimeInterval = 0
         private var lastVolumeKeyLogTime: TimeInterval = 0
     #endif
     private var volumeListenerBlock: ((UInt32, UnsafePointer<AudioObjectPropertyAddress>) -> Void)?
@@ -144,7 +159,46 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         logger.debug("Stopped monitoring for volume changes.")
     }
 
-    private func getCurrentVolumeAndMuteState() -> (volume: Float, isMuted: Bool) {
+    private func isAlignedToStep(_ value: Float, stepCount: Float, tolerance: Float = 0.01) -> Bool {
+        let scaledValue = value * stepCount
+        return abs(scaledValue - round(scaledValue)) < tolerance
+    }
+
+    private func preferredVolumeStepCount(for rawVolume: Float) -> Float {
+        if isOptionShiftHeld {
+            return 64.0
+        }
+
+        if isAlignedToStep(rawVolume, stepCount: 16.0) {
+            return 16.0
+        }
+
+        if isAlignedToStep(rawVolume, stepCount: 64.0) {
+            return 64.0
+        }
+
+        return 16.0
+    }
+
+    private func isUserInitiatedVolumeChange(_ delta: Float, rawVolume: Float) -> Bool {
+        let tolerance: Float = 0.001
+        let absDelta = abs(delta)
+        let supportedStepCounts: [Float] = [16.0, 64.0]
+
+        for stepCount in supportedStepCounts {
+            let baseStepSize = 1.0 / stepCount
+            for multiplier in 1 ... 4 {
+                let expectedDelta = baseStepSize * Float(multiplier)
+                if abs(absDelta - expectedDelta) < tolerance, isAlignedToStep(rawVolume, stepCount: stepCount) {
+                    return true
+                }
+            }
+        }
+
+        return false
+    }
+
+    private func getCurrentVolumeAndMuteState() -> VolumeSnapshot {
         // Get volume
         var volume: Float = 0.0
         var size = UInt32(MemoryLayout<Float>.size)
@@ -158,13 +212,12 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             &volume,
         )
 
+        var rawVolume: Float = previousRawVolume
         var newVolume: Float = currentVolume
         if volumeStatus == noErr {
-            // Quantize volume based on modifier keys:
-            // - Normal: 16 steps (1/16th increments)
-            // - Option+Shift: 64 steps (1/64th increments)
-            let steps: Float = isOptionShiftHeld ? 64.0 : 16.0
-            let quantizedVolume = round(volume * steps) / steps
+            rawVolume = volume
+            let steps = preferredVolumeStepCount(for: rawVolume)
+            let quantizedVolume = round(rawVolume * steps) / steps
             newVolume = quantizedVolume
         }
 
@@ -191,28 +244,32 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             newMuted = muted != 0
         }
 
-        return (volume: newVolume, isMuted: newMuted)
+        return VolumeSnapshot(rawVolume: rawVolume, displayVolume: newVolume, isMuted: newMuted)
     }
 
     private func updateVolumeValuesOnStartup() {
-        let (newVolume, newMuted) = getCurrentVolumeAndMuteState()
+        let snapshot = getCurrentVolumeAndMuteState()
 
         // Update @Published properties directly
-        currentVolume = newVolume
-        isMuted = newMuted
+        currentVolume = snapshot.displayVolume
+        isMuted = snapshot.isMuted
 
         // Set previous values to current values to prevent initial HUD display
-        previousVolume = newVolume
-        previousMuteState = newMuted
+        previousRawVolume = snapshot.rawVolume
+        previousVolume = snapshot.displayVolume
+        previousMuteState = snapshot.isMuted
 
-        logger.debug("Initial volume set: \(Int(newVolume * 100))%, Muted: \(newMuted)")
+        logger.debug("Initial volume set: \(Int(snapshot.displayVolume * 100))%, Muted: \(snapshot.isMuted)")
     }
 
     private func updateVolumeValues() {
-        let (newVolume, newMuted) = getCurrentVolumeAndMuteState()
+        let snapshot = getCurrentVolumeAndMuteState()
+        let newVolume = snapshot.displayVolume
+        let newMuted = snapshot.isMuted
+        let rawVolumeDelta = snapshot.rawVolume - previousRawVolume
 
         // Check if volume or mute state changed
-        let volumeChanged = abs(newVolume - previousVolume) > 0.001 // Smaller threshold for more responsiveness
+        let volumeChanged = abs(rawVolumeDelta) > 0.001
         let muteChanged = newMuted != previousMuteState
 
         if volumeChanged || muteChanged {
@@ -222,27 +279,69 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             currentVolume = newVolume
             isMuted = newMuted
 
-            // Check if MediaKeyInterceptor recently handled this change
-            // If so, skip showing HUD (interceptor already showed it with proper quantization)
+            let currentTime = Date().timeIntervalSince1970
+            let timeSinceVolumeKey = currentTime - lastVolumeKeyTime
+            let timeSinceMuteKey = currentTime - lastMuteKeyTime
+            let userVolumeHeuristicMatched = volumeChanged && isUserInitiatedVolumeChange(rawVolumeDelta, rawVolume: snapshot.rawVolume)
+            let hasRecentVolumeKeyEvidence = timeSinceVolumeKey < 1.0
+            let hasRecentMuteKeyEvidence = timeSinceMuteKey < 1.0
+
+            // MediaKeyInterceptor already showed the HUD for intercepted changes.
             let shouldShowHUD: Bool
+            let showReason: String
             #if !SANDBOX
                 if let interceptor = mediaKeyInterceptor {
                     let timeSinceInterceptorChange = Date().timeIntervalSince1970 - interceptor.lastVolumeChangeTime
-                    shouldShowHUD = timeSinceInterceptorChange > MediaKeyInterceptor.volumeChangeCooldown
+                    if timeSinceInterceptorChange <= MediaKeyInterceptor.volumeChangeCooldown {
+                        shouldShowHUD = false
+                        showReason = "Suppressing duplicate HUD because MediaKeyInterceptor already handled this change."
+                    } else if volumeChanged, userVolumeHeuristicMatched || hasRecentVolumeKeyEvidence {
+                        shouldShowHUD = true
+                        showReason = userVolumeHeuristicMatched
+                            ? "Showing HUD because the volume delta matched user key step patterns."
+                            : "Showing HUD because a recent volume key press corroborated the CoreAudio change."
+                    } else if muteChanged, hasRecentMuteKeyEvidence {
+                        shouldShowHUD = true
+                        showReason = "Showing HUD because a recent mute key press corroborated the mute change."
+                    } else {
+                        shouldShowHUD = false
+                        showReason = "Ignoring non-user volume or mute change with no corroborating key evidence."
+                    }
                 } else {
-                    shouldShowHUD = true
+                    if volumeChanged, userVolumeHeuristicMatched || hasRecentVolumeKeyEvidence {
+                        shouldShowHUD = true
+                        showReason = userVolumeHeuristicMatched
+                            ? "Showing HUD because the volume delta matched user key step patterns."
+                            : "Showing HUD because a recent volume key press corroborated the CoreAudio change."
+                    } else if muteChanged, hasRecentMuteKeyEvidence {
+                        shouldShowHUD = true
+                        showReason = "Showing HUD because a recent mute key press corroborated the mute change."
+                    } else {
+                        shouldShowHUD = false
+                        showReason = "Ignoring non-user volume or mute change with no corroborating key evidence."
+                    }
                 }
             #else
-                shouldShowHUD = true
+                if volumeChanged, userVolumeHeuristicMatched {
+                    shouldShowHUD = true
+                    showReason = "Showing HUD because the volume delta matched user key step patterns."
+                } else {
+                    shouldShowHUD = false
+                    showReason = "Ignoring volume or mute change without heuristic evidence in sandbox mode."
+                }
             #endif
 
             if shouldShowHUD {
+                logger.debug(showReason)
                 DispatchQueue.main.async {
                     self.hudController?.showVolumeHUD(volume: newVolume, isMuted: newMuted)
                 }
+            } else {
+                logger.debug(showReason)
             }
 
             // Update previous values
+            previousRawVolume = snapshot.rawVolume
             previousVolume = newVolume
             previousMuteState = newMuted
         }
@@ -253,11 +352,6 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         // MARK: Key Press Monitoring
 
         private func startSystemEventMonitoring() {
-            if !accessibilityEnabled {
-                logger.info("Accessibility permissions not granted, so volume keys cannot be detected.")
-                return
-            }
-
             // Monitor system-defined events for volume key presses
             systemEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: .systemDefined) { [weak self] event in
                 guard let self else { return }
@@ -286,6 +380,8 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             // Also monitor key events to catch volume keys that might not generate system-defined events
             keyEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.keyDown, .keyUp]) { _ in }
 
+            startEventTap()
+
             logger.debug("Started monitoring system-defined events for volume keys.")
         }
 
@@ -299,6 +395,160 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
                 NSEvent.removeMonitor(keyMonitor)
                 keyEventMonitor = nil
             }
+
+            stopEventTap()
+        }
+
+        private func startEventTap() {
+            let systemDefinedMask: CGEventMask = 1 << 14
+            let userInfo = Unmanaged.passUnretained(self).toOpaque()
+
+            guard
+                let tap = CGEvent.tapCreate(
+                    tap: .cgSessionEventTap,
+                    place: .headInsertEventTap,
+                    options: .listenOnly,
+                    eventsOfInterest: systemDefinedMask,
+                    callback: { _, type, cgEvent, opaqueInfo -> Unmanaged<CGEvent>? in
+                        if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+                            if let opaqueInfo {
+                                let monitor = Unmanaged<VolumeMonitor>.fromOpaque(opaqueInfo).takeUnretainedValue()
+                                if let sessionTap = monitor.eventTap {
+                                    CGEvent.tapEnable(tap: sessionTap, enable: true)
+                                }
+                                if let hidTap = monitor.hidEventTap {
+                                    CGEvent.tapEnable(tap: hidTap, enable: true)
+                                }
+                            }
+                            return Unmanaged.passUnretained(cgEvent)
+                        }
+
+                        guard type.rawValue == 14, let nsEvent = NSEvent(cgEvent: cgEvent) else {
+                            return Unmanaged.passUnretained(cgEvent)
+                        }
+                        guard let opaqueInfo else {
+                            return Unmanaged.passUnretained(cgEvent)
+                        }
+                        let monitor = Unmanaged<VolumeMonitor>.fromOpaque(opaqueInfo).takeUnretainedValue()
+                        let subtype = Int(nsEvent.subtype.rawValue)
+                        let data1 = Int(nsEvent.data1)
+                        let keyCode = (data1 & 0xFFFF_0000) >> 16
+                        let keyFlags = data1 & 0x0000_FFFF
+                        let keyState = (keyFlags & 0xFF00) >> 8
+                        let isKeyDown = keyState == 0x0A
+                        let modifierFlags = nsEvent.modifierFlags
+
+                        Task { @MainActor in
+                            monitor.handleSystemDefinedEventData(
+                                subtype: subtype,
+                                keyCode: keyCode,
+                                keyPressed: keyState,
+                                isKeyDown: isKeyDown,
+                                modifierFlags: modifierFlags,
+                            )
+                        }
+
+                        return Unmanaged.passUnretained(cgEvent)
+                    },
+                    userInfo: userInfo,
+                ) else
+            {
+                logger.warning("Failed to create CGEvent tap for volume keys; falling back to NSEvent monitoring only.")
+                return
+            }
+
+            eventTap = tap
+            eventTapRunLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
+            if let source = eventTapRunLoopSource {
+                CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
+                CGEvent.tapEnable(tap: tap, enable: true)
+                logger.debug("Started CGEvent tap (session-level) for volume keys.")
+            } else {
+                logger.warning("Failed to create run loop source for volume key event tap.")
+            }
+
+            if
+                let hidTap = CGEvent.tapCreate(
+                    tap: .cghidEventTap,
+                    place: .headInsertEventTap,
+                    options: .listenOnly,
+                    eventsOfInterest: systemDefinedMask,
+                    callback: { _, type, cgEvent, opaqueInfo -> Unmanaged<CGEvent>? in
+                        if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+                            if let opaqueInfo {
+                                let monitor = Unmanaged<VolumeMonitor>.fromOpaque(opaqueInfo).takeUnretainedValue()
+                                if let sessionTap = monitor.eventTap {
+                                    CGEvent.tapEnable(tap: sessionTap, enable: true)
+                                }
+                                if let hidTap = monitor.hidEventTap {
+                                    CGEvent.tapEnable(tap: hidTap, enable: true)
+                                }
+                            }
+                            return Unmanaged.passUnretained(cgEvent)
+                        }
+
+                        guard type.rawValue == 14, let nsEvent = NSEvent(cgEvent: cgEvent) else {
+                            return Unmanaged.passUnretained(cgEvent)
+                        }
+                        guard let opaqueInfo else {
+                            return Unmanaged.passUnretained(cgEvent)
+                        }
+                        let monitor = Unmanaged<VolumeMonitor>.fromOpaque(opaqueInfo).takeUnretainedValue()
+                        let subtype = Int(nsEvent.subtype.rawValue)
+                        let data1 = Int(nsEvent.data1)
+                        let keyCode = (data1 & 0xFFFF_0000) >> 16
+                        let keyFlags = data1 & 0x0000_FFFF
+                        let keyState = (keyFlags & 0xFF00) >> 8
+                        let isKeyDown = keyState == 0x0A
+                        let modifierFlags = nsEvent.modifierFlags
+
+                        Task { @MainActor in
+                            monitor.handleSystemDefinedEventData(
+                                subtype: subtype,
+                                keyCode: keyCode,
+                                keyPressed: keyState,
+                                isKeyDown: isKeyDown,
+                                modifierFlags: modifierFlags,
+                            )
+                        }
+
+                        return Unmanaged.passUnretained(cgEvent)
+                    },
+                    userInfo: userInfo,
+                )
+            {
+                hidEventTap = hidTap
+                hidEventTapRunLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, hidTap, 0)
+                if let hidSource = hidEventTapRunLoopSource {
+                    CFRunLoopAddSource(CFRunLoopGetMain(), hidSource, .commonModes)
+                    CGEvent.tapEnable(tap: hidTap, enable: true)
+                    logger.debug("Started CGEvent tap (HID-level) for volume keys.")
+                } else {
+                    logger.warning("Failed to create run loop source for HID-level volume key event tap.")
+                }
+            } else {
+                logger.debug("HID-level volume key event tap unavailable; relying on session-level tap only.")
+            }
+        }
+
+        private func stopEventTap() {
+            if let source = eventTapRunLoopSource {
+                CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes)
+            }
+            if let tap = eventTap {
+                CGEvent.tapEnable(tap: tap, enable: false)
+            }
+            eventTapRunLoopSource = nil
+            eventTap = nil
+
+            if let hidSource = hidEventTapRunLoopSource {
+                CFRunLoopRemoveSource(CFRunLoopGetMain(), hidSource, .commonModes)
+            }
+            if let hidTap = hidEventTap {
+                CGEvent.tapEnable(tap: hidTap, enable: false)
+            }
+            hidEventTapRunLoopSource = nil
+            hidEventTap = nil
         }
 
         @MainActor
@@ -325,13 +575,26 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
 
                 guard isKeyDown else { return }
 
+                if keyCode == lastHandledKeyCode, currentTime - lastKeyHandleTime < 0.05 {
+                    return
+                }
+
+                lastHandledKeyCode = keyCode
+                lastKeyHandleTime = currentTime
+
                 // NX key codes: 0 = vol up, 1 = vol down, 7 = mute
                 switch keyCode {
                 case 1: // Volume down
+                    lastVolumeKeyTime = currentTime
                     showHUDForVolumeKeyPress(isVolumeUp: false)
 
                 case 0: // Volume up
+                    lastVolumeKeyTime = currentTime
                     showHUDForVolumeKeyPress(isVolumeUp: true)
+
+                case 7: // Mute
+                    lastMuteKeyTime = currentTime
+                    logger.debug("Mute key detected.")
 
                 default:
                     break
