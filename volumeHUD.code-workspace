@@ -40,6 +40,7 @@
     },
     "sweetpad.build.xcodeWorkspacePath": "volumeHUD.xcodeproj/project.xcworkspace",
     "swift.autoGenerateLaunchConfigurations": false,
+    "swift.backgroundCompilation": false,
     "swift.buildPath": "./.build"
   }
 }
