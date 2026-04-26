@@ -48,7 +48,7 @@ class HUDController: ObservableObject {
             }
             displayHUD(hudType: .brightness, value: brightness, isMuted: false)
         }
-    #endif
+    #endif // !SANDBOX
 
     @MainActor
     func startDisplayChangeMonitoring() {
@@ -100,8 +100,8 @@ class HUDController: ObservableObject {
         // If the HUD window exists, update its position
         if hudWindow != nil {
             updateWindowPosition()
-            // Re-apply after a short delay to handle transient frame/layout updates
-            // macOS screen geometry may still be adjusting after didChangeScreenParameters fires
+            // Re-apply after a short delay to handle transient frame/layout updates macOS screen
+            // geometry may still be adjusting after didChangeScreenParameters fires
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
                 self?.updateWindowPosition()
             }
@@ -114,8 +114,8 @@ class HUDController: ObservableObject {
 
         let windowSize = NSSize(width: 200, height: 200)
 
-        // Brightness HUD always shows on built-in display (since that's what it controls)
-        // Volume HUD respects user preference for display location
+        // Brightness HUD always shows on built-in display (since that's what it controls). Volume
+        // HUD respects user preference for display location.
         let targetScreen: NSScreen
         let selectionReason: String
         #if !SANDBOX
@@ -183,7 +183,7 @@ class HUDController: ObservableObject {
                     selectionReason = "volume primaryDisplay missing-primary fallback firstScreen"
                 }
             }
-        #endif
+        #endif // !SANDBOX
 
         let selectedDisplayID: CGDirectDisplayID? = {
             guard
@@ -239,7 +239,7 @@ class HUDController: ObservableObject {
         return nil
     }
 
-    /// Returns the NSScreen corresponding to macOS's primary display (menu bar display), if present.
+    /// Returns the NSScreen corresponding to macOS's primary (menu bar) display, if present.
     private func getPrimaryScreen() -> NSScreen? {
         let mainDisplayID = CGMainDisplayID()
         for screen in NSScreen.screens {
@@ -348,8 +348,8 @@ class HUDController: ObservableObject {
             return
         }
 
-        // Configure window properties for overlay behavior
-        // Use .statusBar level to appear above normal windows but not block Exposé/Show Desktop
+        // Configure window properties for overlay behavior. Use `.statusBar` level to appear above
+        // normal windows but not block Exposé/Show Desktop.
         window.level = .statusBar
         window.isOpaque = false
         window.backgroundColor = .clear

@@ -13,11 +13,11 @@ import CoreGraphics
 import Foundation
 import IOKit
 
-/// Intercepts media key events at the HID level to suppress the system HUDs.
-/// When active, this class consumes volume/brightness key events before macOS sees them,
-/// manually adjusts the values, and triggers the custom HUD.
+/// Intercepts media key events at the HID level to suppress the system HUDs. When active, this
+/// class consumes volume/brightness key events before macOS sees them, manually adjusts the values,
+/// and triggers the custom HUD.
 ///
-/// Features intelligent fallback: if adjusting a value fails (e.g., brightness on external display),
+/// Intelligent fallback: if adjusting a value fails (e.g., brightness on external display),
 /// interception for that type is automatically disabled and events pass through to the system.
 @MainActor
 final class MediaKeyInterceptor {
@@ -71,14 +71,10 @@ final class MediaKeyInterceptor {
     private var activeFeedbackPlayers: [AVAudioPlayer] = []
     private var isRunning = false
 
-    /// Whether volume interception is currently working (resets on device change or app restart).
-    /// Using nonisolated(unsafe) is acceptable here because:
-    /// - The flag transitions are one-way per "session" (true→false on failure, reset on device change)
-    /// - A race condition would only allow one extra event through, which is acceptable
+    /// Whether volume interception is working (resets on device change or app restart)
     private nonisolated(unsafe) var volumeInterceptionWorking = true
 
-    /// Whether brightness interception is currently working (resets on device change or app restart).
-    /// Using nonisolated(unsafe) for the same reasons as volumeInterceptionWorking.
+    /// Whether brightness interception is working (resets on device change or app restart)
     private nonisolated(unsafe) var brightnessInterceptionWorking = true
 
     /// Last known audio device ID for detecting device changes
@@ -113,14 +109,13 @@ final class MediaKeyInterceptor {
     }
 
     deinit {
-        // Note: stop() must be called before deinit since we're @MainActor
-        // DisplayServices handle is closed in stop()
+        // Note: stop() must be called before deinit since we're @MainActor DisplayServices handle
+        // is closed in stop()
     }
 
     // MARK: Public Methods
 
-    /// Start intercepting media key events.
-    /// Returns true if the event tap was successfully created.
+    /// Start intercepting media key events. Returns true if the event tap was successfully created.
     @discardableResult
     func start() -> Bool {
         guard !isRunning else {
@@ -138,13 +133,12 @@ final class MediaKeyInterceptor {
             return false
         }
 
-        // Create the event tap
-        // We use kCGHIDEventTap to intercept at the lowest level
-        // and .defaultTap (not .listenOnly) so we can consume events
+        // Create the event tap We use kCGHIDEventTap to intercept at the lowest level and
+        // .defaultTap (not .listenOnly) so we can consume events
         let systemDefinedMask: CGEventMask = 1 << 14 // NX_SYSDEFINED = 14
 
-        // We need to use a static callback that bridges to self
-        // Store self in a context that the callback can access
+        // We need to use a static callback that bridges to self Store self in a context that the
+        // callback can access
         let userInfo = Unmanaged.passUnretained(self).toOpaque()
 
         guard
@@ -209,8 +203,7 @@ final class MediaKeyInterceptor {
         logger.debug("Stopped intercepting media keys.")
     }
 
-    /// Handle a system-defined CGEvent. Returns nil to consume the event,
-    /// or the event to pass it through.
+    /// Handle system-defined CGEvent. Returns nil to consume, or the event to pass it through.
     private nonisolated func handleEvent(_ cgEvent: CGEvent) -> Unmanaged<CGEvent>? {
         // Convert to NSEvent to extract key info
         guard
@@ -226,8 +219,7 @@ final class MediaKeyInterceptor {
         let keyFlags = data1 & 0x0000_FFFF
         let keyState = (keyFlags & 0xFF00) >> 8
 
-        // 0x0A = key down, 0x0B = key up
-        // Only handle key down events
+        // 0x0A = key down, 0x0B = key up Only handle key down events
         guard keyState == 0x0A else {
             return Unmanaged.passRetained(cgEvent)
         }
@@ -275,18 +267,18 @@ final class MediaKeyInterceptor {
             return nil
 
         case .brightnessUp, .brightnessDown:
-            // Only intercept brightness if the brightness HUD feature is enabled
-            // and brightness interception is still working
+            // Only intercept brightness if the brightness HUD feature is enabled and brightness
+            // interception is still working.
             guard brightnessInterceptionWorking else {
                 return Unmanaged.passRetained(cgEvent) // Pass through to system
             }
 
-            // Handle the key press on the main actor
+            // Handle the key press on the main actor.
             Task { @MainActor [weak self] in
                 self?.handleBrightnessKey(keyType: keyType, useFineStep: useFineStep)
             }
 
-            // Consume the event
+            // Consume the event.
             return nil
         }
     }
@@ -530,8 +522,8 @@ final class MediaKeyInterceptor {
         // Record the change time so VolumeMonitor knows to skip its HUD update
         lastVolumeChangeTime = Date().timeIntervalSince1970
 
-        // Show our HUD with the quantized expected value (not the actual read-back)
-        // This ensures clean 1/16 or 1/64 steps without partial bar flicker
+        // Show our HUD with the quantized expected value (not the actual read-back). This ensures
+        // clean 1/16 or 1/64 steps without partial bar flicker.
         let isMuted = getMuteState(deviceID: deviceID) ?? false
         hudController?.showVolumeHUD(volume: expectedVolume, isMuted: isMuted)
 
@@ -752,9 +744,8 @@ final class MediaKeyInterceptor {
 
     // MARK: Private - Feedback Sound
 
-    /// Determine whether feedback should play for this key press.
-    /// Default follows the macOS preference. Shift alone inverts the preference.
-    /// Option+Shift remains silent, matching macOS behavior.
+    /// Determine whether feedback should play for this keypress. Default follows macOS preference.
+    /// Shift alone inverts the preference. Option+Shift remains silent, matching macOS behavior.
     private func shouldPlayVolumeFeedback(shiftHeld: Bool, optionHeld: Bool) -> Bool {
         guard let globalDomain = UserDefaults.standard.persistentDomain(forName: "NSGlobalDomain") else {
             logger.debug("Volume feedback preference unavailable. Defaulting to no feedback.")

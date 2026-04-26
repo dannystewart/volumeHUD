@@ -52,7 +52,7 @@ struct HUDView: View {
                 Image(systemName: iconName)
                     .font(.system(size: iconSize, weight: .medium))
                     .foregroundStyle(.primary.opacity(0.7))
-                    // SF Symbols has slight misalignment between speaker.slash.fill and speaker.fill
+                    // SF Symbols has misalignment between speaker.slash.fill and speaker.fill
                     .offset(y: hudType == .volume && (isMuted || value <= 0.001) ? 2 : 0)
                 Spacer()
             }
@@ -91,8 +91,8 @@ struct HUDView: View {
                 .fill(.primary.opacity(0.2))
                 .frame(width: barWidth, height: barHeight)
         } else {
-            // Each of the 16 bars represents 1/16th of the total range
-            // Support 1/64th increments by filling each bar horizontally in quarters
+            // Each of the 16 bars represents 1/16th of the total range. Support 1/64th increments
+            // by filling each bar horizontally in quarters.
             let barStart = Float(index) / 16.0
             let barEnd = Float(index + 1) / 16.0
 

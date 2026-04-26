@@ -15,7 +15,7 @@ struct AboutView: View {
     // Settings for app preferences
     #if !SANDBOX
         @AppStorage("brightnessEnabled") private var brightnessEnabled: Bool = false
-    #endif
+    #endif // !SANDBOX
     @AppStorage("volumeHUDFollowsMouse") private var volumeHUDFollowsMouse: Bool = true
     @AppStorage("useRelativePositioning") private var useRelativePositioning: Bool = true
 
@@ -26,7 +26,7 @@ struct AboutView: View {
         // GitHub repository info
         private let githubOwner = "dannystewart"
         private let githubRepo = "volumeHUD"
-    #endif
+    #endif // !SANDBOX
 
     let onQuit: () -> Void
     weak var appDelegate: AppDelegate?
@@ -107,7 +107,7 @@ struct AboutView: View {
                     .disabled(!isUpdateAvailable)
                     .opacity(isUpdateAvailable ? 1.0 : 0.0)
                     .padding(.bottom, 16)
-                #endif
+                #endif // !SANDBOX
 
                 Spacer(minLength: 0)
 
@@ -191,7 +191,7 @@ struct AboutView: View {
                     }
                     .padding(.leading, settingPadding)
                     .animation(.easeInOut(duration: 0.3), value: brightnessEnabled)
-                #endif
+                #endif // !SANDBOX
 
                 // MARK: - Display Toggle for HUD Placement
 
@@ -282,7 +282,7 @@ struct AboutView: View {
                     checkForUpdates()
                 }
             }
-        #endif
+        #endif // !SANDBOX
     }
 
     #if !SANDBOX
@@ -361,7 +361,7 @@ struct AboutView: View {
                 NSWorkspace.shared.open(url)
             }
         }
-    #endif
+    #endif // !SANDBOX
 }
 
 #Preview {

@@ -26,7 +26,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
     weak var hudController: HUDController?
     #if !SANDBOX
         weak var mediaKeyInterceptor: MediaKeyInterceptor?
-    #endif
+    #endif // !SANDBOX
 
     let logger: Logger = .init()
 
@@ -50,7 +50,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         private var lastHandledKeyCode: Int = -1
         private var lastKeyHandleTime: TimeInterval = 0
         private var lastVolumeKeyLogTime: TimeInterval = 0
-    #endif
+    #endif // !SANDBOX
     private var volumeListenerBlock: ((UInt32, UnsafePointer<AudioObjectPropertyAddress>) -> Void)?
     private var muteListenerBlock: ((UInt32, UnsafePointer<AudioObjectPropertyAddress>) -> Void)?
     private var devicePollingTimer: Timer?
@@ -132,7 +132,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         #if !SANDBOX
             // Start monitoring system-defined events for volume key presses
             startSystemEventMonitoring()
-        #endif
+        #endif // !SANDBOX
 
         // Monitor for default device changes
         startDefaultDeviceMonitoring()
@@ -150,7 +150,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         #if !SANDBOX
             // Stop system event monitoring
             stopSystemEventMonitoring()
-        #endif
+        #endif // !SANDBOX
 
         // Stop default device monitoring
         stopDefaultDeviceMonitoring()
@@ -329,7 +329,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
                     shouldShowHUD = false
                     showReason = "Ignoring volume or mute change without heuristic evidence in sandbox mode."
                 }
-            #endif
+            #endif // !SANDBOX
 
             if shouldShowHUD {
                 logger.debug(showReason)
@@ -355,8 +355,8 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             // Monitor system-defined events for volume key presses
             systemEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: .systemDefined) { [weak self] event in
                 guard let self else { return }
-                // Extract only primitive fields on the monitoring thread to avoid
-                // crossing threads with non-Sendable NSEvent
+                // Extract only primitive fields on the monitoring thread to avoid crossing threads
+                // with non-Sendable NSEvent.
                 let subtype = Int(event.subtype.rawValue)
                 let data1 = Int(event.data1)
                 let keyCode = (data1 & 0xFFFF_0000) >> 16
@@ -377,7 +377,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
                 }
             }
 
-            // Also monitor key events to catch volume keys that might not generate system-defined events
+            // Also monitor key events to catch keys that may not generate system-defined events.
             keyEventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.keyDown, .keyUp]) { _ in }
 
             startEventTap()
@@ -608,8 +608,8 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
             let currentVol = currentVolume
             let currentMuted = isMuted
 
-            // Only show HUD on key presses if we're at volume boundaries (0% or 100%)
-            // This prevents media keys from triggering the HUD when volume is between 1-99%
+            // Only show HUD on key presses if we're at volume boundaries (0% or 100%) This prevents
+            // media keys from triggering the HUD when volume is between 1-99%
             let atMinVolume = currentVol <= 0.001
             let atMaxVolume = currentVol >= 0.999
 
@@ -627,7 +627,7 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
 
             logger.debug("Showing HUD for volume \(isVolumeUp ? "up" : "down") key press at boundary, current volume: \(Int(currentVol * 100))%, muted: \(currentMuted)")
         }
-    #endif
+    #endif // !SANDBOX
 
     // MARK: Device Change Monitoring
 

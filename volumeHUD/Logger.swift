@@ -9,17 +9,16 @@ import Foundation
 
 #if canImport(os)
     import os
-#endif
+#endif // !SANDBOX
 
 // MARK: - Logger
 
-public final class Logger: @unchecked Sendable {
+final class Logger: @unchecked Sendable {
     private enum LogLevel {
         case debug
         case info
         case warning
         case error
-        case fault
 
         nonisolated var label: String {
             switch self {
@@ -27,7 +26,6 @@ public final class Logger: @unchecked Sendable {
             case .info: "✅"
             case .warning: "⚠️"
             case .error: "❌"
-            case .fault: "🔥"
             }
         }
     }
@@ -42,17 +40,13 @@ public final class Logger: @unchecked Sendable {
 
     #if canImport(os)
         private let osLogger: os.Logger
-    #endif
+    #endif // !SANDBOX
 
-    private let category: String
-
-    public nonisolated init(category: String = "volumeHUD") {
-        self.category = category
-
+    nonisolated init(category: String = "volumeHUD") {
         #if canImport(os)
             let subsystem = Bundle.main.bundleIdentifier ?? "com.dannystewart.volumeHUD"
             osLogger = os.Logger(subsystem: subsystem, category: category)
-        #endif
+        #endif // !SANDBOX
     }
 
     private nonisolated static func formatTimestamp(_ date: Date) -> String {
@@ -61,24 +55,20 @@ public final class Logger: @unchecked Sendable {
         return timestampFormatter.string(from: date)
     }
 
-    public nonisolated func debug(_ message: @autoclosure () -> String) {
+    nonisolated func debug(_ message: @autoclosure () -> String) {
         log(.debug, message())
     }
 
-    public nonisolated func info(_ message: @autoclosure () -> String) {
+    nonisolated func info(_ message: @autoclosure () -> String) {
         log(.info, message())
     }
 
-    public nonisolated func warning(_ message: @autoclosure () -> String) {
+    nonisolated func warning(_ message: @autoclosure () -> String) {
         log(.warning, message())
     }
 
-    public nonisolated func error(_ message: @autoclosure () -> String) {
+    nonisolated func error(_ message: @autoclosure () -> String) {
         log(.error, message())
-    }
-
-    public nonisolated func fault(_ message: @autoclosure () -> String) {
-        log(.fault, message())
     }
 
     private nonisolated func log(_ level: LogLevel, _ message: String) {
@@ -95,11 +85,9 @@ public final class Logger: @unchecked Sendable {
                 self.osLogger.notice("\(formatted, privacy: .public)")
             case .error:
                 self.osLogger.error("\(formatted, privacy: .public)")
-            case .fault:
-                self.osLogger.fault("\(formatted, privacy: .public)")
             }
         #else
             print(formatted)
-        #endif
+        #endif // !SANDBOX
     }
 }

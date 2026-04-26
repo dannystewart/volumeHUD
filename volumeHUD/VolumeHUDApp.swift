@@ -34,7 +34,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
     #if !SANDBOX
         var brightnessMonitor: BrightnessMonitor!
         var mediaKeyInterceptor: MediaKeyInterceptor?
-    #endif
+    #endif // !SANDBOX
     var hudController: HUDController!
     var aboutWindow: NSPanel?
     var loginItemManager: LoginItemManager!
@@ -46,7 +46,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         private var isBrightnessEnabled: Bool {
             UserDefaults.standard.bool(forKey: "brightnessEnabled")
         }
-    #endif
+    #endif // !SANDBOX
 
     deinit {
         DistributedNotificationCenter.default().removeObserver(self)
@@ -96,26 +96,26 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         volumeMonitor = VolumeMonitor(isPreviewMode: false)
         #if !SANDBOX
             brightnessMonitor = BrightnessMonitor(isPreviewMode: false)
-        #endif
+        #endif // !SANDBOX
         hudController = HUDController(isPreviewMode: false)
 
         // Set up bidirectional references
         volumeMonitor.hudController = hudController
         #if !SANDBOX
             brightnessMonitor.hudController = hudController
-        #endif
+        #endif // !SANDBOX
 
         #if !SANDBOX
             // Request accessibility permissions if needed
             requestAccessibilityPermissionsIfNeeded()
-        #endif
+        #endif // !SANDBOX
 
-        // Request notification permission and post "started" notification (only if manually launched)
+        // Request notification permission and post "started" notification
         requestNotificationAuthorizationIfNeeded { [weak self] granted in
             guard let self else { return }
             logger.debug("Notification permission granted: \(granted)")
             if granted {
-                // Only show startup notification if launched manually (not during system startup)
+                // Only show startup notification if launched manually
                 if isManualLaunch() {
                     Task { @MainActor in
                         self.postUserNotification(title: "volumeHUD started!", body: nil)
@@ -137,7 +137,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
 
             // Start media key interceptor to hide system HUDs
             startMediaKeyInterceptor()
-        #endif
+        #endif // !SANDBOX
 
         // Start monitoring display configuration changes
         hudController.startDisplayChangeMonitoring()
@@ -165,8 +165,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
             }
         }
 
-        /// Start the media key interceptor to hide system HUDs.
-        /// The interceptor automatically falls back to system HUDs if interception fails.
+        /// Start the media key interceptor to hide system HUDs. The interceptor automatically falls
+        /// back to system HUDs if interception fails.
         @MainActor
         func startMediaKeyInterceptor() {
             // Create the interceptor if not already created
@@ -174,8 +174,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
                 mediaKeyInterceptor = MediaKeyInterceptor()
                 mediaKeyInterceptor?.hudController = hudController
 
-                // Connect VolumeMonitor to interceptor so it can skip HUD updates
-                // when the interceptor is handling volume changes
+                // Connect VolumeMonitor to interceptor so it can skip HUD updates when the
+                // interceptor is handling volume changes
                 volumeMonitor.mediaKeyInterceptor = mediaKeyInterceptor
             }
 
@@ -185,7 +185,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
                 logger.warning("Failed to start media key interceptor. Accessibility permissions may be required.")
             }
         }
-    #endif
+    #endif // !SANDBOX
 
     // MARK: - Notification Center Delegate
 
@@ -211,7 +211,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
 
     // MARK: - Environment Check
 
-    /// Check to see if we're running in a development environment (SwiftUI preview, test mode, etc.)
+    /// Check to see if we're running in a development environment (SwiftUI preview, test mode,
+    /// etc.)
     private nonisolated func isRunningInDevEnvironment() -> Bool {
         if
             ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" ||
@@ -225,7 +226,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         return false
     }
 
-    /// Returns true if this was a manual launch (user double-clicked), false for automatic (login item).
+    /// Returns true if manual launch (user double-clicked), false for automatic (login item).
     private nonisolated func isManualLaunch() -> Bool {
         if isRunningInDevEnvironment() { return false }
 
@@ -463,7 +464,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
             brightnessMonitor.updateAccessibilityStatus()
             volumeMonitor.updateAccessibilityStatus()
         }
-    #endif
+    #endif // !SANDBOX
 
     // MARK: - Notification Permissions
 
@@ -518,7 +519,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         #if !SANDBOX
             if isBrightnessEnabled { brightnessMonitor?.stopMonitoring() }
             mediaKeyInterceptor?.stop()
-        #endif
+        #endif // !SANDBOX
         hudController?.stopDisplayChangeMonitoring()
 
         // Terminate without activating the app

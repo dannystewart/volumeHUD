@@ -128,8 +128,8 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
         logger.debug("Stopped monitoring for brightness changes.")
     }
 
-    /// Check if a brightness delta matches user-initiated key press patterns
-    /// User key presses always change brightness by multiples of 1/16th (0.0625)
+    /// Check if a brightness delta matches user-initiated key press patterns User key presses
+    /// always change brightness by multiples of 1/16th (0.0625)
     private func isUserInitiatedBrightnessChange(_ delta: Float, rawBrightness: Float) -> Bool {
         let baseStepSize: Float = 0.0625
         let tolerance: Float = 0.0001
@@ -305,8 +305,8 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
     private func startEventTap() {
         // Install a CGEvent tap to reliably observe NX_SYSDEFINED events without capturing context
         let systemDefinedMask: CGEventMask = 1 << 14 // kCGEventSystemDefined = 14
-        // Both session and HID taps share the same userInfo pointer to self
-        // This is safe because self outlives both taps (stopped in stopEventTap)
+        // Both session and HID taps share the same userInfo pointer to self This is safe because
+        // self outlives both taps (stopped in stopEventTap)
         let userInfo = Unmanaged.passUnretained(self).toOpaque()
         guard
             let tap = CGEvent.tapCreate(
@@ -368,7 +368,8 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
             logger.warning("Failed to create run loop source for event tap.")
         }
 
-        // Also install a HID-level tap as a backup; this may be more resilient to display configuration changes
+        // Also install a HID-level tap as a backup; this may be more resilient to display
+        // configuration changes
         if
             let hidTap = CGEvent.tapCreate(
                 tap: .cghidEventTap,
@@ -481,8 +482,8 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
         // Cancel any pending restart task to debounce rapid-fire display config changes
         restartTask?.cancel()
 
-        // Debounce display configuration changes that fire in rapid succession
-        // Lid close/open can trigger 3-4 notifications over ~1 second
+        // Debounce display configuration changes that fire in rapid succession Lid close/open can
+        // trigger 3-4 notifications over ~1 second
         restartTask = Task { @MainActor in
             do {
                 try await Task.sleep(nanoseconds: 500_000_000) // 500ms
@@ -549,7 +550,8 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
                 currentBrightness = quantizedBrightness
             }
 
-            // If accessibility is enabled and we had a recent key press, show HUD even if step detection failed
+            // If accessibility is enabled and we had a recent key press, show HUD even if step
+            // detection failed
             if accessibilityEnabled, timeSinceKeyPress < 1.0 {
                 if !isUserChange {
                     logger.debug("Showing HUD (accessibility override): \(Int(quantizedBrightness * 100))% (delta: \(delta))")
@@ -570,8 +572,9 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
             // NX key codes: 2 = brightness up, 3 = brightness down
             switch keyCode {
             case 2, 3:
-                // Attempt to reduce duplicate logging: both session and HID taps fire for same keypress
-                // Due to @MainActor queuing, both may pass this check (race condition), which is fine
+                // Attempt to reduce duplicate logging: both session and HID taps fire for same
+                // keypress. Due to @MainActor queuing, both may pass this check (race condition),
+                // which is fine.
                 let now = Date().timeIntervalSince1970
                 if keyCode == lastHandledKeyCode, now - lastKeyHandleTime < 0.05 {
                     return
