@@ -28,11 +28,11 @@ struct AboutView: View {
         private let githubRepo = "volumeHUD"
     #endif // !SANDBOX
 
+    /// Login item manager
+    @Environment(\.loginItemManager) private var loginItemManager
+
     let onQuit: () -> Void
     weak var appDelegate: AppDelegate?
-
-    /// Login item manager
-    @ObservedObject var loginItemManager: LoginItemManager
 
     let logger: Logger = .init()
 
@@ -127,29 +127,13 @@ struct AboutView: View {
             VStack(alignment: .leading, spacing: 15) {
                 // MARK: - Open at Login Setting
 
-                VStack(alignment: .leading, spacing: spaceBeforeSubtitle) {
-                    HStack(alignment: .center, spacing: iconColumnWidth) {
-                        Image(systemName: "power.circle.fill")
-                            .foregroundStyle(loginItemManager.isEnabled ? .green : .gray)
-                            .font(.system(size: 14))
-                            .frame(width: 14, alignment: .leading)
-                            .animation(.easeInOut(duration: 0.3), value: loginItemManager.isEnabled)
-
-                        Text("Open at Login")
-                            .font(.system(size: 12, weight: .medium))
-                            .frame(width: minSettingColumnWidth, alignment: .leading)
-
-                        Spacer()
-
-                        Toggle("", isOn: Binding(
-                            get: { loginItemManager.isEnabled },
-                            set: { loginItemManager.setEnabled($0) },
-                        ))
-                        .toggleStyle(SwitchToggleStyle(tint: .accentColor))
-                        .scaleEffect(0.8)
-                    }
-                }
-                .padding(.leading, settingPadding)
+                LoginItemSetting(
+                    loginItemManager: loginItemManager,
+                    iconColumnWidth: iconColumnWidth,
+                    minSettingColumnWidth: minSettingColumnWidth,
+                    settingPadding: settingPadding,
+                    spaceBeforeSubtitle: spaceBeforeSubtitle,
+                )
 
                 #if !SANDBOX
 
@@ -364,20 +348,61 @@ struct AboutView: View {
     #endif // !SANDBOX
 }
 
-#Preview {
-    class MockLoginItemManager: LoginItemManager {
-        override init() {
-            super.init()
-            isEnabled = true
-        }
+// MARK: - LoginItemSetting
 
-        override func setEnabled(_ enabled: Bool) { isEnabled = enabled }
-        override func updateStatus() {}
+private struct LoginItemSetting: View {
+    @ObservedObject private var loginItemManager: LoginItemManager
+
+    let iconColumnWidth: CGFloat
+    let minSettingColumnWidth: CGFloat
+    let settingPadding: CGFloat
+    let spaceBeforeSubtitle: CGFloat
+
+    init(
+        loginItemManager: LoginItemManager,
+        iconColumnWidth: CGFloat,
+        minSettingColumnWidth: CGFloat,
+        settingPadding: CGFloat,
+        spaceBeforeSubtitle: CGFloat,
+    ) {
+        self.loginItemManager = loginItemManager
+        self.iconColumnWidth = iconColumnWidth
+        self.minSettingColumnWidth = minSettingColumnWidth
+        self.settingPadding = settingPadding
+        self.spaceBeforeSubtitle = spaceBeforeSubtitle
     }
 
-    return AboutView(
+    var body: some View {
+        VStack(alignment: .leading, spacing: spaceBeforeSubtitle) {
+            HStack(alignment: .center, spacing: iconColumnWidth) {
+                Image(systemName: "power.circle.fill")
+                    .foregroundStyle(loginItemManager.isEnabled ? .green : .gray)
+                    .font(.system(size: 14))
+                    .frame(width: 14, alignment: .leading)
+                    .animation(.easeInOut(duration: 0.3), value: loginItemManager.isEnabled)
+
+                Text("Open at Login")
+                    .font(.system(size: 12, weight: .medium))
+                    .frame(width: minSettingColumnWidth, alignment: .leading)
+
+                Spacer()
+
+                Toggle("", isOn: Binding(
+                    get: { loginItemManager.isEnabled },
+                    set: { loginItemManager.setEnabled($0) },
+                ))
+                .toggleStyle(SwitchToggleStyle(tint: .accentColor))
+                .scaleEffect(0.8)
+            }
+        }
+        .padding(.leading, settingPadding)
+    }
+}
+
+#Preview {
+    AboutView(
         onQuit: {},
         appDelegate: nil,
-        loginItemManager: MockLoginItemManager(),
     )
+    .environment(\.loginItemManager, LoginItemManager())
 }

@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## [Unreleased]
 
+### Changed
+
+- Replaces the separate login helper app with macOS's built-in `SMAppService.mainApp` login item registration.
+
 ## [3.3.1] (2026-03-23)
 
 ### Fixed

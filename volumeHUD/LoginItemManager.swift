@@ -8,6 +8,9 @@
 import Combine
 import Foundation
 import ServiceManagement
+import SwiftUI
+
+// MARK: - LoginItemManager
 
 /// Manages login item functionality using the modern SMAppService API.
 @MainActor
@@ -16,12 +19,11 @@ class LoginItemManager: ObservableObject {
     @Published private(set) var lastError: String?
 
     private let logger: Logger = .init()
-    private let helperBundleIdentifier = "com.dannystewart.volumehud.loginhelper"
 
     private var isUpdatingFromSystem = false
 
     private var service: SMAppService {
-        SMAppService.loginItem(identifier: helperBundleIdentifier)
+        SMAppService.mainApp
     }
 
     init() {
@@ -56,4 +58,8 @@ class LoginItemManager: ObservableObject {
             lastError = error.localizedDescription
         }
     }
+}
+
+extension EnvironmentValues {
+    @Entry var loginItemManager: LoginItemManager = .init()
 }

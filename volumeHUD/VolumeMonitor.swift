@@ -37,7 +37,6 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
     private var lastVolumeKeyTime: TimeInterval = 0
     private var lastMuteKeyTime: TimeInterval = 0
     private var previousRawVolume: Float = 0.0
-    private var previousVolume: Float = 0.0
     private var previousMuteState: Bool = false
     #if !SANDBOX
         private var systemEventMonitor: Any?
@@ -256,7 +255,6 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
 
         // Set previous values to current values to prevent initial HUD display
         previousRawVolume = snapshot.rawVolume
-        previousVolume = snapshot.displayVolume
         previousMuteState = snapshot.isMuted
 
         logger.debug("Initial volume set: \(Int(snapshot.displayVolume * 100))%, Muted: \(snapshot.isMuted)")
@@ -342,7 +340,6 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
 
             // Update previous values
             previousRawVolume = snapshot.rawVolume
-            previousVolume = newVolume
             previousMuteState = newMuted
         }
     }

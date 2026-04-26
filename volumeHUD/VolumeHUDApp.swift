@@ -17,12 +17,6 @@ import SwiftUI
 class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotificationCenterDelegate {
     // MARK: - Launch Detection
 
-    /// Shared UserDefaults key for login helper launch marker (must match LoginHelper)
-    private nonisolated static let launchMarkerKey = "loginHelperLaunchTimestamp"
-
-    /// Maximum age of the launch marker to consider it valid (10 seconds)
-    private nonisolated static let launchMarkerMaxAge: TimeInterval = 10.0
-
     /// Maximum system uptime to consider as "just logged in" (3 minutes)
     private nonisolated static let loginUptimeThreshold: TimeInterval = 180.0
 
@@ -230,71 +224,21 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
     private nonisolated func isManualLaunch() -> Bool {
         if isRunningInDevEnvironment() { return false }
 
-        // Check 1: UserDefaults marker from LoginHelper (most reliable)
-        // LoginHelper writes a timestamp just before launching us
-        if let markerTimestamp = UserDefaults.standard.object(forKey: Self.launchMarkerKey) as? TimeInterval {
-            let markerAge = Date().timeIntervalSince1970 - markerTimestamp
-            // Clear the marker so it doesn't affect future launches
-            UserDefaults.standard.removeObject(forKey: Self.launchMarkerKey)
-            UserDefaults.standard.synchronize()
-
-            if markerAge < Self.launchMarkerMaxAge {
-                logger.debug("Launch detected via UserDefaults marker (age: \(String(format: "%.1f", markerAge))s)")
-                return false // Launched by login helper
-            }
-        }
-
-        // Check 2: System uptime heuristic
-        // If the system just booted (uptime < 3 minutes), likely a login item launch
+        // Check 1: System uptime heuristic If the system just booted (uptime < 3 minutes), likely a
+        // login item launch
         let uptime = ProcessInfo.processInfo.systemUptime
         if uptime < Self.loginUptimeThreshold {
             logger.debug("Launch detected via system uptime heuristic (uptime: \(String(format: "%.0f", uptime))s)")
             return false // Likely launched at login
         }
 
-        // Check 3: Legacy checks for backwards compatibility
-        if CommandLine.arguments.contains("--launchedByLoginItem") { return false }
-        if ProcessInfo.processInfo.environment["VOLUMEHUD_LOGIN_HELPER"] == "1" { return false }
-
-        // Check 4: Parent process checks (less reliable but kept as fallback)
-        let parentPID = getppid()
-        if isParentEmbeddedLoginHelper(parentPID) { return false }
-
         // Default to manual launch
         logger.debug("Manual launch detected (uptime: \(String(format: "%.0f", uptime))s)")
         return true
     }
 
-    /// Checks if the parent PID is our embedded login helper in Contents/Library/LoginItems.
-    private nonisolated func isParentEmbeddedLoginHelper(_ parentPID: pid_t) -> Bool {
-        guard let parentBundlePath = Self.getBundlePath(for: parentPID) else { return false }
-
-        let loginItemsURL = Bundle.main
-            .bundleURL
-            .appendingPathComponent("Contents/Library/LoginItems", isDirectory: true)
-
-        var isDir: ObjCBool = false
-        guard
-            FileManager.default.fileExists(atPath: loginItemsURL.path, isDirectory: &isDir),
-            isDir.boolValue else
-        {
-            return false
-        }
-
-        guard
-            let contents = try? FileManager.default.contentsOfDirectory(
-                at: loginItemsURL,
-                includingPropertiesForKeys: nil,
-            ) else
-        {
-            return false
-        }
-
-        return contents.contains { $0.pathExtension == "app" && $0.path == parentBundlePath }
-    }
-
-    /// Checks for another instance of this app running from a different bundle path.
-    /// Returns the conflicting bundle path if found, nil otherwise.
+    /// Checks for another instance of this app running from a different bundle path. Returns the
+    /// conflicting bundle path if found, nil otherwise.
     private func checkForConflictingInstance() -> String? {
         let currentPID = ProcessInfo.processInfo.processIdentifier
         let currentBundlePath = Bundle.main.bundlePath
@@ -382,8 +326,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
                 self?.gracefulTerminate()
             },
             appDelegate: self,
-            loginItemManager: loginItemManager,
         )
+        .environment(\.loginItemManager, loginItemManager)
 
         let hostingController = NSHostingController(rootView: aboutView)
 
