@@ -21,6 +21,15 @@ import IOKit
 /// interception for that type is automatically disabled and events pass through to the system.
 @MainActor
 final class MediaKeyInterceptor {
+    private struct VolumeControlState {
+        let deviceID: AudioDeviceID
+        let requestedVolume: Float
+        let readbackVolume: Float
+        let lastDelta: Float
+        let isHardwareQuantized: Bool
+        let toleratedUnchangedRequest: Bool
+    }
+
     private enum NXKeyType: Int {
         case soundUp = 0
         case soundDown = 1
@@ -80,6 +89,9 @@ final class MediaKeyInterceptor {
     /// Last known audio device ID for detecting device changes
     private var lastKnownAudioDeviceID: AudioDeviceID = kAudioObjectUnknown
 
+    /// Last logical target and its physical read-back, which may differ on hardware-quantized devices
+    private var volumeControlState: VolumeControlState?
+
     /// Timer for polling audio device changes
     private var audioDevicePollingTimer: Timer?
 
@@ -126,6 +138,7 @@ final class MediaKeyInterceptor {
         // Reset fallback states on start (allows re-testing each app launch)
         volumeInterceptionWorking = true
         brightnessInterceptionWorking = true
+        volumeControlState = nil
 
         // Check accessibility permissions first
         guard AXIsProcessTrusted() else {
@@ -472,9 +485,26 @@ final class MediaKeyInterceptor {
             return
         }
 
+        // Continue from our logical target when the device still reports the physical result of our
+        // previous request. Some devices map 1/16 targets to different hardware-supported values.
+        let baseVolume: Float
+        let previousControlState: VolumeControlState?
+        if
+            let state = volumeControlState,
+            state.deviceID == deviceID,
+            abs(state.readbackVolume - currentVolume) <= 0.001
+        {
+            baseVolume = state.requestedVolume
+            previousControlState = state
+        } else {
+            baseVolume = currentVolume
+            previousControlState = nil
+            volumeControlState = nil
+        }
+
         // Calculate expected new volume with quantization
         let steps = 1.0 / abs(delta)
-        var expectedVolume = currentVolume + delta
+        var expectedVolume = baseVolume + delta
         expectedVolume = round(expectedVolume * steps) / steps
         expectedVolume = max(0.0, min(1.0, expectedVolume))
         let nearZeroThreshold: Float = 0.001
@@ -482,7 +512,7 @@ final class MediaKeyInterceptor {
         let shouldBeMutedAfterChange = expectedVolume <= nearZeroThreshold
 
         // Check if we're at a boundary (where change isn't expected)
-        let atBoundary = (currentVolume <= nearZeroThreshold && delta < 0) || (currentVolume >= nearOneThreshold && delta > 0)
+        let atBoundary = (baseVolume <= nearZeroThreshold && delta < 0) || (baseVolume >= nearOneThreshold && delta > 0)
 
         // If muted and adjusting volume to an audible level, unmute first
         if let isMuted = getMuteState(deviceID: deviceID), isMuted {
@@ -496,9 +526,26 @@ final class MediaKeyInterceptor {
 
         // Set the volume and get the actual result
         guard let actualVolume = setVolume(expectedVolume, deviceID: deviceID) else {
+            volumeControlState = nil
             disableVolumeInterception(reason: "cannot set volume")
             return
         }
+        let volumeChanged = abs(actualVolume - currentVolume) > 0.001
+        let requestWasQuantized = abs(expectedVolume - actualVolume) > 0.001
+        let isHardwareQuantized = previousControlState?.isHardwareQuantized == true || requestWasQuantized
+        let directionChanged = previousControlState.map { ($0.lastDelta < 0) != (delta < 0) } ?? false
+        let tolerateQuantizedStep = !atBoundary
+            && !volumeChanged
+            && isHardwareQuantized
+            && (previousControlState?.toleratedUnchangedRequest != true || directionChanged)
+        volumeControlState = VolumeControlState(
+            deviceID: deviceID,
+            requestedVolume: expectedVolume,
+            readbackVolume: actualVolume,
+            lastDelta: delta,
+            isHardwareQuantized: isHardwareQuantized,
+            toleratedUnchangedRequest: tolerateQuantizedStep,
+        )
 
         // If the new volume is zero, explicitly set mute (matching macOS behavior)
         if shouldBeMutedAfterChange {
@@ -512,10 +559,15 @@ final class MediaKeyInterceptor {
 
         // Verify the change worked (if not at a boundary)
         if !atBoundary {
-            let volumeChanged = abs(actualVolume - currentVolume) > 0.001
             if !volumeChanged {
-                disableVolumeInterception(reason: "volume change did not take effect")
-                // Still show HUD with current state even though we're disabling
+                if tolerateQuantizedStep {
+                    logger.debug(
+                        "Volume request mapped to the previous hardware level; retaining interception for one quantized step: requested=\(expectedVolume), readback=\(actualVolume)",
+                    )
+                } else {
+                    disableVolumeInterception(reason: "volume change did not take effect")
+                    // Still show HUD with current state even though we're disabling
+                }
             }
         }
 
@@ -892,6 +944,7 @@ final class MediaKeyInterceptor {
         if currentDeviceID != lastKnownAudioDeviceID {
             logger.info("MediaKeyInterceptor: Audio device changed: \(lastKnownAudioDeviceID) → \(currentDeviceID)")
             lastKnownAudioDeviceID = currentDeviceID
+            volumeControlState = nil
 
             // Reset volume interception state to re-test with new device
             if !volumeInterceptionWorking {
