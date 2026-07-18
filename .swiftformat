@@ -124,5 +124,5 @@
 --xcode-indentation disabled
 --xctest-symbols
 --yoda-swap always
---disable wrapFunctionBodies,wrapPropertyBodies
+--disable wrapFunctionBodies,wrapGuardStatementBodies,wrapIfExpressionBodies,wrapIfStatementBodies,wrapPropertyBodies
 --enable blankLineAfterSwitchCase,blockComments,markTypes,organizeDeclarations,preferSwiftTesting,privateStateVariables,propertyTypes,singlePropertyPerLine,unusedPrivateDeclarations,wrapEnumCases,wrapMultilineFunctionChains
