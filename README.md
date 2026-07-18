@@ -2,7 +2,7 @@
 
 A simple macOS app that brings back the classic volume and brightness HUDs.
 
-**NOTE: volumeHUD is feature-complete and no longer under active development.** It is a personal project that I built for myself, and it does everything it's supposed to do. I'm very glad it's found an appreciative audience, but no further updates are planned.
+**PLEASE NOTE: volumeHUD is feature-complete and no longer under active development.** This is an app I built for myself and it does everything it's supposed to. I'm very glad it's found an appreciative audience, but I am not accepting PRs and no further updates are planned except to fix bugs and maintain macOS compatibility.
 
 ## Why This Exists
 
