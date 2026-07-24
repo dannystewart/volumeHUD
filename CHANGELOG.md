@@ -6,9 +6,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## [Unreleased]
 
+## [3.3.2] (2026-07-24)
+
+### Added
+
+- Adds hardware-quantized volume control state tracking to correctly handle audio devices where multiple requested volume steps map to the same physical output level, preventing interception from being disabled prematurely.
+
 ### Changed
 
-- Replaces the separate login helper app with macOS's built-in `SMAppService.mainApp` login item registration.
+- Simplifies login item registration by switching to `SMAppService`, removing the need for a separate helper application.
 
 ## [3.3.1] (2026-03-23)
 
@@ -273,7 +279,8 @@ Initial release.
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
 <!-- Versions -->
-[unreleased]: https://github.com/dannystewart/volumeHUD/compare/v3.3.1...HEAD
+[unreleased]: https://github.com/dannystewart/volumeHUD/compare/v3.3.2...HEAD
+[3.3.2]: https://github.com/dannystewart/volumeHUD/compare/v3.3.1...v3.3.2
 [3.3.1]: https://github.com/dannystewart/volumeHUD/compare/v3.3.0...v3.3.1
 [3.3.0]: https://github.com/dannystewart/volumeHUD/compare/v3.2.0...v3.3.0
 [3.2.0]: https://github.com/dannystewart/volumeHUD/compare/v3.1.1...v3.2.0
