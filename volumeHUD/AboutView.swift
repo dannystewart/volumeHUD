@@ -127,13 +127,15 @@ struct AboutView: View {
             VStack(alignment: .leading, spacing: 15) {
                 // MARK: - Open at Login Setting
 
-                LoginItemSetting(
-                    loginItemManager: loginItemManager,
-                    iconColumnWidth: iconColumnWidth,
-                    minSettingColumnWidth: minSettingColumnWidth,
-                    settingPadding: settingPadding,
-                    spaceBeforeSubtitle: spaceBeforeSubtitle,
-                )
+                if let loginItemManager {
+                    LoginItemSetting(
+                        loginItemManager: loginItemManager,
+                        iconColumnWidth: iconColumnWidth,
+                        minSettingColumnWidth: minSettingColumnWidth,
+                        settingPadding: settingPadding,
+                        spaceBeforeSubtitle: spaceBeforeSubtitle,
+                    )
+                }
 
                 #if !SANDBOX
 

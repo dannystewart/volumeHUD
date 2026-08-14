@@ -60,10 +60,6 @@ class LoginItemManager: ObservableObject {
     }
 }
 
-extension LoginItemManager {
-    static let defaultValue: LoginItemManager = .init()
-}
-
 extension EnvironmentValues {
-    @Entry var loginItemManager: LoginItemManager = .defaultValue
+    @Entry var loginItemManager: LoginItemManager?
 }
