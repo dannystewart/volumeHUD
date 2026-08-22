@@ -92,9 +92,9 @@
 		30C9375F2E806B79004B5AF5 = {
 			isa = PBXGroup;
 			children = (
+				30C9376A2E806B79004B5AF5 /* volumeHUD */,
 				3045B1AF2E8CB81A00C34F16 /* CHANGELOG.md */,
 				3045B1B02E8CB81A00C34F16 /* README.md */,
-				30C9376A2E806B79004B5AF5 /* volumeHUD */,
 				30A48DC62E8B13B9005E1B15 /* Frameworks */,
 				30C937692E806B79004B5AF5 /* Products */,
 				30FF7CEE2EB20778000E1031 /* volumeHUD.icon */,
@@ -398,7 +398,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 3.3.2;
+				MARKETING_VERSION = 3.3.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.dannystewart.volumehud.debug;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -438,7 +438,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 3.3.2;
+				MARKETING_VERSION = 3.3.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.dannystewart.volumehud;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -478,7 +478,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 3.3.2;
+				MARKETING_VERSION = 3.3.3;
 				OTHER_SWIFT_FLAGS = "-D SANDBOX";
 				PRODUCT_BUNDLE_IDENTIFIER = com.dannystewart.volumehud.mas;
 				PRODUCT_NAME = volumeHUD;
@@ -519,7 +519,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 3.3.2;
+				MARKETING_VERSION = 3.3.3;
 				OTHER_SWIFT_FLAGS = "-D SANDBOX";
 				PRODUCT_BUNDLE_IDENTIFIER = com.dannystewart.volumehud.mas;
 				PRODUCT_NAME = volumeHUD;

@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## [Unreleased]
 
+## [3.3.3] (2026-08-23)
+
+### Fixed
+
+- Improves volume control reliability for USB audio devices with uneven hardware volume steps.
+
 ## [3.3.2] (2026-07-24)
 
 ### Added
