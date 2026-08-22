@@ -25,9 +25,8 @@ final class MediaKeyInterceptor {
         let deviceID: AudioDeviceID
         let requestedVolume: Float
         let readbackVolume: Float
-        let lastDelta: Float
+        let unchangedRequestDistance: Float
         let isHardwareQuantized: Bool
-        let toleratedUnchangedRequest: Bool
     }
 
     private enum NXKeyType: Int {
@@ -103,6 +102,9 @@ final class MediaKeyInterceptor {
 
     /// Fine step when Option+Shift is held (1/64th)
     private let fineStep: Float = 1.0 / 64.0
+
+    /// Maximum logical travel allowed while a quantized device remains at one physical level
+    private let maximumHardwarePlateauDistance: Float = 1.0 / 8.0
 
     // MARK: DisplayServices
 
@@ -532,19 +534,26 @@ final class MediaKeyInterceptor {
         }
         let volumeChanged = abs(actualVolume - currentVolume) > 0.001
         let requestWasQuantized = abs(expectedVolume - actualVolume) > 0.001
-        let isHardwareQuantized = previousControlState?.isHardwareQuantized == true || requestWasQuantized
-        let directionChanged = previousControlState.map { ($0.lastDelta < 0) != (delta < 0) } ?? false
+        let requestReachedTarget = !requestWasQuantized
+        let logicalTravel = abs(expectedVolume - baseVolume)
+        let unchangedRequestDistance: Float = if volumeChanged || requestReachedTarget {
+            0
+        } else {
+            (previousControlState?.unchangedRequestDistance ?? 0) + logicalTravel
+        }
+        let isHardwareQuantized = previousControlState?.isHardwareQuantized == true
+            || (volumeChanged && requestWasQuantized)
         let tolerateQuantizedStep = !atBoundary
             && !volumeChanged
-            && isHardwareQuantized
-            && (previousControlState?.toleratedUnchangedRequest != true || directionChanged)
+            && requestWasQuantized
+            && unchangedRequestDistance <= maximumHardwarePlateauDistance
+        let tolerateQuantizedBoundary = atBoundary && isHardwareQuantized
         volumeControlState = VolumeControlState(
             deviceID: deviceID,
             requestedVolume: expectedVolume,
             readbackVolume: actualVolume,
-            lastDelta: delta,
+            unchangedRequestDistance: unchangedRequestDistance,
             isHardwareQuantized: isHardwareQuantized,
-            toleratedUnchangedRequest: tolerateQuantizedStep,
         )
 
         // If the new volume is zero, explicitly set mute (matching macOS behavior)
@@ -557,17 +566,15 @@ final class MediaKeyInterceptor {
             }
         }
 
-        // Verify the change worked (if not at a boundary)
-        if !atBoundary {
-            if !volumeChanged {
-                if tolerateQuantizedStep {
-                    logger.debug(
-                        "Volume request mapped to the previous hardware level; retaining interception for one quantized step: requested=\(expectedVolume), readback=\(actualVolume)",
-                    )
-                } else {
-                    disableVolumeInterception(reason: "volume change did not take effect")
-                    // Still show HUD with current state even though we're disabling
-                }
+        // Verify the request reached either its logical target or a valid quantized hardware level.
+        if !volumeChanged, !requestReachedTarget {
+            if tolerateQuantizedStep || tolerateQuantizedBoundary {
+                logger.debug(
+                    "Volume request mapped to the previous hardware level; retaining interception: requested=\(expectedVolume), readback=\(actualVolume), plateauDistance=\(unchangedRequestDistance)",
+                )
+            } else {
+                disableVolumeInterception(reason: "volume change did not take effect")
+                // Still show HUD with current state even though we're disabling
             }
         }
 
