@@ -25,8 +25,6 @@ final class MediaKeyInterceptor {
         let deviceID: AudioDeviceID
         let requestedVolume: Float
         let readbackVolume: Float
-        let unchangedRequestDistance: Float
-        let isHardwareQuantized: Bool
     }
 
     private enum NXKeyType: Int {
@@ -102,9 +100,6 @@ final class MediaKeyInterceptor {
 
     /// Fine step when Option+Shift is held (1/64th)
     private let fineStep: Float = 1.0 / 64.0
-
-    /// Maximum logical travel allowed while a quantized device remains at one physical level
-    private let maximumHardwarePlateauDistance: Float = 1.0 / 8.0
 
     // MARK: DisplayServices
 
@@ -475,7 +470,7 @@ final class MediaKeyInterceptor {
         return status == noErr
     }
 
-    /// Adjust volume by delta and show HUD. Verifies the change worked.
+    /// Adjust volume by delta and show HUD.
     private func adjustVolume(delta: Float) {
         guard let deviceID = getDefaultOutputDevice() else {
             disableVolumeInterception(reason: "cannot get audio device")
@@ -490,17 +485,14 @@ final class MediaKeyInterceptor {
         // Continue from our logical target when the device still reports the physical result of our
         // previous request. Some devices map 1/16 targets to different hardware-supported values.
         let baseVolume: Float
-        let previousControlState: VolumeControlState?
         if
             let state = volumeControlState,
             state.deviceID == deviceID,
             abs(state.readbackVolume - currentVolume) <= 0.001
         {
             baseVolume = state.requestedVolume
-            previousControlState = state
         } else {
             baseVolume = currentVolume
-            previousControlState = nil
             volumeControlState = nil
         }
 
@@ -510,11 +502,7 @@ final class MediaKeyInterceptor {
         expectedVolume = round(expectedVolume * steps) / steps
         expectedVolume = max(0.0, min(1.0, expectedVolume))
         let nearZeroThreshold: Float = 0.001
-        let nearOneThreshold: Float = 0.999
         let shouldBeMutedAfterChange = expectedVolume <= nearZeroThreshold
-
-        // Check if we're at a boundary (where change isn't expected)
-        let atBoundary = (baseVolume <= nearZeroThreshold && delta < 0) || (baseVolume >= nearOneThreshold && delta > 0)
 
         // If muted and adjusting volume to an audible level, unmute first
         if let isMuted = getMuteState(deviceID: deviceID), isMuted {
@@ -532,28 +520,10 @@ final class MediaKeyInterceptor {
             disableVolumeInterception(reason: "cannot set volume")
             return
         }
-        let volumeChanged = abs(actualVolume - currentVolume) > 0.001
-        let requestWasQuantized = abs(expectedVolume - actualVolume) > 0.001
-        let requestReachedTarget = !requestWasQuantized
-        let logicalTravel = abs(expectedVolume - baseVolume)
-        let unchangedRequestDistance: Float = if volumeChanged || requestReachedTarget {
-            0
-        } else {
-            (previousControlState?.unchangedRequestDistance ?? 0) + logicalTravel
-        }
-        let isHardwareQuantized = previousControlState?.isHardwareQuantized == true
-            || (volumeChanged && requestWasQuantized)
-        let tolerateQuantizedStep = !atBoundary
-            && !volumeChanged
-            && requestWasQuantized
-            && unchangedRequestDistance <= maximumHardwarePlateauDistance
-        let tolerateQuantizedBoundary = atBoundary && isHardwareQuantized
         volumeControlState = VolumeControlState(
             deviceID: deviceID,
             requestedVolume: expectedVolume,
             readbackVolume: actualVolume,
-            unchangedRequestDistance: unchangedRequestDistance,
-            isHardwareQuantized: isHardwareQuantized,
         )
 
         // If the new volume is zero, explicitly set mute (matching macOS behavior)
@@ -563,18 +533,6 @@ final class MediaKeyInterceptor {
             } else {
                 let didMute = setMuteState(true, deviceID: deviceID)
                 logger.debug("Auto-muting at 0% after volume adjustment (success=\(didMute)).")
-            }
-        }
-
-        // Verify the request reached either its logical target or a valid quantized hardware level.
-        if !volumeChanged, !requestReachedTarget {
-            if tolerateQuantizedStep || tolerateQuantizedBoundary {
-                logger.debug(
-                    "Volume request mapped to the previous hardware level; retaining interception: requested=\(expectedVolume), readback=\(actualVolume), plateauDistance=\(unchangedRequestDistance)",
-                )
-            } else {
-                disableVolumeInterception(reason: "volume change did not take effect")
-                // Still show HUD with current state even though we're disabling
             }
         }
 
