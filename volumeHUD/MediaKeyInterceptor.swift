@@ -180,6 +180,7 @@ final class MediaKeyInterceptor {
             return true
         } else {
             logger.error("MediaKeyInterceptor: Failed to create run loop source.")
+            CFMachPortInvalidate(tap)
             eventTap = nil
             return false
         }
@@ -194,10 +195,13 @@ final class MediaKeyInterceptor {
 
         if let tap = eventTap {
             CGEvent.tapEnable(tap: tap, enable: false)
+            // Disabling pauses delivery; invalidating unregisters the tap from WindowServer.
+            CFMachPortInvalidate(tap)
         }
 
         if let source = runLoopSource {
             CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes)
+            CFRunLoopSourceInvalidate(source)
         }
 
         runLoopSource = nil

@@ -397,6 +397,8 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         }
 
         private func startEventTap() {
+            guard eventTap == nil, hidEventTap == nil else { return }
+
             let systemDefinedMask: CGEventMask = 1 << 14
             let userInfo = Unmanaged.passUnretained(self).toOpaque()
 
@@ -462,6 +464,8 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
                 logger.debug("Started CGEvent tap (session-level) for volume keys.")
             } else {
                 logger.warning("Failed to create run loop source for volume key event tap.")
+                CFMachPortInvalidate(tap)
+                eventTap = nil
             }
 
             if
@@ -522,6 +526,8 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
                     logger.debug("Started CGEvent tap (HID-level) for volume keys.")
                 } else {
                     logger.warning("Failed to create run loop source for HID-level volume key event tap.")
+                    CFMachPortInvalidate(hidTap)
+                    hidEventTap = nil
                 }
             } else {
                 logger.debug("HID-level volume key event tap unavailable; relying on session-level tap only.")
@@ -529,20 +535,25 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
         }
 
         private func stopEventTap() {
-            if let source = eventTapRunLoopSource {
-                CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes)
-            }
             if let tap = eventTap {
                 CGEvent.tapEnable(tap: tap, enable: false)
+                // Disabling pauses delivery; invalidating unregisters the tap from WindowServer.
+                CFMachPortInvalidate(tap)
+            }
+            if let source = eventTapRunLoopSource {
+                CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes)
+                CFRunLoopSourceInvalidate(source)
             }
             eventTapRunLoopSource = nil
             eventTap = nil
 
-            if let hidSource = hidEventTapRunLoopSource {
-                CFRunLoopRemoveSource(CFRunLoopGetMain(), hidSource, .commonModes)
-            }
             if let hidTap = hidEventTap {
                 CGEvent.tapEnable(tap: hidTap, enable: false)
+                CFMachPortInvalidate(hidTap)
+            }
+            if let hidSource = hidEventTapRunLoopSource {
+                CFRunLoopRemoveSource(CFRunLoopGetMain(), hidSource, .commonModes)
+                CFRunLoopSourceInvalidate(hidSource)
             }
             hidEventTapRunLoopSource = nil
             hidEventTap = nil

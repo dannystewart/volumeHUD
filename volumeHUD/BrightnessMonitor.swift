@@ -303,6 +303,8 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
     }
 
     private func startEventTap() {
+        guard eventTap == nil, hidEventTap == nil else { return }
+
         // Install a CGEvent tap to reliably observe NX_SYSDEFINED events without capturing context
         let systemDefinedMask: CGEventMask = 1 << 14 // kCGEventSystemDefined = 14
         // Both session and HID taps share the same userInfo pointer to self This is safe because
@@ -366,6 +368,8 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
             logger.debug("Started CGEvent tap (session-level) for systemDefined events.")
         } else {
             logger.warning("Failed to create run loop source for event tap.")
+            CFMachPortInvalidate(tap)
+            eventTap = nil
         }
 
         // Also install a HID-level tap as a backup; this may be more resilient to display
@@ -423,6 +427,8 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
                 logger.debug("Started CGEvent tap (HID-level) for systemDefined events.")
             } else {
                 logger.warning("Failed to create run loop source for HID event tap.")
+                CFMachPortInvalidate(hidTap)
+                hidEventTap = nil
             }
         } else {
             logger.debug("HID-level event tap not available; relying on session-level tap only.")
@@ -430,20 +436,25 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
     }
 
     private func stopEventTap() {
-        if let source = eventTapRunLoopSource {
-            CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes)
-        }
         if let tap = eventTap {
             CGEvent.tapEnable(tap: tap, enable: false)
+            // Disabling pauses delivery; invalidating unregisters the tap from WindowServer.
+            CFMachPortInvalidate(tap)
+        }
+        if let source = eventTapRunLoopSource {
+            CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes)
+            CFRunLoopSourceInvalidate(source)
         }
         eventTapRunLoopSource = nil
         eventTap = nil
 
-        if let hidSource = hidEventTapRunLoopSource {
-            CFRunLoopRemoveSource(CFRunLoopGetMain(), hidSource, .commonModes)
-        }
         if let hidTap = hidEventTap {
             CGEvent.tapEnable(tap: hidTap, enable: false)
+            CFMachPortInvalidate(hidTap)
+        }
+        if let hidSource = hidEventTapRunLoopSource {
+            CFRunLoopRemoveSource(CFRunLoopGetMain(), hidSource, .commonModes)
+            CFRunLoopSourceInvalidate(hidSource)
         }
         hidEventTapRunLoopSource = nil
         hidEventTap = nil
@@ -498,6 +509,8 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
 
     @MainActor
     private func restartEventMonitoring() {
+        guard isMonitoring, !isPreviewMode else { return }
+
         stopSystemEventMonitoring()
         stopEventTap()
         startSystemEventMonitoring()
