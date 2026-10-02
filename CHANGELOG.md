@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## [Unreleased]
 
+## [3.3.4] (2026-10-02)
+
+### Removed
+
+- Drops the heuristic that silently absorbed volume changes when macOS mapped them to a different physical volume level. Previously, hardware quantization was tolerated up to a small plateau, but that heuristic was masking real failures and it made volume tracking harder to reason about. Requests are now applied directly without second-guessing quantization boundaries. This should finally conclude the recent saga of hardware quantization fixes.
+
+### Fixed
+
+- Fixes a resource leak where event taps weren't fully torn down when monitoring stopped.
+- Prevents starting duplicate event taps. Both the brightness and volume monitors now bail out of `startEventTap` if a tap is already installed.
+
 ## [3.3.3] (2026-08-23)
 
 ### Fixed
@@ -285,7 +296,9 @@ Initial release.
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
 <!-- Versions -->
-[unreleased]: https://github.com/dannystewart/volumeHUD/compare/v3.3.2...HEAD
+[unreleased]: https://github.com/dannystewart/volumeHUD/compare/v3.3.4...HEAD
+[3.3.4]: https://github.com/dannystewart/volumeHUD/compare/v3.3.3...v3.3.4
+[3.3.3]: https://github.com/dannystewart/volumeHUD/compare/v3.3.2...v3.3.3
 [3.3.2]: https://github.com/dannystewart/volumeHUD/compare/v3.3.1...v3.3.2
 [3.3.1]: https://github.com/dannystewart/volumeHUD/compare/v3.3.0...v3.3.1
 [3.3.0]: https://github.com/dannystewart/volumeHUD/compare/v3.2.0...v3.3.0
