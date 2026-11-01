@@ -20,6 +20,7 @@ class HUDController: ObservableObject {
     private var hudWindow: NSWindow?
     private var hostingView: NSHostingView<HUDPresentationView>?
     private let presentation: HUDPresentation = .init()
+    private let animationDriver: HUDAnimationDriver = .init()
     private var lastShownStyle: HUDStyle?
     private var presentationGeneration = 0
     private var isHiding = false
@@ -279,6 +280,7 @@ class HUDController: ObservableObject {
         // Modern needs a different native window class; never change Classic's window appearance to
         // accommodate glass.
         if hudWindow == nil || (lastShownStyle != nil && lastShownStyle != style) {
+            animationDriver.cancel()
             hudWindow?.orderOut(nil)
             hostingView = nil
             createHUDWindow()
@@ -315,14 +317,19 @@ class HUDController: ObservableObject {
             }
 
             let needsEntrance = !window.isVisible || lastShownStyle != style
+            let wasHiding = isHiding
             isHiding = false
             // Cancel an interrupted fade before presenting new content.
-            NSAnimationContext.runAnimationGroup { context in
-                context.duration = 0
-                window.animator().alphaValue = 1
+            if style == .classic {
+                NSAnimationContext.runAnimationGroup { context in
+                    context.duration = 0
+                    window.animator().alphaValue = 1
+                }
             }
             if needsEntrance {
                 presentation.isPresented = false
+                presentation.scale = ModernHUDMetrics.entranceScale
+                presentation.blurRadius = ModernHUDMetrics.transitionBlurRadius
             }
 
             let content = HUDPresentationView(
@@ -360,17 +367,18 @@ class HUDController: ObservableObject {
             updateWindowPosition(for: hudType)
 
             // Show the window
+            if style == .modern, needsEntrance {
+                window.alphaValue = 0
+            }
             window.orderFront(nil)
             isShowing = true
             lastShownStyle = style
 
-            if style == .modern {
+            if style == .modern, needsEntrance || wasHiding || !presentation.isPresented {
                 newHostingView.layoutSubtreeIfNeeded()
                 DispatchQueue.main.async { [weak self] in
                     guard let self, presentationGeneration == generation else { return }
-                    withAnimation(.timingCurve(0.16, 1, 0.3, 1, duration: ModernHUDMetrics.entranceDuration)) {
-                        presentation.isPresented = true
-                    }
+                    animateModernHUD(showing: true, generation: generation)
                 }
             }
         }
@@ -392,9 +400,11 @@ class HUDController: ObservableObject {
     @MainActor
     private func scheduleHideTimer() {
         hideTimer?.invalidate()
+        let generation = presentationGeneration
         hideTimer = Timer.scheduledTimer(withTimeInterval: 1.1, repeats: false) { [weak self] _ in
-            Task { @MainActor in
-                self?.hideHUD()
+            Task { @MainActor [weak self] in
+                guard let self, presentationGeneration == generation else { return }
+                hideHUD()
             }
         }
     }
@@ -450,20 +460,13 @@ class HUDController: ObservableObject {
 
     @MainActor
     private func hideHUD() {
-        guard let window = hudWindow else { return }
+        guard let window = hudWindow, window.isVisible, !isHiding else { return }
         isHiding = true
         presentationGeneration += 1
         let generation = presentationGeneration
 
         if lastShownStyle == .modern {
-            withAnimation(.easeIn(duration: ModernHUDMetrics.exitDuration)) {
-                presentation.isPresented = false
-            } completion: { [weak self] in
-                guard let self, presentationGeneration == generation else { return }
-                window.orderOut(nil)
-                isShowing = false
-                isHiding = false
-            }
+            animateModernHUD(showing: false, generation: generation)
             return
         }
 
@@ -481,5 +484,43 @@ class HUDController: ObservableObject {
                 isHiding = false
             }
         }
+    }
+
+    private func animateModernHUD(showing: Bool, generation: Int) {
+        guard let window = hudWindow, let screen = window.screen ?? NSScreen.screens.first else { return }
+        let startOpacity = window.alphaValue
+        let startScale = presentation.scale
+        let startBlur = presentation.blurRadius
+        let endOpacity: CGFloat = showing ? 1 : 0
+        let endScale: CGFloat = showing ? 1 : ModernHUDMetrics.exitScale
+        let endBlur: CGFloat = showing ? 0 : ModernHUDMetrics.transitionBlurRadius
+        presentation.isPresented = showing
+
+        animationDriver.animate(
+            on: screen,
+            duration: showing ? ModernHUDMetrics.entranceDuration : ModernHUDMetrics.exitDuration,
+            curve: showing ? .easeOut : .easeIn,
+            update: { [weak self, weak window] progress in
+                guard let self, let window else { return }
+                let fraction = CGFloat(progress)
+                var transaction = Transaction()
+                transaction.disablesAnimations = true
+                withTransaction(transaction) {
+                    presentation.scale = startScale + (endScale - startScale) * fraction
+                    presentation.blurRadius = startBlur + (endBlur - startBlur) * fraction
+                }
+                // Commit the foreground and material geometry for this same tick,
+                // then set native opacity directly: no second animation engine.
+                hostingView?.layoutSubtreeIfNeeded()
+                window.alphaValue = startOpacity + (endOpacity - startOpacity) * fraction
+            },
+            completion: { [weak self, weak window] in
+                guard let self, let window, !showing, presentationGeneration == generation else { return }
+                window.orderOut(nil)
+                window.alphaValue = 1
+                isShowing = false
+                isHiding = false
+            },
+        )
     }
 }

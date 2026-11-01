@@ -35,9 +35,11 @@ enum ModernHUDMetrics {
     static let muteIconVerticalOffset: CGFloat = 3
     static let volumeIconFontSize: CGFloat = 88
     static let brightnessIconFontSize: CGFloat = 88
-    static let iconCenterY: CGFloat = 82.9
-    static let barsCenterY: CGFloat = 163.5
-    static let transitionBlurRadius: CGFloat = 6
-    static let entranceDuration: TimeInterval = 0.16
+    static let iconCenterY: CGFloat = 83
+    static let barsCenterY: CGFloat = 165
+    static let transitionBlurRadius: CGFloat = 5
+    static let entranceScale: CGFloat = 0.97
+    static let exitScale: CGFloat = 0.97
+    static let entranceDuration: TimeInterval = 0.06
     static let exitDuration: TimeInterval = 0.13
 }
