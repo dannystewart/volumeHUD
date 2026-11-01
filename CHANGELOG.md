@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## [Unreleased]
 
+## [4.0.0] (2026-11-01)
+
+### Modern HUD Option
+
+**Version 4.0 adds a new Modern HUD style with Liquid Glass.**
+
+My goal with volumeHUD has always been to restore the classic UI, not invent a new one. What reinforced that decision is that even Xcode's status notifications maintained the same UI as the original volume HUD more than a year after macOS changed it.
+
+However, Apple recently refreshed that design, giving me a glimpse into an alternate universe where they hadn't lost their minds and moved it to the corner of the screen. Now I had an official Apple template to work from.
+
+The new HUD is precisely matched to Xcode's, which is very similar in size and layout, just rendered using modern glass elements. It uses slightly softer colors, rounder corners, and a new entry/exit animation with scale, blur, and fade.
+
+### Other Improvements
+
+- volumeHUD now has a brand new icon, done properly this time with modern styling and separate elements for the speaker and bars.
+- The About window has been redesigned to be a proper traditional macOS Settings window with native style and layout.
+
 ## [3.3.4] (2026-10-02)
 
 ### Removed
@@ -296,7 +313,8 @@ Initial release.
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
 <!-- Versions -->
-[unreleased]: https://github.com/dannystewart/volumeHUD/compare/v3.3.4...HEAD
+[unreleased]: https://github.com/dannystewart/volumeHUD/compare/v4.0.0...HEAD
+[4.0.0]: https://github.com/dannystewart/volumeHUD/compare/v3.3.4...v4.0.0
 [3.3.4]: https://github.com/dannystewart/volumeHUD/compare/v3.3.3...v3.3.4
 [3.3.3]: https://github.com/dannystewart/volumeHUD/compare/v3.3.2...v3.3.3
 [3.3.2]: https://github.com/dannystewart/volumeHUD/compare/v3.3.1...v3.3.2
