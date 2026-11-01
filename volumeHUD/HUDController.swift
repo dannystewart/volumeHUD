@@ -212,15 +212,10 @@ class HUDController: ObservableObject {
         // Use full screen frame to ignore Dock positioning
         let screenFrame = targetScreen.frame
 
-        // Check user preference for positioning
-        let useRelativePositioning = UserDefaults.standard.bool(forKey: "useRelativePositioning")
-        let yPosition = useRelativePositioning
-            ? screenFrame.origin.y + screenFrame.height * 0.17 // 17% from bottom
-            : screenFrame.origin.y + 140 // 140px from bottom
-
+        // Keep the visible HUD 140 points from the bottom, excluding any window padding.
         let newWindowRect = NSRect(
             x: screenFrame.origin.x + (screenFrame.width - windowSize.width) / 2,
-            y: yPosition - style.windowPadding,
+            y: screenFrame.origin.y + 140 - style.windowPadding,
             width: windowSize.width,
             height: windowSize.height,
         )

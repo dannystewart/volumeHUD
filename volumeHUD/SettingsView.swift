@@ -128,7 +128,6 @@ private struct LoginItemSetting: View {
 private struct AppearanceSection: View {
     @AppStorage(HUDStyle.preferenceKey) private var hudStyle: HUDStyle = .classic
     @AppStorage("volumeHUDFollowsMouse") private var volumeHUDFollowsMouse = true
-    @AppStorage("useRelativePositioning") private var useRelativePositioning = true
 
     let onStyleChange: () -> Void
 
@@ -146,13 +145,6 @@ private struct AppearanceSection: View {
                 Picker("HUD Display", selection: $volumeHUDFollowsMouse) {
                     Text("Always Use Primary Display").tag(false)
                     Text("Follow Mouse Cursor").tag(true)
-                }
-            }
-
-            SettingsRow(description: "How to position the HUD relative to the bottom of the screen") {
-                Picker("Position From Bottom", selection: $useRelativePositioning) {
-                    Text("Absolute Distance").tag(false)
-                    Text("Relative Percentage").tag(true)
                 }
             }
         }

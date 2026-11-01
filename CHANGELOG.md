@@ -23,6 +23,10 @@ The new HUD is precisely matched to Xcode's, which is very similar in size and l
 - volumeHUD now has a brand new icon, done properly this time with modern styling and separate elements for the speaker and bars.
 - The About window has been redesigned to be a proper traditional macOS Settings window with native style and layout.
 
+### Removed
+
+- The relative HUD position has been removed. Apple always used absolute positioning, and if I'd realized that sooner the app never would have had relative positioning to begin with. The UI update is a good time to finally remove it.
+
 ## [3.3.4] (2026-10-02)
 
 ### Removed
