@@ -31,6 +31,7 @@
 --extension-mark "MARK: - %t + %c"
 --extension-threshold 0
 --file-macro "#file"
+--for-where always
 --fraction-grouping disabled
 --fragment false
 --func-attributes preserve
@@ -38,7 +39,7 @@
 --group-blank-lines true
 --grouped-extension "MARK: %c"
 --guard-else same-line
---header \n {file}\n by Danny Stewart ({created.year})\n MIT License\n https://github.com/dannystewart/volumeHUD\n
+--header \n {file}\n by Danny Stewart ({year})\n MIT License\n https://github.com/dannystewart/volumeHUD\n
 --hex-grouping 4,8
 --hex-literal-case uppercase
 --ifdef indent
@@ -124,5 +125,5 @@
 --xcode-indentation disabled
 --xctest-symbols
 --yoda-swap always
---disable wrapFunctionBodies,wrapGuardStatementBodies,wrapIfExpressionBodies,wrapIfStatementBodies,wrapPropertyBodies
---enable blankLineAfterSwitchCase,blockComments,markTypes,organizeDeclarations,preferSwiftTesting,privateStateVariables,propertyTypes,singlePropertyPerLine,unusedPrivateDeclarations,wrapEnumCases,wrapMultilineFunctionChains
+--disable privateSwiftUIDynamicProperties,unusedPrivateDeclarations,wrapFunctionBodies,wrapGuardStatementBodies,wrapIfExpressionBodies,wrapIfStatementBodies,wrapPropertyBodies
+--enable blankLineAfterSwitchCase,blockComments,forWhere,markTypes,organizeDeclarations,preferStructSwiftTestingSuites,preferSwiftTesting,propertyTypes,singlePropertyPerLine,wrapEnumCases,wrapMultilineFunctionChains
