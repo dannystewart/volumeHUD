@@ -91,8 +91,8 @@ final class SettingsWindowController: NSObject {
         NSApp.mainMenu = settingsMenu
         if isChangingPolicy {
             isActivationHandoffPending = true
-            // Run after the Settings scene has ordered its window. A real application switch
-            // is needed here: deactivate() alone leaves first-open menu tracking unresponsive.
+            // Run after the Settings scene has ordered its window. A real application switch is
+            // needed here: deactivate() alone leaves first-open menu tracking unresponsive.
             DispatchQueue.main.async { [weak self] in
                 guard let self, isActivationHandoffPending else { return }
                 beginActivationHandoff()

@@ -32,8 +32,8 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Assets.xcassets,
-				BrightnessMonitor.swift,
-				MediaKeyInterceptor.swift,
+				Services/BrightnessMonitor.swift,
+				Services/MediaKeyInterceptor.swift,
 			);
 			target = 30DAC6CB2EEE1F73004F96CE /* volumeHUD (Sandbox) */;
 		};

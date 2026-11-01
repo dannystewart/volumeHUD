@@ -504,8 +504,8 @@ class HUDController: ObservableObject {
                     presentation.scale = startScale + (endScale - startScale) * fraction
                     presentation.blurRadius = startBlur + (endBlur - startBlur) * fraction
                 }
-                // Commit the foreground and material geometry for this same tick,
-                // then set native opacity directly: no second animation engine.
+                // Commit the foreground and material geometry for this same tick, then set native
+                // opacity directly: no second animation engine.
                 hostingView?.layoutSubtreeIfNeeded()
                 window.alphaValue = startOpacity + (endOpacity - startOpacity) * fraction
             },

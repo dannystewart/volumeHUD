@@ -9,7 +9,7 @@ import Foundation
 
 #if canImport(os)
     import os
-#endif // !SANDBOX
+#endif
 
 // MARK: - Logger
 
@@ -40,13 +40,13 @@ final class Logger: @unchecked Sendable {
 
     #if canImport(os)
         private let osLogger: os.Logger
-    #endif // !SANDBOX
+    #endif
 
     nonisolated init(category: String = "volumeHUD") {
         #if canImport(os)
             let subsystem = Bundle.main.bundleIdentifier ?? "com.dannystewart.volumeHUD"
             osLogger = os.Logger(subsystem: subsystem, category: category)
-        #endif // !SANDBOX
+        #endif
     }
 
     private nonisolated static func formatTimestamp(_ date: Date) -> String {
@@ -88,6 +88,6 @@ final class Logger: @unchecked Sendable {
             }
         #else
             print(formatted)
-        #endif // !SANDBOX
+        #endif // canImport(os)
     }
 }

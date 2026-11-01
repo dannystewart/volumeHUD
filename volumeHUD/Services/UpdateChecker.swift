@@ -34,4 +34,4 @@
             return false
         }
     }
-#endif
+#endif // !SANDBOX

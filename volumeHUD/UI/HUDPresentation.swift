@@ -32,15 +32,15 @@ struct HUDPresentationView: View {
         if style == .modern {
             GlassEffectContainer {
                 ModernHUDView(hudType: hudType, value: value, isMuted: isMuted)
-                    // Keep glass alive and blur only the foreground. Explicit
-                    // presentation values replace materialization's fixed scale.
+                    // Keep glass alive and blur only the foreground. Explicit presentation values
+                    // replace materialization's fixed scale.
                     .blur(radius: reduceMotion ? 0 : presentation.blurRadius)
                     .glassEffect(.regular, in: RoundedRectangle(cornerRadius: ModernHUDMetrics.cornerRadius, style: .continuous))
                     .glassEffectTransition(.identity)
             }
             .fixedSize()
-            // Transform the complete material container, not just its child:
-            // foreground and glass must share the same center and coordinate space.
+            // Transform the complete material container, not just its child: foreground and glass
+            // must share the same center and coordinate space.
             .scaleEffect(reduceMotion ? 1 : presentation.scale, anchor: .center)
             .environment(\.appearsActive, true)
             .padding(style.windowPadding)

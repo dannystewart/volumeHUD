@@ -1,11 +1,48 @@
 //
-//  ModernHUDView.swift
+//  ModernHUD.swift
 //  by Danny Stewart (2026)
 //  MIT License
 //  https://github.com/dannystewart/volumeHUD
 //
 
+import AppKit
 import SwiftUI
+
+// MARK: - ModernHUDMetrics
+
+/// Measured from the 3456 × 2234 fullscreen Xcode capture at 2× scale. Geometry is in screen
+/// points; animation endpoints are estimates from the recording.
+enum ModernHUDMetrics {
+    static let size: CGFloat = 200
+    static let cornerRadius: CGFloat = 26
+    static let iconWidth: CGFloat = 96
+    static let iconHeight: CGFloat = 90
+    static let muteIconVerticalOffset: CGFloat = 3
+    static let volumeIconFontSize: CGFloat = 88
+    static let brightnessIconFontSize: CGFloat = 88
+    static let iconCenterY: CGFloat = 83
+    static let barsCenterY: CGFloat = 165
+    static let transitionBlurRadius: CGFloat = 5
+    static let entranceScale: CGFloat = 0.97
+    static let exitScale: CGFloat = 0.97
+    static let entranceDuration: TimeInterval = 0.06
+    static let exitDuration: TimeInterval = 0.13
+}
+
+// MARK: - ModernHUDPanel
+
+/// A nonactivating overlay that renders glass as active without taking key focus.
+@MainActor
+final class ModernHUDPanel: NSPanel {
+    override var canBecomeKey: Bool { false }
+    override var canBecomeMain: Bool { false }
+
+    /// Xcode's DVTBezelAlertPanel returns YES from this private window hook. SwiftUI's
+    /// appearsActive value does not replace it: AppKit's glass renderer still uses the window's
+    /// native active-appearance state. Both targets preserve the same glass appearance.
+    @objc(_hasActiveAppearanceIgnoringKeyFocus)
+    func hasActiveGlassAppearanceIgnoringKeyFocus() -> Bool { true }
+}
 
 // MARK: - ModernHUDView
 
