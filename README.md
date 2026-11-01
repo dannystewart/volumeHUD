@@ -2,27 +2,27 @@
 
 A simple macOS app that brings back the classic volume and brightness HUDs.
 
-**PLEASE NOTE: volumeHUD is feature-complete and no longer under active development.** This is an app I built for myself and it does everything it's supposed to. I'm very glad it's found an appreciative audience, but I am not accepting PRs and no further updates are planned except to fix bugs and maintain macOS compatibility.
+---
 
-## Why This Exists
+**NOTE: volumeHUD is a personal project and I don't accept PRs or feature requests.** I'm very glad it's found an appreciative audience, but I built this for myself and it works the way I want. Issues are disabled because too many people didn't respect that.
 
-With macOS Tahoe, Apple revamped Control Center and replaced the classic volume and brightness indicators of 25 years with tiny popovers in the corner of the screen, even smaller than notifications. They're hard to see, especially against light backgrounds, and they disappear before I remember where to look. Even after months on the Tahoe beta I haven't gotten used to them. It's bad UI.
+---
 
-So I did what any sane person would do: I picked up Xcode and wrote my first ever Mac app to bring back the classic macOS HUDs we all know and love (except Apple, apparently). They do what any good system indicator should do: they show you the level when you change it and then they go away. And get this—you can actually *see them*. A groundbreaking feature in 2025.
+With macOS Tahoe, Apple revamped Control Center and replaced the classic volume and brightness indicators of 25 years with tiny popovers in the corner of the screen, even smaller than notifications. They're hard to see, especially against light backgrounds, and they disappear before I remember where to look. It's bad UI.
+
+So I did what any sane person would do: I picked up Xcode and wrote my first ever Mac app to bring back the classic macOS HUDs we all know and love. They do what any good system indicator should do: they show you your changes and then go away. And get this—you can actually *see them*. A groundbreaking feature post-2025.
+
+volumeHUD also supports brightness on built-in displays (though it is **off by default**—it is *volumeHUD*, after all), and hides the system HUD by intercepting volume and brightness keys and handling the changes itself rather than letting the OS do it.
+
+Version 4.0 features a redesigned glass UI that feels right at home on modern macOS without forgetting its roots as the original volume HUD we're all here for.
 
 ## What It Looks Like
 
-<img src="Images/volumeHUD-demo.gif" alt="volumeHUD Demo" height="300"></img>
+<img src="Images/volumeHUD-demo.gif" alt="volumeHUD Demo" height="250"></img>
 
 ## Usage
 
-Just launch the app! You should see a notification that it started, and you can begin enjoying your new (old) volume HUD right away. If you launch the app a second time, you'll get a window where you can set it to open at login, configure HUD preferences, and quit. It will also show when an update is available.
-
-<img src="Images/volumeHUD-settings.png" alt="volumeHUD Settings" height="300"></img>
-
-As of version 2.0, volumeHUD supports brightness. It is **off by default** (this is *volumeHUD*, after all), and it is **experimental and unsupported**. It will only work for built-in displays, and it may not be bulletproof for automatic changes like power source or ambient light, though it does mostly catch these.
-
-As of version 3.0, **volumeHUD hides the system HUD**. It does this by intercepting the volume/brightness keys and handling volume/brightness changes directly, instead of having the OS do it. There is a safety check to make sure the volume/brightness has actually changed after you press a key; if not, the app assumes key interception is not working and disables it until a device change or the app is restarted. This ensures you can still change volume or brightness even if this doesn't work on your system.
+Just launch the app. You should see a notification that it started, and you can begin enjoying your new (old) volume HUD right away. If you launch it a second time, you'll get a Settings window, where you can also update or quit the app.
 
 ## Installation
 
