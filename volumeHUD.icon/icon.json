@@ -1,36 +1,71 @@
 {
-    "fill": {
-        "automatic-gradient": "extended-srgb:0.00000,0.53333,1.00000,1.00000"
-    },
-    "groups": [
+  "fill" : {
+    "linear-gradient" : [
+      "gray:0.30313,1.00000",
+      "gray:0.20032,1.00000"
+    ]
+  },
+  "groups" : [
+    {
+      "blur-material" : null,
+      "layers" : [
         {
-            "layers": [
-                {
-                    "image-name": "volumeHUD.png",
-                    "name": "volumeHUD",
-                    "position": {
-                        "scale": 1.1,
-                        "translation-in-points": [
-                            0,
-                            -32.953125
-                        ]
-                    }
-                }
-            ],
-            "shadow": {
-                "kind": "neutral",
-                "opacity": 0.5
+          "fill" : "automatic",
+          "glass" : true,
+          "image-name" : "Speaker.png",
+          "name" : "Speaker",
+          "position" : {
+            "scale" : 0.36,
+            "translation-in-points" : [
+              0,
+              -90
+            ]
+          }
+        },
+        {
+          "fill" : "automatic",
+          "glass" : false,
+          "image-name" : "Bars.png",
+          "name" : "Bars",
+          "opacity-specializations" : [
+            {
+              "value" : 1
             },
-            "translucency": {
-                "enabled": true,
-                "value": 0.5
+            {
+              "appearance" : "dark",
+              "value" : 0.8
             }
+          ],
+          "position" : {
+            "scale" : 0.72,
+            "translation-in-points" : [
+              0,
+              290
+            ]
+          }
         }
-    ],
-    "supported-platforms": {
-        "circles": [
-            "watchOS"
-        ],
-        "squares": "shared"
+      ],
+      "lighting" : "individual",
+      "refractivity" : {
+        "depth" : 0,
+        "enabled" : false,
+        "strength" : 0.5
+      },
+      "shadow" : {
+        "kind" : "layer-color",
+        "opacity" : 0.5
+      },
+      "specular" : false,
+      "translucency" : {
+        "enabled" : false,
+        "value" : 0.5
+      }
     }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
 }
