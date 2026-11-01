@@ -8,7 +8,6 @@
 import Combine
 import Foundation
 import ServiceManagement
-import SwiftUI
 
 // MARK: - LoginItemManager
 
@@ -57,8 +56,4 @@ class LoginItemManager: ObservableObject {
             lastError = error.localizedDescription
         }
     }
-}
-
-extension EnvironmentValues {
-    @Entry var loginItemManager: LoginItemManager?
 }

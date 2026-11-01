@@ -30,10 +30,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         var mediaKeyInterceptor: MediaKeyInterceptor?
     #endif // !SANDBOX
     var hudController: HUDController!
-    var aboutWindow: NSPanel?
-    var loginItemManager: LoginItemManager!
-
+    let loginItemManager: LoginItemManager = .init()
     let logger: Logger = .init()
+
+    private var settingsWindowController: SettingsWindowController?
 
     #if !SANDBOX
         /// Check to see if brightness is enabled
@@ -64,6 +64,24 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
 
     // MARK: - On Finish Launching
 
+    func applicationWillFinishLaunching(_: Notification) {
+        guard !isRunningInDevEnvironment() else { return }
+        let controller = SettingsWindowController(onQuit: { [weak self] in self?.gracefulTerminate() })
+        controller.install {
+            SettingsView(
+                loginItemManager: loginItemManager,
+                onStyleChange: { [weak self] in self?.hudController?.refreshStyle() },
+                onBrightnessChange: { [weak self] in
+                    #if !SANDBOX
+                        self?.startBrightnessMonitoringIfEnabled()
+                    #endif
+                },
+                onQuit: { [weak self] in self?.gracefulTerminate() },
+            )
+        }
+        settingsWindowController = controller
+    }
+
     func applicationDidFinishLaunching(_: Notification) {
         // Skip full initialization if running in SwiftUI preview or test mode
         let isDevEnvironment = isRunningInDevEnvironment()
@@ -86,7 +104,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         UNUserNotificationCenter.current().delegate = self
 
         // Initialize login item manager, monitors, and HUD controller
-        loginItemManager = LoginItemManager()
         volumeMonitor = VolumeMonitor(isPreviewMode: false)
         #if !SANDBOX
             brightnessMonitor = BrightnessMonitor(isPreviewMode: false)
@@ -137,14 +154,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         hudController.startDisplayChangeMonitoring()
     }
 
-    /// If we get a new "open" event, also show the about window
+    /// If we get a new "open" event, show Settings.
     func application(_: NSApplication, open _: [URL]) {
-        showAboutWindow()
+        settingsWindowController?.open()
     }
 
-    /// Open the about window when the app is opened while already running
+    /// Open Settings when the app is opened while already running.
     func applicationShouldHandleReopen(_: NSApplication, hasVisibleWindows _: Bool) -> Bool {
-        showAboutWindow()
+        settingsWindowController?.open()
         return false
     }
 
@@ -193,13 +210,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         completionHandler([.banner])
     }
 
-    /// Show the About window when the startup notification is tapped
+    /// Show Settings when the startup notification is tapped.
     func userNotificationCenter(
         _: UNUserNotificationCenter,
         didReceive _: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void,
     ) {
-        Task { @MainActor in self.showAboutWindow() }
+        Task { @MainActor in self.settingsWindowController?.open() }
         completionHandler()
     }
 
@@ -307,62 +324,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         }
 
         onDismiss?()
-    }
-
-    // MARK: - Show About Window
-
-    private func showAboutWindow() {
-        // If window already exists and is visible, just bring it to the front
-        if let window = aboutWindow, window.isVisible {
-            window.makeKeyAndOrderFront(nil)
-            return
-        }
-
-        // Create the About window
-        let aboutView = AboutView(
-            onQuit: { [weak self] in
-                self?.aboutWindow?.close()
-                self?.aboutWindow = nil
-                self?.gracefulTerminate()
-            },
-            appDelegate: self,
-        )
-        .environment(\.loginItemManager, loginItemManager)
-
-        let hostingController = NSHostingController(rootView: aboutView)
-
-        // Use NSPanel to remain in accessory mode
-        let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 600, height: 340),
-            styleMask: [.titled, .closable],
-            backing: .buffered,
-            defer: false,
-        )
-
-        panel.contentViewController = hostingController
-        panel.title = "About volumeHUD"
-
-        // Prevent the panel from closing when clicking away
-        panel.hidesOnDeactivate = false
-
-        // Position at visual center of the screen
-        if let screen = NSScreen.main {
-            let screenFrame = screen.visibleFrame
-            let windowWidth: CGFloat = 600
-            let windowHeight: CGFloat = 340
-
-            let x = screenFrame.origin.x + (screenFrame.width - windowWidth) / 2
-            let y = screenFrame.origin.y + screenFrame.height * 0.66 - windowHeight / 2
-
-            panel.setFrame(NSRect(x: x, y: y, width: windowWidth, height: windowHeight), display: false)
-        }
-
-        panel.isReleasedWhenClosed = false
-
-        aboutWindow = panel
-
-        // Show the panel without changing activation policy
-        panel.makeKeyAndOrderFront(nil)
     }
 
     #if !SANDBOX
@@ -474,18 +435,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
 // MARK: - VolumeHUDApp
 
 @main
-@available(macOS 26.0, *)
-struct VolumeHUDApp: App {
-    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-
-    @available(macOS 26.0, *)
-    var body: some Scene {
-        WindowGroup {
-            EmptyView()
-                .frame(width: 0, height: 0)
+enum VolumeHUDApp {
+    @MainActor
+    static func main() {
+        let application = NSApplication.shared
+        let delegate = AppDelegate()
+        application.delegate = delegate
+        withExtendedLifetime(delegate) {
+            application.run()
         }
-        .windowStyle(.hiddenTitleBar)
-        .defaultSize(width: 0, height: 0)
-        .windowResizability(.contentSize)
     }
 }
