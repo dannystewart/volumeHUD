@@ -1,6 +1,6 @@
 //
 //  MediaKeyInterceptor.swift
-//  by Danny Stewart (2025)
+//  by Danny Stewart (2026)
 //  MIT License
 //  https://github.com/dannystewart/volumeHUD
 //
@@ -86,7 +86,7 @@ final class MediaKeyInterceptor {
     /// Last known audio device ID for detecting device changes
     private var lastKnownAudioDeviceID: AudioDeviceID = kAudioObjectUnknown
 
-    /// Last logical target and its physical read-back, which may differ on hardware-quantized devices
+    /// Last logical target and its physical read-back, which may differ if hardware-quantized
     private var volumeControlState: VolumeControlState?
 
     /// Timer for polling audio device changes
@@ -234,11 +234,7 @@ final class MediaKeyInterceptor {
         let keyState = (keyFlags & 0xFF00) >> 8
 
         // 0x0A = key down, 0x0B = key up Only handle key down events
-        guard keyState == 0x0A else {
-            return Unmanaged.passRetained(cgEvent)
-        }
-
-        guard let keyType = NXKeyType(rawValue: keyCode) else {
+        guard keyState == 0x0A, let keyType = NXKeyType(rawValue: keyCode) else {
             return Unmanaged.passRetained(cgEvent)
         }
 

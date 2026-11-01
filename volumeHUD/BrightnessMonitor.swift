@@ -1,6 +1,6 @@
 //
 //  BrightnessMonitor.swift
-//  by Danny Stewart (2025)
+//  by Danny Stewart (2026)
 //  MIT License
 //  https://github.com/dannystewart/volumeHUD
 //
@@ -332,10 +332,11 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
                     }
 
                     // Only handle systemDefined events (kCGEventSystemDefined = 14)
-                    guard type.rawValue == 14, let nsEvent = NSEvent(cgEvent: cgEvent) else {
-                        return Unmanaged.passUnretained(cgEvent)
-                    }
-                    guard let opaqueInfo else {
+                    guard
+                        type.rawValue == 14,
+                        let nsEvent = NSEvent(cgEvent: cgEvent),
+                        let opaqueInfo else
+                    {
                         return Unmanaged.passUnretained(cgEvent)
                     }
                     let monitor = Unmanaged<BrightnessMonitor>.fromOpaque(opaqueInfo).takeUnretainedValue()
@@ -395,10 +396,11 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
                         return Unmanaged.passUnretained(cgEvent)
                     }
 
-                    guard type.rawValue == 14, let nsEvent = NSEvent(cgEvent: cgEvent) else {
-                        return Unmanaged.passUnretained(cgEvent)
-                    }
-                    guard let opaqueInfo else {
+                    guard
+                        type.rawValue == 14,
+                        let nsEvent = NSEvent(cgEvent: cgEvent),
+                        let opaqueInfo else
+                    {
                         return Unmanaged.passUnretained(cgEvent)
                     }
                     let monitor = Unmanaged<BrightnessMonitor>.fromOpaque(opaqueInfo).takeUnretainedValue()
@@ -565,11 +567,9 @@ class BrightnessMonitor: ObservableObject, @unchecked Sendable {
 
             // If accessibility is enabled and we had a recent key press, show HUD even if step
             // detection failed
-            if accessibilityEnabled, timeSinceKeyPress < 1.0 {
-                if !isUserChange {
-                    logger.debug("Showing HUD (accessibility override): \(Int(quantizedBrightness * 100))% (delta: \(delta))")
-                    hudController?.showBrightnessHUD(brightness: quantizedBrightness)
-                }
+            if accessibilityEnabled, timeSinceKeyPress < 1.0, !isUserChange {
+                logger.debug("Showing HUD (accessibility override): \(Int(quantizedBrightness * 100))% (delta: \(delta))")
+                hudController?.showBrightnessHUD(brightness: quantizedBrightness)
             }
 
             previousBrightness = quantizedBrightness

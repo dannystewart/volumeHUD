@@ -1,6 +1,6 @@
 //
 //  LoginItemManager.swift
-//  by Danny Stewart (2025)
+//  by Danny Stewart (2026)
 //  MIT License
 //  https://github.com/dannystewart/volumeHUD
 //
@@ -40,8 +40,7 @@ class LoginItemManager: ObservableObject {
 
     /// Sets the login item state
     func setEnabled(_ enabled: Bool) {
-        guard !isUpdatingFromSystem else { return }
-        guard enabled != isEnabled else { return }
+        guard !isUpdatingFromSystem, enabled != isEnabled else { return }
 
         do {
             if enabled {

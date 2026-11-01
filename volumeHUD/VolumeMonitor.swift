@@ -1,6 +1,6 @@
 //
 //  VolumeMonitor.swift
-//  by Danny Stewart (2025)
+//  by Danny Stewart (2026)
 //  MIT License
 //  https://github.com/dannystewart/volumeHUD
 //
@@ -422,10 +422,11 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
                             return Unmanaged.passUnretained(cgEvent)
                         }
 
-                        guard type.rawValue == 14, let nsEvent = NSEvent(cgEvent: cgEvent) else {
-                            return Unmanaged.passUnretained(cgEvent)
-                        }
-                        guard let opaqueInfo else {
+                        guard
+                            type.rawValue == 14,
+                            let nsEvent = NSEvent(cgEvent: cgEvent),
+                            let opaqueInfo else
+                        {
                             return Unmanaged.passUnretained(cgEvent)
                         }
                         let monitor = Unmanaged<VolumeMonitor>.fromOpaque(opaqueInfo).takeUnretainedValue()
@@ -488,10 +489,11 @@ class VolumeMonitor: ObservableObject, @unchecked Sendable {
                             return Unmanaged.passUnretained(cgEvent)
                         }
 
-                        guard type.rawValue == 14, let nsEvent = NSEvent(cgEvent: cgEvent) else {
-                            return Unmanaged.passUnretained(cgEvent)
-                        }
-                        guard let opaqueInfo else {
+                        guard
+                            type.rawValue == 14,
+                            let nsEvent = NSEvent(cgEvent: cgEvent),
+                            let opaqueInfo else
+                        {
                             return Unmanaged.passUnretained(cgEvent)
                         }
                         let monitor = Unmanaged<VolumeMonitor>.fromOpaque(opaqueInfo).takeUnretainedValue()
