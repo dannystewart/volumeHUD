@@ -1,6 +1,6 @@
 //
 //  HUDController.swift
-//  by Danny Stewart (2025)
+//  by Danny Stewart (2026)
 //  MIT License
 //  https://github.com/dannystewart/volumeHUD
 //
@@ -18,7 +18,11 @@ class HUDController: ObservableObject {
     let logger: Logger = .init()
 
     private var hudWindow: NSWindow?
-    private var hostingView: NSHostingView<HUDView>?
+    private var hostingView: NSHostingView<HUDPresentationView>?
+    private let presentation: HUDPresentation = .init()
+    private var lastShownStyle: HUDStyle?
+    private var presentationGeneration = 0
+    private var isHiding = false
     private var hideTimer: Timer?
     private var lastShownVolume: Float?
     private var lastShownMuted: Bool?
@@ -32,6 +36,16 @@ class HUDController: ObservableObject {
     }
 
     deinit {}
+
+    func refreshStyle() {
+        guard isShowing, let hudType = lastShownHUDType else { return }
+        switch hudType {
+        case .volume:
+            displayHUD(hudType: hudType, value: lastShownVolume ?? 0, isMuted: lastShownMuted ?? false)
+        case .brightness:
+            displayHUD(hudType: hudType, value: lastShownBrightness ?? 0, isMuted: false)
+        }
+    }
 
     @MainActor
     func showVolumeHUD(volume: Float, isMuted: Bool) {
@@ -99,11 +113,11 @@ class HUDController: ObservableObject {
 
         // If the HUD window exists, update its position
         if hudWindow != nil {
-            updateWindowPosition()
+            updateWindowPosition(for: lastShownHUDType)
             // Re-apply after a short delay to handle transient frame/layout updates macOS screen
             // geometry may still be adjusting after didChangeScreenParameters fires
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
-                self?.updateWindowPosition()
+                self?.updateWindowPosition(for: self?.lastShownHUDType)
             }
         }
     }
@@ -112,7 +126,8 @@ class HUDController: ObservableObject {
     private func updateWindowPosition(for hudType: HUDType? = nil) {
         guard let window = hudWindow else { return }
 
-        let windowSize = NSSize(width: 200, height: 200)
+        let style = HUDStyle.current
+        let windowSize = NSSize(width: style.windowSize, height: style.windowSize)
 
         // Brightness HUD always shows on built-in display (since that's what it controls). Volume
         // HUD respects user preference for display location.
@@ -204,7 +219,7 @@ class HUDController: ObservableObject {
 
         let newWindowRect = NSRect(
             x: screenFrame.origin.x + (screenFrame.width - windowSize.width) / 2,
-            y: yPosition,
+            y: yPosition - style.windowPadding,
             width: windowSize.width,
             height: windowSize.height,
         )
@@ -257,9 +272,15 @@ class HUDController: ObservableObject {
     private func displayHUD(hudType: HUDType, value: Float, isMuted: Bool) {
         // Cancel any existing hide timer
         hideTimer?.invalidate()
+        presentationGeneration += 1
+        let generation = presentationGeneration
+        let style = HUDStyle.current
 
-        // Create or update the HUD window
-        if hudWindow == nil {
+        // Modern needs a different native window class; never change Classic's window appearance to
+        // accommodate glass.
+        if hudWindow == nil || (lastShownStyle != nil && lastShownStyle != style) {
+            hudWindow?.orderOut(nil)
+            hostingView = nil
             createHUDWindow()
         }
 
@@ -282,23 +303,57 @@ class HUDController: ObservableObject {
                 }
 
             // If nothing changed and the window is already visible, just extend the timer
-            if window.isVisible, !shouldUpdateContent {
+            if
+                window.isVisible,
+                !isHiding,
+                !shouldUpdateContent,
+                lastShownStyle == style,
+                style != .modern || presentation.isPresented
+            {
                 scheduleHideTimer()
                 return
             }
 
-            // Always recreate hosting view to avoid SwiftUI state issues
-            let newHostingView = NSHostingView(rootView: HUDView(hudType: hudType, value: value, isMuted: isMuted))
-            newHostingView.frame = window.contentView?.bounds ?? NSRect(x: 0, y: 0, width: 200, height: 200)
+            let needsEntrance = !window.isVisible || lastShownStyle != style
+            isHiding = false
+            // Cancel an interrupted fade before presenting new content.
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0
+                window.animator().alphaValue = 1
+            }
+            if needsEntrance {
+                presentation.isPresented = false
+            }
 
-            // Ensure hosting view background is clear for proper material rendering
-            newHostingView.wantsLayer = true
-            newHostingView.layer?.backgroundColor = NSColor.clear.cgColor
+            let content = HUDPresentationView(
+                hudType: hudType,
+                value: value,
+                isMuted: isMuted,
+                style: style,
+                presentation: presentation,
+            )
+            // Keep Modern's glass container alive across repeated keypresses. Classic retains its
+            // original fresh-hosting-view behavior.
+            let newHostingView: NSHostingView<HUDPresentationView>
+            if style == .modern, lastShownStyle == .modern, let hostingView {
+                newHostingView = hostingView
+                newHostingView.rootView = content
+            } else {
+                newHostingView = NSHostingView(rootView: content)
+            }
+            newHostingView.frame = NSRect(x: 0, y: 0, width: style.windowSize, height: style.windowSize)
 
-            // Remove old content view if it exists
-            if let oldView = window.contentView { oldView.removeFromSuperview() }
+            // Preserve Classic's backing configuration; let SwiftUI own Modern's glass rendering
+            // layers without imposing a custom backing layer.
+            if style == .classic {
+                newHostingView.wantsLayer = true
+                newHostingView.layer?.backgroundColor = NSColor.clear.cgColor
+            }
 
-            window.contentView = newHostingView
+            if window.contentView !== newHostingView {
+                if let oldView = window.contentView { oldView.removeFromSuperview() }
+                window.contentView = newHostingView
+            }
             hostingView = newHostingView
 
             // Update position based on HUD type
@@ -307,6 +362,17 @@ class HUDController: ObservableObject {
             // Show the window
             window.orderFront(nil)
             isShowing = true
+            lastShownStyle = style
+
+            if style == .modern {
+                newHostingView.layoutSubtreeIfNeeded()
+                DispatchQueue.main.async { [weak self] in
+                    guard let self, presentationGeneration == generation else { return }
+                    withAnimation(.timingCurve(0.16, 1, 0.3, 1, duration: ModernHUDMetrics.entranceDuration)) {
+                        presentation.isPresented = true
+                    }
+                }
+            }
         }
 
         scheduleHideTimer()
@@ -336,12 +402,24 @@ class HUDController: ObservableObject {
     @MainActor
     private func createHUDWindow() {
         // Create the window with special properties for overlay
-        hudWindow = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 200, height: 200),
-            styleMask: [.borderless],
-            backing: .buffered,
-            defer: false,
-        )
+        let contentRect = NSRect(x: 0, y: 0, width: 200, height: 200)
+        if HUDStyle.current == .modern {
+            let panel = ModernHUDPanel(
+                contentRect: contentRect,
+                styleMask: [.borderless, .nonactivatingPanel],
+                backing: .buffered,
+                defer: false,
+            )
+            panel.hidesOnDeactivate = false
+            hudWindow = panel
+        } else {
+            hudWindow = NSWindow(
+                contentRect: contentRect,
+                styleMask: [.borderless],
+                backing: .buffered,
+                defer: false,
+            )
+        }
 
         guard let window = hudWindow else {
             logger.error("createHUDWindow: failed to create NSWindow (hudWindow is nil)")
@@ -373,6 +451,21 @@ class HUDController: ObservableObject {
     @MainActor
     private func hideHUD() {
         guard let window = hudWindow else { return }
+        isHiding = true
+        presentationGeneration += 1
+        let generation = presentationGeneration
+
+        if lastShownStyle == .modern {
+            withAnimation(.easeIn(duration: ModernHUDMetrics.exitDuration)) {
+                presentation.isPresented = false
+            } completion: { [weak self] in
+                guard let self, presentationGeneration == generation else { return }
+                window.orderOut(nil)
+                isShowing = false
+                isHiding = false
+            }
+            return
+        }
 
         // Animate fade-out before hiding
         NSAnimationContext.runAnimationGroup { context in
@@ -381,9 +474,11 @@ class HUDController: ObservableObject {
             window.animator().alphaValue = 0.0
         } completionHandler: { [weak self] in
             Task { @MainActor [weak self] in
+                guard let self, presentationGeneration == generation else { return }
                 window.orderOut(nil)
                 window.alphaValue = 1.0 // Reset for next show
-                self?.isShowing = false
+                isShowing = false
+                isHiding = false
             }
         }
     }

@@ -1,6 +1,6 @@
 //
 //  AboutView.swift
-//  by Danny Stewart (2025)
+//  by Danny Stewart (2026)
 //  MIT License
 //  https://github.com/dannystewart/volumeHUD
 //
@@ -18,6 +18,7 @@ struct AboutView: View {
     #endif // !SANDBOX
     @AppStorage("volumeHUDFollowsMouse") private var volumeHUDFollowsMouse: Bool = true
     @AppStorage("useRelativePositioning") private var useRelativePositioning: Bool = true
+    @AppStorage(HUDStyle.preferenceKey) private var hudStyle: HUDStyle = .classic
 
     #if !SANDBOX
         /// State to track if an update is available
@@ -38,7 +39,6 @@ struct AboutView: View {
 
     // Visual alignment
     private let iconColumnWidth: CGFloat = 20
-    private let minSettingColumnWidth: CGFloat = 140
     private let settingPadding: CGFloat = 24 // Higher for less padding
     private let spaceBeforeSubtitle: CGFloat = -3
 
@@ -125,13 +125,35 @@ struct AboutView: View {
             // MARK: - Right Column (Settings)
 
             VStack(alignment: .leading, spacing: 15) {
+                HStack(spacing: iconColumnWidth) {
+                    Image(systemName: "square.on.square")
+                        .foregroundStyle(.secondary)
+                        .font(.system(size: 14))
+                        .frame(width: 14, alignment: .leading)
+
+                    Text("HUD Style")
+                        .font(.system(size: 12, weight: .medium))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Picker("HUD Style", selection: $hudStyle) {
+                        Text("Classic").tag(HUDStyle.classic)
+                        Text("Modern").tag(HUDStyle.modern)
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.menu)
+                    .fixedSize()
+                    .onChange(of: hudStyle) {
+                        appDelegate?.hudController?.refreshStyle()
+                    }
+                }
+                .padding(.leading, settingPadding)
+
                 // MARK: - Open at Login Setting
 
                 if let loginItemManager {
                     LoginItemSetting(
                         loginItemManager: loginItemManager,
                         iconColumnWidth: iconColumnWidth,
-                        minSettingColumnWidth: minSettingColumnWidth,
                         settingPadding: settingPadding,
                         spaceBeforeSubtitle: spaceBeforeSubtitle,
                     )
@@ -151,13 +173,11 @@ struct AboutView: View {
 
                             Text("Brightness HUD")
                                 .font(.system(size: 12, weight: .medium))
-                                .frame(width: minSettingColumnWidth, alignment: .leading)
-
-                            Spacer()
+                                .frame(maxWidth: .infinity, alignment: .leading)
 
                             Toggle("", isOn: $brightnessEnabled)
                                 .toggleStyle(SwitchToggleStyle(tint: .accentColor))
-                                .scaleEffect(0.8)
+                                .scaleEffect(0.8, anchor: .trailing)
                                 .onChange(of: brightnessEnabled) { oldValue, newValue in
                                     logger.debug("Brightness setting changed from \(oldValue) to \(newValue).")
                                     appDelegate?.startBrightnessMonitoringIfEnabled()
@@ -191,13 +211,11 @@ struct AboutView: View {
 
                         Text("HUD Follows Mouse")
                             .font(.system(size: 12, weight: .medium))
-                            .frame(width: minSettingColumnWidth, alignment: .leading)
-
-                        Spacer()
+                            .frame(maxWidth: .infinity, alignment: .leading)
 
                         Toggle("", isOn: $volumeHUDFollowsMouse)
                             .toggleStyle(SwitchToggleStyle(tint: .accentColor))
-                            .scaleEffect(0.8)
+                            .scaleEffect(0.8, anchor: .trailing)
                             .onChange(of: volumeHUDFollowsMouse) { oldValue, newValue in
                                 logger.debug("Volume HUD display setting changed from \(oldValue) to \(newValue).")
                             }
@@ -229,13 +247,11 @@ struct AboutView: View {
 
                         Text("Relative HUD Position")
                             .font(.system(size: 12, weight: .medium))
-                            .frame(width: minSettingColumnWidth, alignment: .leading)
-
-                        Spacer()
+                            .frame(maxWidth: .infinity, alignment: .leading)
 
                         Toggle("", isOn: $useRelativePositioning)
                             .toggleStyle(SwitchToggleStyle(tint: .accentColor))
-                            .scaleEffect(0.8)
+                            .scaleEffect(0.8, anchor: .trailing)
                             .onChange(of: useRelativePositioning) { oldValue, newValue in
                                 logger.debug("Relative positioning setting changed from \(oldValue) to \(newValue).")
                             }
@@ -260,7 +276,7 @@ struct AboutView: View {
             .padding(.trailing, 6) // Right side window padding
         }
         .padding(32) // Overall frame padding
-        .frame(width: 540, height: 300)
+        .frame(width: 540, height: 340)
         #if !SANDBOX
             .onAppear {
                 Task {
@@ -356,20 +372,17 @@ private struct LoginItemSetting: View {
     @ObservedObject private var loginItemManager: LoginItemManager
 
     let iconColumnWidth: CGFloat
-    let minSettingColumnWidth: CGFloat
     let settingPadding: CGFloat
     let spaceBeforeSubtitle: CGFloat
 
     init(
         loginItemManager: LoginItemManager,
         iconColumnWidth: CGFloat,
-        minSettingColumnWidth: CGFloat,
         settingPadding: CGFloat,
         spaceBeforeSubtitle: CGFloat,
     ) {
         self.loginItemManager = loginItemManager
         self.iconColumnWidth = iconColumnWidth
-        self.minSettingColumnWidth = minSettingColumnWidth
         self.settingPadding = settingPadding
         self.spaceBeforeSubtitle = spaceBeforeSubtitle
     }
@@ -385,16 +398,14 @@ private struct LoginItemSetting: View {
 
                 Text("Open at Login")
                     .font(.system(size: 12, weight: .medium))
-                    .frame(width: minSettingColumnWidth, alignment: .leading)
-
-                Spacer()
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
                 Toggle("", isOn: Binding(
                     get: { loginItemManager.isEnabled },
                     set: { loginItemManager.setEnabled($0) },
                 ))
                 .toggleStyle(SwitchToggleStyle(tint: .accentColor))
-                .scaleEffect(0.8)
+                .scaleEffect(0.8, anchor: .trailing)
             }
         }
         .padding(.leading, settingPadding)

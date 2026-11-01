@@ -1,6 +1,6 @@
 //
 //  HUDView.swift
-//  by Danny Stewart (2025)
+//  by Danny Stewart (2026)
 //  MIT License
 //  https://github.com/dannystewart/volumeHUD
 //
@@ -20,40 +20,36 @@ struct HUDView: View {
     let hudType: HUDType
     let value: Float
     let isMuted: Bool
+    var style: HUDStyle = .classic
+
+    var body: some View {
+        switch style {
+        case .classic:
+            ClassicHUDView(hudType: hudType, value: value, isMuted: isMuted)
+        case .modern:
+            ModernHUDView(hudType: hudType, value: value, isMuted: isMuted)
+        }
+    }
+}
+
+// MARK: - ClassicHUDView
+
+private struct ClassicHUDView: View {
+    let hudType: HUDType
+    let value: Float
+    let isMuted: Bool
 
     private let hudSize: CGFloat = 200
     private let iconSize: CGFloat = 80
-
-    private var iconName: String {
-        switch hudType {
-        case .volume:
-            if isMuted || value <= 0.001 {
-                "speaker.slash.fill"
-            } else if value < 0.08 {
-                "speaker.fill"
-            } else if value < 0.33 {
-                "speaker.wave.1.fill"
-            } else if value < 0.66 {
-                "speaker.wave.2.fill"
-            } else {
-                "speaker.wave.3.fill"
-            }
-
-        case .brightness:
-            "sun.max"
-        }
-    }
 
     var body: some View {
         VStack(spacing: 0) {
             VStack { // Icon section
                 Spacer()
                     .frame(height: 56)
-                Image(systemName: iconName)
+                HUDIconView(hudType: hudType, value: value, isMuted: isMuted)
                     .font(.system(size: iconSize, weight: .medium))
                     .foregroundStyle(.primary.opacity(0.7))
-                    // SF Symbols has misalignment between speaker.slash.fill and speaker.fill
-                    .offset(y: hudType == .volume && (isMuted || value <= 0.001) ? 2 : 0)
                 Spacer()
             }
             .frame(height: 100)

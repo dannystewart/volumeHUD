@@ -1,6 +1,6 @@
 //
 //  VolumeHUDApp.swift
-//  by Danny Stewart (2025)
+//  by Danny Stewart (2026)
 //  MIT License
 //  https://github.com/dannystewart/volumeHUD
 //
@@ -333,7 +333,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
 
         // Use NSPanel to remain in accessory mode
         let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 600, height: 300),
+            contentRect: NSRect(x: 0, y: 0, width: 600, height: 340),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false,
@@ -349,7 +349,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, @preconcurrency UNUserNotifi
         if let screen = NSScreen.main {
             let screenFrame = screen.visibleFrame
             let windowWidth: CGFloat = 600
-            let windowHeight: CGFloat = 300
+            let windowHeight: CGFloat = 340
 
             let x = screenFrame.origin.x + (screenFrame.width - windowWidth) / 2
             let y = screenFrame.origin.y + screenFrame.height * 0.66 - windowHeight / 2
