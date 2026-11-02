@@ -18,8 +18,8 @@ enum ModernHUDMetrics {
     static let iconWidth: CGFloat = 96
     static let iconHeight: CGFloat = 90
     static let muteIconVerticalOffset: CGFloat = 3
-    static let volumeIconFontSize: CGFloat = 88
-    static let brightnessIconFontSize: CGFloat = 88
+    static let volumeIconFontSize: CGFloat = 86
+    static let brightnessIconFontSize: CGFloat = 86
     static let iconCenterY: CGFloat = 83
     static let barsCenterY: CGFloat = 165
     static let transitionBlurRadius: CGFloat = 5
@@ -89,7 +89,7 @@ struct ModernHUDView: View {
                 .position(x: ModernHUDMetrics.size / 2, y: ModernHUDMetrics.barsCenterY)
         }
         .frame(width: ModernHUDMetrics.size, height: ModernHUDMetrics.size)
-        .opacity(0.7)
+        .opacity(0.72)
         .environment(\.appearsActive, true)
     }
 }
