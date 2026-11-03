@@ -17,6 +17,7 @@ final class SettingsWindowController: NSObject {
     private weak var window: NSWindow?
     private weak var aboutWindow: NSWindow?
     private var isSettingsOpen = false
+    private var hasCenteredWindow = false
     private var previousMenu: NSMenu?
     private var previousActivationPolicy: NSApplication.ActivationPolicy?
     private var isActivationHandoffPending = false
@@ -69,14 +70,38 @@ final class SettingsWindowController: NSObject {
         guard self.window !== window else { return }
         if let previousWindow = self.window {
             NotificationCenter.default.removeObserver(self, name: NSWindow.willCloseNotification, object: previousWindow)
+            NotificationCenter.default.removeObserver(self, name: NSWindow.didBecomeKeyNotification, object: previousWindow)
         }
         self.window = window
+        if !hasCenteredWindow {
+            // Don't expose Settings' restored position before its initial layout is complete.
+            window.alphaValue = 0
+        }
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(windowWillClose(_:)),
             name: NSWindow.willCloseNotification,
             object: window,
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(windowDidBecomeKey(_:)),
+            name: NSWindow.didBecomeKeyNotification,
+            object: window,
+        )
+    }
+
+    @objc private func windowDidBecomeKey(_: Notification) {
+        guard !hasCenteredWindow else { return }
+        hasCenteredWindow = true
+        // Settings can restore its frame after the hosting view attaches. Wait until the
+        // first presentation has finished sizing and positioning the native window.
+        DispatchQueue.main.async { [weak window] in
+            guard let window else { return }
+            window.contentView?.layoutSubtreeIfNeeded()
+            window.center()
+            window.alphaValue = 1
+        }
     }
 
     private func beginPresentation() {
