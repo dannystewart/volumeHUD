@@ -6,11 +6,19 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## [Unreleased]
 
+### Changed
+
+- Slightly reduces the size of the speaker icon for the Modern Glass appearance.
+
+### Fixed
+
+- Fixes the Settings window so it always opens in the center of the screen.
+
 ## [4.0.0] (2026-11-01)
 
-### Modern HUD Option
+### New Modern HUD Option
 
-**Version 4.0 adds a new Modern HUD style with Liquid Glass.**
+**Version 4.0 adds a new Modern HUD option with Liquid Glass.**
 
 My goal with volumeHUD has always been to restore the classic UI, not invent a new one. What reinforced that decision is that even Xcode's status notifications maintained the same UI as the original volume HUD more than a year after macOS changed it.
 
@@ -18,10 +26,12 @@ However, Apple recently refreshed that design, giving me a glimpse into an alter
 
 The new HUD is precisely matched to Xcode's, which is very similar in size and layout, just rendered using modern glass elements. It uses slightly softer colors, rounder corners, and a new entry/exit animation with scale, blur, and fade.
 
+The Classic HUD design is still available in Settings (accessed by opening the app a second time).
+
 ### Other Improvements
 
-- volumeHUD now has a brand new icon, done properly this time with modern styling and separate elements for the speaker and bars.
-- The About window has been redesigned to be a proper traditional macOS Settings window with native style and layout.
+- A new icon, done properly this time with modern styling and separate elements for the speaker and bars.
+- The main window is now a traditional macOS Settings window with a more native style and layout.
 
 ### Removed
 
