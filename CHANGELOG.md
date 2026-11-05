@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## [Unreleased]
 
+## [4.0.1] (2026-11-04)
+
 ### Changed
 
 - Slightly reduces the size of the speaker icon for the Modern Glass appearance.
@@ -327,7 +329,8 @@ Initial release.
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
 <!-- Versions -->
-[unreleased]: https://github.com/dannystewart/volumeHUD/compare/v4.0.0...HEAD
+[unreleased]: https://github.com/dannystewart/volumeHUD/compare/v4.0.1...HEAD
+[4.0.1]: https://github.com/dannystewart/volumeHUD/compare/v4.0.0...v4.0.1
 [4.0.0]: https://github.com/dannystewart/volumeHUD/compare/v3.3.4...v4.0.0
 [3.3.4]: https://github.com/dannystewart/volumeHUD/compare/v3.3.3...v3.3.4
 [3.3.3]: https://github.com/dannystewart/volumeHUD/compare/v3.3.2...v3.3.3
